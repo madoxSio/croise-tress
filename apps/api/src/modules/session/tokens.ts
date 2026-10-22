@@ -1,5 +1,8 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 
+/** Forme d'un jeton émis par `generateToken` : tout autre format est refusé sans requête en base. */
+export const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/
+
 /** Jeton opaque de 256 bits, encodé en base64url. */
 export function generateToken(): string {
   return randomBytes(32).toString('base64url')

@@ -16,4 +16,4 @@ test-results/
 !.env.prod.example
 # Sauvegardes de base (données personnelles)
 backups/
-src/generated/
+**/src/generated/

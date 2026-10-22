@@ -15,7 +15,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
 import type { Config } from '../../config.ts'
 import { AppError, notFound, parseInput } from '../../http/errors.ts'
-import { requireAuth, setSessionCookie } from '../../plugins/auth.ts'
+import { clearSession, issueSession, requireAuth } from '../../plugins/auth.ts'
 import type { SessionService } from '../session/service.ts'
 import type { AuthService } from './service.ts'
 
@@ -72,8 +72,7 @@ export function authRoutes(
   ): Promise<SessionResponse> {
     if (request.auth) await sessions.revoke(request.auth.sessionId)
     const { token, auth: next } = await sessions.create(userId)
-    setSessionCookie(reply, config, token)
-    return { user: next.user, csrfToken: next.csrfToken }
+    return issueSession(request, reply, config, token, next)
   }
 
   app.post(
@@ -116,7 +115,7 @@ export function authRoutes(
   app.post('/auth/logout', async (request, reply) => {
     const current = requireAuth(request)
     await sessions.revoke(current.sessionId)
-    void reply.clearCookie(config.sessionCookieName, { path: '/' })
+    clearSession(request, reply, config)
     return reply.code(204).send()
   })
 
@@ -139,7 +138,7 @@ export function authRoutes(
     async (request, reply) => {
       const { token, password } = parseInput(resetPasswordBodySchema, request.body)
       await auth.resetPassword(token, password)
-      void reply.clearCookie(config.sessionCookieName, { path: '/' })
+      clearSession(request, reply, config)
       return reply.code(204).send()
     },
   )
@@ -190,7 +189,7 @@ export function authRoutes(
     async (request, reply) => {
       const body = parseInput(deleteAccountBodySchema, request.body)
       await auth.deleteAccount(requireAuth(request), body.password)
-      void reply.clearCookie(config.sessionCookieName, { path: '/' })
+      clearSession(request, reply, config)
       return reply.code(204).send()
     },
   )

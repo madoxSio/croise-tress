@@ -17,6 +17,7 @@ import { Server, type Socket } from 'socket.io'
 import type { ZodType } from 'zod'
 import type { Config } from '../../config.ts'
 import { AppError } from '../../http/errors.ts'
+import { isNativeClient, isSessionToken } from '../../plugins/auth.ts'
 import type { AuthUser, SessionService } from '../session/service.ts'
 import type { FinishResult, MatchService } from './service.ts'
 
@@ -37,10 +38,16 @@ type MatchSocket = Socket<
 
 const RATE = { capacity: 10, perSecond: 10, maxStrikes: 20 } as const
 
+/** Jeton passé par un client natif dans la poignée de main (`auth.token`), jamais dans l'URL. */
+function nativeToken(auth: Record<string, unknown>): string | undefined {
+  const token = auth['token']
+  return isSessionToken(token) ? token : undefined
+}
+
 /**
- * Passerelle temps réel : authentifie chaque connexion par le cookie de session, vérifie
- * l'origine, valide chaque événement par schéma et limite le débit. Les rooms sont gérées
- * uniquement côté serveur (une room par utilisateur) : un client ne peut rejoindre aucune room.
+ * Passerelle temps réel : authentifie chaque connexion par le cookie de session (navigateur)
+ * ou par jeton porteur (client natif), vérifie l'origine des navigateurs, valide chaque
+ * événement par schéma et limite le débit. Les rooms sont gérées uniquement côté serveur (une room par utilisateur) : un client ne peut rejoindre aucune room.
  */
 export class MatchGateway {
   readonly io: Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>
@@ -64,6 +71,13 @@ export class MatchGateway {
       // toujours `Origin` sur une poignée de main WebSocket et sur toute requête inter-origines ;
       // il l'omet seulement pour un GET de même origine (long polling), que `Sec-Fetch-Site` confirme.
       allowRequest: (req, callback) => {
+        // Client natif : l'en-tête dédié est impossible à poser depuis un navigateur (l'API
+        // WebSocket n'accepte aucun en-tête, le polling inter-origines exigerait un pré-vol
+        // CORS refusé). L'authentification exige alors un jeton porteur, jamais le cookie.
+        if (isNativeClient(req.headers)) {
+          callback(null, true)
+          return
+        }
         const origin = req.headers.origin
         if (origin !== undefined) {
           callback(null, config.webOrigins.includes(origin))
@@ -105,8 +119,9 @@ export class MatchGateway {
   }
 
   private async authenticate(socket: MatchSocket, app: FastifyInstance): Promise<void> {
-    const cookies = app.parseCookie(socket.handshake.headers.cookie ?? '')
-    const token = cookies[this.config.sessionCookieName]
+    const token = isNativeClient(socket.handshake.headers)
+      ? nativeToken(socket.handshake.auth)
+      : app.parseCookie(socket.handshake.headers.cookie ?? '')[this.config.sessionCookieName]
     const auth = token ? await this.sessions.resolve(token) : null
     if (!auth) throw new Error('unauthenticated')
     if (auth.user.isGuest || !auth.user.emailVerified) throw new Error('account_required')

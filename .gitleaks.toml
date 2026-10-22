@@ -1,0 +1,11 @@
+# Configuration de gitleaks (job « secrets » de la CI) : règles par défaut, plus une exception
+# étroite pour les faux jetons des tests (valeurs factices finissant par -0123456789).
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Jetons factices des tests"
+condition = "AND"
+paths = ['''^apps/[^/]+/test/''']
+regexTarget = "secret"
+regexes = ['''-0123456789$''']
