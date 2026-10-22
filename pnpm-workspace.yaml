@@ -1,0 +1,11 @@
+packages:
+  - apps/*
+  - packages/*
+
+# pnpm 10 bloque les scripts d'installation par défaut : n'autoriser que ceux
+# dont on a réellement besoin (ex. argon2, prisma) en les listant ici.
+onlyBuiltDependencies:
+  - '@prisma/engines'
+  - argon2
+  - esbuild
+  - prisma

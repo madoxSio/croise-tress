@@ -1,0 +1,33 @@
+{
+  "name": "@crossverse/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Client Nuxt (SPA) de Crossverse : présentation uniquement, aucune solution.",
+  "scripts": {
+    "dev": "nuxt dev --host ${HOST:-127.0.0.1} --port ${PORT:-3000}",
+    "build": "nuxt generate",
+    "preview": "nuxt preview",
+    "typecheck": "nuxt prepare && vue-tsc -b --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@crossverse/contracts": "workspace:*",
+    "@crossverse/crossword-core": "workspace:*",
+    "nuxt": "4.6.2",
+    "socket.io-client": "4.8.4",
+    "vue": "3.5.44",
+    "vue-router": "5.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "24.19.2",
+    "eslint-plugin-vue": "10.11.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5",
+    "vue-eslint-parser": "10.4.1",
+    "vue-tsc": "3.3.13"
+  }
+}

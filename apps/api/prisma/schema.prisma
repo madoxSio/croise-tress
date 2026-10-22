@@ -1,0 +1,301 @@
+// Schéma de données Crossverse. Toute modification passe par une migration versionnée
+// (`pnpm --filter @crossverse/api db:migrate:dev --name <nom>`), jamais par `db push`.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  player
+  admin
+}
+
+enum Difficulty {
+  discovery
+  easy
+  intermediate
+  hard
+  expert
+}
+
+enum PuzzleStatus {
+  draft
+  published
+}
+
+enum TokenPurpose {
+  register
+  change_email
+  reset_password
+}
+
+enum MatchMode {
+  quick
+  private
+}
+
+enum MatchStatus {
+  waiting
+  active
+  finished
+  aborted
+}
+
+enum MatchResult {
+  win
+  loss
+  draw
+}
+
+enum PlayStatus {
+  in_progress
+  completed
+}
+
+/// Compte joueur. Un invité n'a ni e-mail ni mot de passe ; l'inscription complète la même ligne.
+model User {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  email           String?   @unique @db.Citext
+  username        String?   @unique @db.Citext
+  passwordHash    String?   @map("password_hash")
+  emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  role            Role      @default(player)
+  /// Préférences d'interface synchronisées (thème, taille du texte…) : sans valeur officielle.
+  preferences     Json      @default("{}")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions     Session[]
+  playSessions PlaySession[]
+  authTokens   AuthToken[]
+  favorites    Favorite[]
+  achievements UserAchievement[]
+  queueEntry   MatchQueueEntry?
+  matches      MatchParticipant[]
+  matchEvents  MatchEvent[]
+  rating       Rating?
+
+  @@map("users")
+}
+
+/// Session serveur : seul le hash SHA-256 du jeton est stocké.
+model Session {
+  id         String    @id @default(uuid(7)) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  csrfSecret String    @map("csrf_secret")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(3)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Jeton envoyé par e-mail (inscription, changement d'e-mail, réinitialisation).
+/// Usage unique, durée limitée ; seul son hash SHA-256 est stocké. Les données `pending*`
+/// ne sont appliquées au compte qu'à la confirmation.
+model AuthToken {
+  id                  String       @id @default(uuid(7)) @db.Uuid
+  userId              String       @map("user_id") @db.Uuid
+  purpose             TokenPurpose
+  tokenHash           String       @unique @map("token_hash")
+  pendingEmail        String?      @map("pending_email") @db.Citext
+  pendingUsername     String?      @map("pending_username") @db.Citext
+  pendingPasswordHash String?      @map("pending_password_hash")
+  expiresAt           DateTime     @map("expires_at") @db.Timestamptz(3)
+  usedAt              DateTime?    @map("used_at") @db.Timestamptz(3)
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@map("auth_tokens")
+}
+
+/// Puzzle éditorial. `grid` et `clues` contiennent la solution : jamais sérialisés tels quels.
+/// Ils sont validés par `@crossverse/crossword-core` à l'import (seed, admin).
+model Puzzle {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  slug             String       @unique
+  title            String
+  theme            String
+  difficulty       Difficulty
+  status           PuzzleStatus @default(draft)
+  width            Int          @db.SmallInt
+  height           Int          @db.SmallInt
+  grid             Json
+  clues            Json
+  estimatedMinutes Int          @map("estimated_minutes") @db.SmallInt
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  dailyChallenges DailyChallenge[]
+  playSessions    PlaySession[]
+  favorites       Favorite[]
+  matches         Match[]
+
+  @@index([status, difficulty, theme])
+  @@map("puzzles")
+}
+
+/// Un seul puzzle par date (UTC) : garanti par la clé primaire.
+model DailyChallenge {
+  date     DateTime @id @db.Date
+  puzzleId String   @map("puzzle_id") @db.Uuid
+
+  puzzle Puzzle @relation(fields: [puzzleId], references: [id], onDelete: Restrict)
+
+  @@map("daily_challenges")
+}
+
+/// Partie solo. Une seule partie en cours par joueur et puzzle (index partiel en migration SQL).
+model PlaySession {
+  id               String     @id @default(uuid(7)) @db.Uuid
+  userId           String     @map("user_id") @db.Uuid
+  puzzleId         String     @map("puzzle_id") @db.Uuid
+  status           PlayStatus @default(in_progress)
+  grid             Json
+  revision         Int        @default(0)
+  cellChecks       Int        @default(0) @map("cell_checks")
+  wordChecks       Int        @default(0) @map("word_checks")
+  lettersRevealed  Int        @default(0) @map("letters_revealed")
+  wordsRevealed    Int        @default(0) @map("words_revealed")
+  solutionRevealed Boolean    @default(false) @map("solution_revealed")
+  startedAt        DateTime   @default(now()) @map("started_at") @db.Timestamptz(3)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  completedAt      DateTime?  @map("completed_at") @db.Timestamptz(3)
+  durationMs       Int?       @map("duration_ms")
+  score            Int?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  puzzle Puzzle @relation(fields: [puzzleId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, updatedAt])
+  @@map("play_sessions")
+}
+
+model Favorite {
+  userId    String   @map("user_id") @db.Uuid
+  puzzleId  String   @map("puzzle_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  puzzle Puzzle @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, puzzleId])
+  @@map("favorites")
+}
+
+/// Succès obtenus. Les définitions sont dans le code ; la clé primaire empêche toute double attribution.
+model UserAchievement {
+  userId     String   @map("user_id") @db.Uuid
+  code       String
+  unlockedAt DateTime @default(now()) @map("unlocked_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, code])
+  @@map("user_achievements")
+}
+
+/// File de matchmaking rapide : une seule entrée par joueur (clé primaire).
+model MatchQueueEntry {
+  userId     String    @id @map("user_id") @db.Uuid
+  mode       MatchMode @default(quick)
+  enqueuedAt DateTime  @default(now()) @map("enqueued_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([mode, enqueuedAt])
+  @@map("match_queue")
+}
+
+/// Match multijoueur. Son état officiel est en base : il survit à un redémarrage de l'API.
+model Match {
+  id         String      @id @default(uuid(7)) @db.Uuid
+  mode       MatchMode
+  status     MatchStatus @default(waiting)
+  puzzleId   String      @map("puzzle_id") @db.Uuid
+  /// Code d'invitation (match privé en attente) ; supprimé au démarrage.
+  inviteCode String?     @unique @map("invite_code")
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  startedAt  DateTime?   @map("started_at") @db.Timestamptz(3)
+  deadlineAt DateTime?   @map("deadline_at") @db.Timestamptz(3)
+  endedAt    DateTime?   @map("ended_at") @db.Timestamptz(3)
+  endReason  String?     @map("end_reason")
+  winnerId   String?     @map("winner_id") @db.Uuid
+
+  puzzle       Puzzle             @relation(fields: [puzzleId], references: [id], onDelete: Restrict)
+  participants MatchParticipant[]
+  events       MatchEvent[]
+
+  @@index([status, deadlineAt])
+  @@map("matches")
+}
+
+model MatchParticipant {
+  matchId        String       @map("match_id") @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  slot           Int          @db.SmallInt
+  /// Vrai tant que le match n'est pas terminé : un index unique partiel (migration SQL)
+  /// empêche un joueur d'être dans deux matchs à la fois.
+  active         Boolean      @default(true)
+  /// Mots trouvés, au format « 1-across ».
+  solvedWords    String[]     @default([]) @map("solved_words")
+  lastSolvedAt   DateTime?    @map("last_solved_at") @db.Timestamptz(3)
+  disconnectedAt DateTime?    @map("disconnected_at") @db.Timestamptz(3)
+  finishedAt     DateTime?    @map("finished_at") @db.Timestamptz(3)
+  result         MatchResult?
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([matchId, userId])
+  @@unique([matchId, slot])
+  @@index([userId])
+  @@map("match_participants")
+}
+
+/// Journal des actions reçues. L'unicité de `client_event_id` rend chaque action idempotente.
+model MatchEvent {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  matchId       String   @map("match_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  clientEventId String   @map("client_event_id")
+  type          String
+  payload       Json
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, userId, clientEventId])
+  @@map("match_events")
+}
+
+/// Classement Elo des matchs rapides (les matchs privés ne comptent pas).
+/// Mis à jour dans la transaction qui clôt le match : une seule fois par match.
+model Rating {
+  userId      String   @id @map("user_id") @db.Uuid
+  rating      Int      @default(1200)
+  gamesPlayed Int      @default(0) @map("games_played")
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  draws       Int      @default(0)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rating(sort: Desc)])
+  @@map("ratings")
+}

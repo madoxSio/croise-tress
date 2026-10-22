@@ -1,0 +1,3 @@
+# Artefacts locaux de Nuxt et du contrôle de types
+.data/
+*.tsbuildinfo

@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "tsBuildInfoFile": "./node_modules/.cache/tsconfig.test.tsbuildinfo"
+  },
+  "include": ["test/**/*.ts", "vitest.config.ts"]
+}

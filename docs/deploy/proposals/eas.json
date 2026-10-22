@@ -1,0 +1,33 @@
+{
+  "cli": {
+    "version": ">= 24.10.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "24.22.0",
+      "pnpm": "10.28.0"
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://crossverse-api.onrender.com"
+      }
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://crossverse-api.onrender.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "REMPLIR_APPLE_ID_NUMERIQUE"
+      }
+    }
+  }
+}

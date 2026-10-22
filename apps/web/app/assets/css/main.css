@@ -1,0 +1,194 @@
+@import 'tailwindcss';
+
+/*
+ * Thèmes : chaque thème ne redéfinit que des variables `--cv-*`. Les utilitaires Tailwind
+ * (`bg-surface`, `text-muted`, `border-line`…) pointent vers ces variables : ajouter un
+ * thème = ajouter un bloc `[data-theme='…']` (et son entrée dans utils/preferences.ts).
+ */
+@theme inline {
+  --color-bg: var(--cv-bg);
+  --color-surface: var(--cv-surface);
+  --color-surface-2: var(--cv-surface-2);
+  --color-fg: var(--cv-fg);
+  --color-muted: var(--cv-muted);
+  --color-line: var(--cv-line);
+  --color-accent: var(--cv-accent);
+  --color-accent-fg: var(--cv-accent-fg);
+  --color-accent-soft: var(--cv-accent-soft);
+  --color-danger: var(--cv-danger);
+  --color-danger-soft: var(--cv-danger-soft);
+  --color-danger-fg: var(--cv-danger-fg);
+  --color-success: var(--cv-success);
+  --color-cell: var(--cv-cell);
+  --color-block: var(--cv-block);
+  --color-word: var(--cv-word);
+  --color-cursor: var(--cv-cursor);
+  --color-cursor-fg: var(--cv-cursor-fg);
+  --color-revealed: var(--cv-revealed);
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --radius-card: 1rem;
+}
+
+:root,
+[data-theme='minimal'] {
+  color-scheme: light;
+  --cv-bg: #f6f6f3;
+  --cv-surface: #ffffff;
+  --cv-surface-2: #efefeb;
+  --cv-fg: #17181c;
+  --cv-muted: #5c5f6a;
+  --cv-line: #d9d9d3;
+  --cv-accent: #2f4fd8;
+  --cv-accent-fg: #ffffff;
+  --cv-accent-soft: #e3e8ff;
+  --cv-danger: #b42318;
+  --cv-danger-fg: #ffffff;
+  --cv-danger-soft: #fde4e1;
+  --cv-success: #17803d;
+  --cv-cell: #ffffff;
+  --cv-block: #1d1e23;
+  --cv-word: #dfe6ff;
+  --cv-cursor: #ffd84d;
+  --cv-cursor-fg: #17181c;
+  --cv-revealed: #6d3fc4;
+  --cv-grid-border: 1px;
+  --cv-focus: #2f4fd8;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --cv-bg: #111216;
+  --cv-surface: #1a1c22;
+  --cv-surface-2: #23262e;
+  --cv-fg: #ecedf1;
+  --cv-muted: #a3a7b3;
+  --cv-line: #343844;
+  --cv-accent: #8ea2ff;
+  --cv-accent-fg: #0d0f1a;
+  --cv-accent-soft: #262d4d;
+  --cv-danger: #ff8a7d;
+  --cv-danger-fg: #1a0b09;
+  --cv-danger-soft: #4a1f1c;
+  --cv-success: #6fd394;
+  --cv-cell: #20232b;
+  --cv-block: #05060a;
+  --cv-word: #2b3560;
+  --cv-cursor: #e7c13a;
+  --cv-cursor-fg: #111216;
+  --cv-revealed: #c8a6ff;
+  --cv-grid-border: 1px;
+  --cv-focus: #8ea2ff;
+}
+
+[data-theme='contrast'] {
+  color-scheme: light;
+  --cv-bg: #ffffff;
+  --cv-surface: #ffffff;
+  --cv-surface-2: #ffffff;
+  --cv-fg: #000000;
+  --cv-muted: #000000;
+  --cv-line: #000000;
+  --cv-accent: #0000c8;
+  --cv-accent-fg: #ffffff;
+  --cv-accent-soft: #ffffff;
+  --cv-danger: #b00000;
+  --cv-danger-fg: #ffffff;
+  --cv-danger-soft: #ffffff;
+  --cv-success: #005c00;
+  --cv-cell: #ffffff;
+  --cv-block: #000000;
+  --cv-word: #c9e3ff;
+  --cv-cursor: #ffe600;
+  --cv-cursor-fg: #000000;
+  --cv-revealed: #5a00b4;
+  --cv-grid-border: 2px;
+  --cv-focus: #000000;
+}
+
+/* Thème automatique : sombre si l'appareil le demande, minimal sinon (valeurs de :root). */
+@media (prefers-color-scheme: dark) {
+  [data-theme='auto'] {
+    color-scheme: dark;
+    --cv-bg: #111216;
+    --cv-surface: #1a1c22;
+    --cv-surface-2: #23262e;
+    --cv-fg: #ecedf1;
+    --cv-muted: #a3a7b3;
+    --cv-line: #343844;
+    --cv-accent: #8ea2ff;
+    --cv-accent-fg: #0d0f1a;
+    --cv-accent-soft: #262d4d;
+    --cv-danger: #ff8a7d;
+    --cv-danger-fg: #1a0b09;
+    --cv-danger-soft: #4a1f1c;
+    --cv-success: #6fd394;
+    --cv-cell: #20232b;
+    --cv-block: #05060a;
+    --cv-word: #2b3560;
+    --cv-cursor: #e7c13a;
+    --cv-cursor-fg: #111216;
+    --cv-revealed: #c8a6ff;
+    --cv-focus: #8ea2ff;
+  }
+}
+
+html {
+  /* Taille du texte réglable : tout le dimensionnement en rem suit cette échelle. */
+  font-size: calc(100% * var(--text-scale, 1));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--cv-bg);
+  color: var(--cv-fg);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cv-focus);
+  outline-offset: 2px;
+}
+
+/* Réduction des animations : préférence explicite ou réglage système. */
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes cv-pop {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.cv-pop {
+  animation: cv-pop 180ms ease-out;
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}

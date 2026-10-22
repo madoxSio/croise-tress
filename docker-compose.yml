@@ -1,0 +1,106 @@
+# Environnement de développement complet : `make init` puis `make start`.
+# Tous les ports sont publiés sur 127.0.0.1 uniquement.
+name: crossverse
+
+x-node-app: &node-app
+  build:
+    context: .
+    dockerfile: docker/dev.Dockerfile
+  image: crossverse-dev:latest
+  restart: unless-stopped
+  env_file: .env
+  volumes:
+    # Code monté pour le rechargement à chaud ; dépendances conservées depuis l'image.
+    - .:/app
+    - /app/node_modules
+    - /app/apps/api/node_modules
+    - /app/apps/web/node_modules
+    - /app/apps/e2e/node_modules
+    - /app/packages/crossword-core/node_modules
+    - /app/packages/contracts/node_modules
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?définir POSTGRES_USER dans .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans .env}
+      POSTGRES_DB: ${POSTGRES_DB:?définir POSTGRES_DB dans .env}
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      # PostgreSQL 18 range ses données dans un sous-dossier versionné de /var/lib/postgresql.
+      - postgres-data:/var/lib/postgresql
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '127.0.0.1:${MAILPIT_UI_PORT:-8025}:8025'
+
+  api:
+    <<: *node-app
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_URL_TEST: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}_test
+      API_HOST: 0.0.0.0
+      API_PORT: 3001
+      SMTP_HOST: mailpit
+    # Génère le client Prisma, applique les migrations puis lance l'API en mode watch.
+    command: >-
+      sh -c "pnpm --filter @crossverse/api db:generate
+      && pnpm --filter @crossverse/api db:migrate
+      && pnpm --filter @crossverse/api dev"
+    ports:
+      - '127.0.0.1:${API_PORT:-3001}:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  web:
+    <<: *node-app
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      NUXT_API_PROXY_TARGET: http://api:3001
+    command: pnpm --filter @crossverse/web dev
+    ports:
+      - '127.0.0.1:${WEB_PORT:-3000}:3000'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
+
+volumes:
+  postgres-data:

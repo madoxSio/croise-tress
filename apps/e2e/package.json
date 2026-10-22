@@ -1,0 +1,18 @@
+{
+  "name": "@crossverse/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Parcours Playwright (mobile et bureau) contre une API et un web déjà démarrés.",
+  "scripts": {
+    "test": "playwright test",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@crossverse/contracts": "workspace:*",
+    "@crossverse/crossword-core": "workspace:*",
+    "@playwright/test": "1.56.1",
+    "@types/node": "24.19.2",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "@crossverse/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Schémas Zod des échanges client/serveur. Ne contient jamais de solution.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "zod": "4.6.7"
+  }
+}

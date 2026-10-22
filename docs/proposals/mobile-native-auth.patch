@@ -1,0 +1,560 @@
+diff -ruN -x generated a/apps/api/src/modules/auth/routes.ts b/apps/api/src/modules/auth/routes.ts
+--- a/apps/api/src/modules/auth/routes.ts	2026-10-20 18:50:53.937925356 +0000
++++ b/apps/api/src/modules/auth/routes.ts	2026-10-20 18:50:54.342929929 +0000
+@@ -15,7 +15,7 @@
+ import { z } from 'zod'
+ import type { Config } from '../../config.ts'
+ import { AppError, notFound, parseInput } from '../../http/errors.ts'
+-import { requireAuth, setSessionCookie } from '../../plugins/auth.ts'
++import { clearSession, issueSession, requireAuth } from '../../plugins/auth.ts'
+ import type { SessionService } from '../session/service.ts'
+ import type { AuthService } from './service.ts'
+ 
+@@ -72,8 +72,7 @@
+   ): Promise<SessionResponse> {
+     if (request.auth) await sessions.revoke(request.auth.sessionId)
+     const { token, auth: next } = await sessions.create(userId)
+-    setSessionCookie(reply, config, token)
+-    return { user: next.user, csrfToken: next.csrfToken }
++    return issueSession(request, reply, config, token, next)
+   }
+ 
+   app.post(
+@@ -116,7 +115,7 @@
+   app.post('/auth/logout', async (request, reply) => {
+     const current = requireAuth(request)
+     await sessions.revoke(current.sessionId)
+-    void reply.clearCookie(config.sessionCookieName, { path: '/' })
++    clearSession(request, reply, config)
+     return reply.code(204).send()
+   })
+ 
+@@ -139,7 +138,7 @@
+     async (request, reply) => {
+       const { token, password } = parseInput(resetPasswordBodySchema, request.body)
+       await auth.resetPassword(token, password)
+-      void reply.clearCookie(config.sessionCookieName, { path: '/' })
++      clearSession(request, reply, config)
+       return reply.code(204).send()
+     },
+   )
+@@ -190,7 +189,7 @@
+     async (request, reply) => {
+       const body = parseInput(deleteAccountBodySchema, request.body)
+       await auth.deleteAccount(requireAuth(request), body.password)
+-      void reply.clearCookie(config.sessionCookieName, { path: '/' })
++      clearSession(request, reply, config)
+       return reply.code(204).send()
+     },
+   )
+diff -ruN -x generated a/apps/api/src/modules/match/gateway.ts b/apps/api/src/modules/match/gateway.ts
+--- a/apps/api/src/modules/match/gateway.ts	2026-10-20 18:50:54.043526954 +0000
++++ b/apps/api/src/modules/match/gateway.ts	2026-10-20 18:50:54.343082181 +0000
+@@ -17,6 +17,7 @@
+ import type { ZodType } from 'zod'
+ import type { Config } from '../../config.ts'
+ import { AppError } from '../../http/errors.ts'
++import { isNativeClient, isSessionToken } from '../../plugins/auth.ts'
+ import type { AuthUser, SessionService } from '../session/service.ts'
+ import type { FinishResult, MatchService } from './service.ts'
+ 
+@@ -37,10 +38,16 @@
+ 
+ const RATE = { capacity: 10, perSecond: 10, maxStrikes: 20 } as const
+ 
++/** Jeton passé par un client natif dans la poignée de main (`auth.token`), jamais dans l'URL. */
++function nativeToken(auth: Record<string, unknown>): string | undefined {
++  const token = auth['token']
++  return isSessionToken(token) ? token : undefined
++}
++
+ /**
+- * Passerelle temps réel : authentifie chaque connexion par le cookie de session, vérifie
+- * l'origine, valide chaque événement par schéma et limite le débit. Les rooms sont gérées
+- * uniquement côté serveur (une room par utilisateur) : un client ne peut rejoindre aucune room.
++ * Passerelle temps réel : authentifie chaque connexion par le cookie de session (navigateur)
++ * ou par jeton porteur (client natif), vérifie l'origine des navigateurs, valide chaque
++ * événement par schéma et limite le débit. Les rooms sont gérées uniquement côté serveur (une room par utilisateur) : un client ne peut rejoindre aucune room.
+  */
+ export class MatchGateway {
+   readonly io: Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>
+@@ -64,6 +71,13 @@
+       // toujours `Origin` sur une poignée de main WebSocket et sur toute requête inter-origines ;
+       // il l'omet seulement pour un GET de même origine (long polling), que `Sec-Fetch-Site` confirme.
+       allowRequest: (req, callback) => {
++        // Client natif : l'en-tête dédié est impossible à poser depuis un navigateur (l'API
++        // WebSocket n'accepte aucun en-tête, le polling inter-origines exigerait un pré-vol
++        // CORS refusé). L'authentification exige alors un jeton porteur, jamais le cookie.
++        if (isNativeClient(req.headers)) {
++          callback(null, true)
++          return
++        }
+         const origin = req.headers.origin
+         if (origin !== undefined) {
+           callback(null, config.webOrigins.includes(origin))
+@@ -105,8 +119,9 @@
+   }
+ 
+   private async authenticate(socket: MatchSocket, app: FastifyInstance): Promise<void> {
+-    const cookies = app.parseCookie(socket.handshake.headers.cookie ?? '')
+-    const token = cookies[this.config.sessionCookieName]
++    const token = isNativeClient(socket.handshake.headers)
++      ? nativeToken(socket.handshake.auth)
++      : app.parseCookie(socket.handshake.headers.cookie ?? '')[this.config.sessionCookieName]
+     const auth = token ? await this.sessions.resolve(token) : null
+     if (!auth) throw new Error('unauthenticated')
+     if (auth.user.isGuest || !auth.user.emailVerified) throw new Error('account_required')
+diff -ruN -x generated a/apps/api/src/modules/session/routes.ts b/apps/api/src/modules/session/routes.ts
+--- a/apps/api/src/modules/session/routes.ts	2026-10-20 18:50:54.289371774 +0000
++++ b/apps/api/src/modules/session/routes.ts	2026-10-20 18:50:54.343463778 +0000
+@@ -1,7 +1,7 @@
+ import type { SessionResponse } from '@crossverse/contracts'
+ import type { FastifyInstance } from 'fastify'
+ import type { Config } from '../../config.ts'
+-import { setSessionCookie } from '../../plugins/auth.ts'
++import { issueSession } from '../../plugins/auth.ts'
+ import type { AuthContext, SessionService } from './service.ts'
+ 
+ function toResponse(auth: AuthContext | null): SessionResponse {
+@@ -22,8 +22,7 @@
+       // Une session valide existe déjà : on la réutilise plutôt que de multiplier les invités.
+       if (request.auth) return toResponse(request.auth)
+       const { token, auth } = await sessions.createGuest()
+-      setSessionCookie(reply, config, token)
+-      return reply.code(201).send(toResponse(auth))
++      return reply.code(201).send(issueSession(request, reply, config, token, auth))
+     },
+   )
+ }
+diff -ruN -x generated a/apps/api/src/modules/session/tokens.ts b/apps/api/src/modules/session/tokens.ts
+--- a/apps/api/src/modules/session/tokens.ts	2026-10-20 18:50:54.290524608 +0000
++++ b/apps/api/src/modules/session/tokens.ts	2026-10-20 18:50:54.343522165 +0000
+@@ -1,5 +1,8 @@
+ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+ 
++/** Forme d'un jeton émis par `generateToken` : tout autre format est refusé sans requête en base. */
++export const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/
++
+ /** Jeton opaque de 256 bits, encodé en base64url. */
+ export function generateToken(): string {
+   return randomBytes(32).toString('base64url')
+diff -ruN -x generated a/apps/api/src/plugins/auth.ts b/apps/api/src/plugins/auth.ts
+--- a/apps/api/src/plugins/auth.ts	2026-10-20 18:50:54.339999553 +0000
++++ b/apps/api/src/plugins/auth.ts	2026-10-20 18:50:54.343576343 +0000
+@@ -1,37 +1,83 @@
+-import { CSRF_HEADER, ERROR_CODES } from '@crossverse/contracts'
++import {
++  CSRF_HEADER,
++  ERROR_CODES,
++  NATIVE_CLIENT_HEADER,
++  NATIVE_CLIENT_VALUE,
++  type SessionResponse,
++} from '@crossverse/contracts'
++import type { IncomingHttpHeaders } from 'node:http'
+ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
+ import type { Config } from '../config.ts'
+ import { AppError } from '../http/errors.ts'
+ import type { AuthContext, SessionService } from '../modules/session/service.ts'
+-import { safeEqual } from '../modules/session/tokens.ts'
++import { TOKEN_PATTERN, safeEqual } from '../modules/session/tokens.ts'
+ 
+ declare module 'fastify' {
+   interface FastifyRequest {
+     auth: AuthContext | null
++    /** Client natif (app mobile) : jeton porteur au lieu du cookie, cf. `isNativeClient`. */
++    nativeClient: boolean
+   }
+ }
+ 
+ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
++const BEARER_PREFIX = 'Bearer '
+ 
+ /**
+- * Résout la session depuis le cookie et applique les protections CSRF :
++ * Un client natif s'annonce par un en-tête personnalisé. Un navigateur ne peut pas l'envoyer
++ * vers une autre origine sans pré-vol CORS, que l'API n'accorde à personne : cet en-tête ne
++ * peut donc pas servir à une attaque CSRF, et le jeton porteur n'est jamais envoyé
++ * automatiquement par un navigateur. Seul le contrôle d'`Origin` est alors sauté.
++ */
++export function isNativeClient(headers: IncomingHttpHeaders): boolean {
++  return headers[NATIVE_CLIENT_HEADER] === NATIVE_CLIENT_VALUE
++}
++
++/** Jeton de session d'un client natif ; une forme invalide est refusée sans requête en base. */
++export function isSessionToken(value: unknown): value is string {
++  return typeof value === 'string' && TOKEN_PATTERN.test(value)
++}
++
++function bearerToken(request: FastifyRequest): string | null {
++  const header = request.headers.authorization
++  if (header === undefined) return null
++  const token = header.startsWith(BEARER_PREFIX) ? header.slice(BEARER_PREFIX.length) : null
++  if (!isSessionToken(token))
++    throw new AppError(401, ERROR_CODES.unauthenticated, 'Jeton invalide.')
++  return token
++}
++
++/**
++ * Résout la session et applique les protections CSRF.
++ *
++ * Navigateur (cookie) :
+  * - toute requête mutante doit provenir d'une origine autorisée (en-tête Origin obligatoire) ;
+  * - si elle est authentifiée, elle doit aussi porter le jeton CSRF de la session.
++ *
++ * Client natif : la session vient uniquement de `Authorization: Bearer` (le cookie est ignoré),
++ * l'en-tête Origin n'est pas exigé, le jeton CSRF l'est toujours.
+  */
+ export function registerAuth(app: FastifyInstance, config: Config, sessions: SessionService): void {
+   app.decorateRequest('auth', null)
++  app.decorateRequest('nativeClient', false)
+ 
+   app.addHook('onRequest', async (request) => {
+-    if (!SAFE_METHODS.has(request.method)) {
++    request.nativeClient = isNativeClient(request.headers)
++
++    // Contrôle d'origine : propre aux navigateurs, sans objet pour un client natif (cf. ci-dessus).
++    if (!request.nativeClient && !SAFE_METHODS.has(request.method)) {
+       const origin = request.headers.origin
+       if (origin === undefined || !config.webOrigins.includes(origin)) {
+         throw new AppError(403, ERROR_CODES.csrf, 'Origine non autorisée.')
+       }
+     }
+ 
+-    const token = request.cookies[config.sessionCookieName]
++    const token = request.nativeClient
++      ? bearerToken(request)
++      : request.cookies[config.sessionCookieName]
+     request.auth = token ? await sessions.resolve(token) : null
+ 
++    // Le jeton CSRF reste exigé dans les deux modes (défense en profondeur).
+     if (!SAFE_METHODS.has(request.method) && request.auth) {
+       const header = request.headers[CSRF_HEADER]
+       if (typeof header !== 'string' || !safeEqual(header, request.auth.csrfToken)) {
+@@ -56,3 +102,25 @@
+     maxAge: Math.floor(config.sessionTtlMs / 1000),
+   })
+ }
++
++/**
++ * Remet une session qui vient de s'ouvrir à son client : cookie HttpOnly pour un navigateur,
++ * jeton dans le corps pour un client natif (qui le range dans son stockage sécurisé).
++ */
++export function issueSession(
++  request: FastifyRequest,
++  reply: FastifyReply,
++  config: Config,
++  token: string,
++  auth: AuthContext,
++): SessionResponse {
++  const response = { user: auth.user, csrfToken: auth.csrfToken }
++  if (request.nativeClient) return { ...response, sessionToken: token }
++  setSessionCookie(reply, config, token)
++  return response
++}
++
++/** Efface le cookie de session d'un navigateur ; un client natif oublie lui-même son jeton. */
++export function clearSession(request: FastifyRequest, reply: FastifyReply, config: Config): void {
++  if (!request.nativeClient) void reply.clearCookie(config.sessionCookieName, { path: '/' })
++}
+diff -ruN -x generated a/apps/api/test/native.test.ts b/apps/api/test/native.test.ts
+--- a/apps/api/test/native.test.ts	1970-01-01 00:00:00.000000000 +0000
++++ b/apps/api/test/native.test.ts	2026-10-20 19:40:04.054761722 +0000
+@@ -0,0 +1,277 @@
++import {
++  NATIVE_CLIENT_HEADER,
++  NATIVE_CLIENT_VALUE,
++  type ClientToServerEvents,
++  type ServerToClientEvents,
++} from '@crossverse/contracts'
++import type { LightMyRequestResponse } from 'fastify'
++import type { AddressInfo } from 'node:net'
++import { io, type Socket } from 'socket.io-client'
++import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
++import {
++  Client,
++  createTestContext,
++  resetDatabase,
++  seedPuzzles,
++  type TestContext,
++} from './helpers.ts'
++
++/**
++ * Clients natifs (app mobile) : jeton porteur au lieu du cookie, sans en-tête Origin.
++ * Cf. docs/proposals/mobile-native-auth.md.
++ */
++
++let ctx: TestContext
++let url: string
++let puzzleId: string
++const sockets: Socket<ServerToClientEvents, ClientToServerEvents>[] = []
++
++beforeAll(async () => {
++  ctx = await createTestContext({ realClock: true })
++  await ctx.app.listen({ host: '127.0.0.1', port: 0 })
++  url = `http://127.0.0.1:${(ctx.app.server.address() as AddressInfo).port}`
++})
++afterAll(async () => {
++  for (const socket of sockets.splice(0)) socket.disconnect()
++  await ctx.app.close()
++  await ctx.db.$disconnect()
++})
++beforeEach(async () => {
++  for (const socket of sockets.splice(0)) socket.disconnect()
++  await resetDatabase(ctx.db)
++  ctx.mailer.sent.length = 0
++  const ids = await seedPuzzles(ctx.db)
++  puzzleId = ids['la-table'] ?? ''
++})
++
++const PASSWORD = 'correct horse battery staple'
++let nextIp = 1
++
++function lastEmailToken(): string {
++  const match = /token=([\w-]{43})/.exec(ctx.mailer.sent.at(-1)?.text ?? '')
++  if (!match?.[1]) throw new Error('aucun jeton dans le dernier e-mail')
++  return match[1]
++}
++
++/** Client natif : jamais d'Origin ni de cookie, jeton gardé comme dans le coffre du téléphone. */
++class NativeClient {
++  token: string | null = null
++  csrf: string | null = null
++  readonly ip = `10.9.0.${nextIp++}`
++
++  async request(
++    method: 'GET' | 'POST' | 'PUT' | 'DELETE',
++    path: string,
++    payload?: unknown,
++    headers: Record<string, string> = {},
++  ): Promise<LightMyRequestResponse> {
++    const res = await ctx.app.inject({
++      method,
++      url: `/api/v1${path}`,
++      remoteAddress: this.ip,
++      headers: {
++        [NATIVE_CLIENT_HEADER]: NATIVE_CLIENT_VALUE,
++        ...(this.token ? { authorization: `Bearer ${this.token}` } : {}),
++        ...(this.csrf && method !== 'GET' ? { 'x-csrf-token': this.csrf } : {}),
++        ...headers,
++      },
++      ...(payload === undefined ? {} : { payload: payload as Record<string, unknown> }),
++    })
++    if (res.statusCode < 300 && res.headers['content-type']?.toString().includes('json')) {
++      const body = res.json<{ csrfToken?: unknown; sessionToken?: unknown }>()
++      if (typeof body.csrfToken === 'string') this.csrf = body.csrfToken
++      if (typeof body.sessionToken === 'string') this.token = body.sessionToken
++    }
++    return res
++  }
++
++  async guest(): Promise<this> {
++    const res = await this.request('POST', '/session/guest')
++    expect(res.statusCode).toBe(201)
++    return this
++  }
++
++  /** Compte confirmé, la session native devenant celle du compte. */
++  async verifiedAccount(name: string): Promise<this> {
++    await this.guest()
++    const res = await this.request('POST', '/auth/register', {
++      email: `${name}@example.com`,
++      username: name,
++      password: PASSWORD,
++    })
++    expect(res.statusCode).toBe(202)
++    const verified = await this.request('POST', '/auth/verify-email', { token: lastEmailToken() })
++    expect(verified.statusCode).toBe(200)
++    return this
++  }
++}
++
++describe('HTTP — client natif', () => {
++  it('ouvre une session invitée sans Origin et reçoit le jeton dans le corps, sans cookie', async () => {
++    const client = new NativeClient()
++    const res = await client.request('POST', '/session/guest')
++
++    expect(res.statusCode).toBe(201)
++    expect(res.json<{ sessionToken: string }>().sessionToken).toMatch(/^[\w-]{43}$/)
++    expect(res.headers['set-cookie']).toBeUndefined()
++    const session = await client.request('GET', '/session')
++    expect(session.json<{ user: { isGuest: boolean } }>().user.isGuest).toBe(true)
++  })
++
++  it('ne remet jamais le jeton brut à un navigateur', async () => {
++    const browser = new Client(ctx.app)
++    const res = await browser.request('POST', '/api/v1/session/guest')
++    expect(res.statusCode).toBe(201)
++    expect(res.json()).not.toHaveProperty('sessionToken')
++    expect(browser.cookie).not.toBeNull()
++  })
++
++  it('exige toujours le jeton CSRF sur une requête mutante authentifiée', async () => {
++    const client = await new NativeClient().guest()
++    const csrf = client.csrf
++    client.csrf = null
++    const refused = await client.request('POST', '/play-sessions', { puzzleId })
++    expect(refused.statusCode).toBe(403)
++    expect(refused.json<{ error: { code: string } }>().error.code).toBe('csrf_rejected')
++
++    client.csrf = csrf
++    const accepted = await client.request('POST', '/play-sessions', { puzzleId })
++    expect(accepted.statusCode).toBe(201)
++  })
++
++  it('ignore le cookie en mode natif : seule l’en-tête Authorization compte', async () => {
++    const browser = await new Client(ctx.app).guest()
++    const native = new NativeClient()
++    const res = await native.request('GET', '/session', undefined, { cookie: browser.cookie ?? '' })
++    expect(res.json<{ user: unknown }>().user).toBeNull()
++  })
++
++  it('refuse un en-tête Authorization mal formé ou un jeton inconnu', async () => {
++    const native = new NativeClient()
++    for (const authorization of ['Bearer court', 'Basic abc', `Bearer ${'a'.repeat(43)} x`]) {
++      const res = await native.request('GET', '/session', undefined, { authorization })
++      expect(res.statusCode).toBe(401)
++    }
++    const unknown = await native.request('GET', '/session', undefined, {
++      authorization: `Bearer ${'a'.repeat(43)}`,
++    })
++    expect(unknown.json<{ user: unknown }>().user).toBeNull()
++  })
++
++  it('n’accepte pas de jeton porteur sans l’en-tête natif (navigateur)', async () => {
++    const native = await new NativeClient().guest()
++    const res = await ctx.app.inject({
++      method: 'GET',
++      url: '/api/v1/session',
++      headers: { authorization: `Bearer ${native.token ?? ''}` },
++    })
++    expect(res.json<{ user: unknown }>().user).toBeNull()
++
++    // Sans l'en-tête natif, une requête mutante sans Origin reste refusée.
++    const mutating = await ctx.app.inject({
++      method: 'POST',
++      url: '/api/v1/play-sessions',
++      headers: { authorization: `Bearer ${native.token ?? ''}`, 'x-csrf-token': native.csrf ?? '' },
++      payload: { puzzleId },
++    })
++    expect(mutating.statusCode).toBe(403)
++  })
++
++  it('renouvelle le jeton à la confirmation puis à la connexion, et révoque l’ancien', async () => {
++    const client = await new NativeClient().verifiedAccount('nina')
++    const afterVerify = client.token
++
++    const relogin = new NativeClient()
++    relogin.token = afterVerify
++    relogin.csrf = client.csrf
++    const res = await relogin.request('POST', '/auth/login', {
++      email: 'nina@example.com',
++      password: PASSWORD,
++    })
++    expect(res.statusCode).toBe(200)
++    expect(relogin.token).not.toBe(afterVerify)
++
++    const stale = new NativeClient()
++    stale.token = afterVerify
++    const session = await stale.request('GET', '/session')
++    expect(session.json<{ user: unknown }>().user).toBeNull()
++  })
++
++  it('révoque le jeton à la déconnexion', async () => {
++    const client = await new NativeClient().verifiedAccount('omar')
++    const res = await client.request('POST', '/auth/logout')
++    expect(res.statusCode).toBe(204)
++    expect(res.headers['set-cookie']).toBeUndefined()
++    const session = await client.request('GET', '/session')
++    expect(session.json<{ user: unknown }>().user).toBeNull()
++  })
++
++  it('supprime le compte depuis l’app (exigence App Store) et révoque le jeton', async () => {
++    const client = await new NativeClient().verifiedAccount('sami')
++    const res = await client.request('DELETE', '/auth/account', { password: PASSWORD })
++    expect(res.statusCode).toBe(204)
++    expect(res.headers['set-cookie']).toBeUndefined()
++    const session = await client.request('GET', '/session')
++    expect(session.json<{ user: unknown }>().user).toBeNull()
++    expect(await ctx.db.user.count({ where: { email: 'sami@example.com' } })).toBe(0)
++  })
++})
++
++describe('temps réel — client natif', () => {
++  function connect(options: {
++    token?: string | null
++    native?: boolean
++    headers?: Record<string, string>
++  }): Promise<Socket<ServerToClientEvents, ClientToServerEvents>> {
++    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(url, {
++      path: '/ws',
++      transports: ['websocket'],
++      reconnection: false,
++      extraHeaders: {
++        ...(options.native === false ? {} : { [NATIVE_CLIENT_HEADER]: NATIVE_CLIENT_VALUE }),
++        ...options.headers,
++      },
++      ...(options.token === undefined ? {} : { auth: { token: options.token } }),
++    })
++    sockets.push(socket)
++    return new Promise((resolve, reject) => {
++      socket.once('connect', () => {
++        resolve(socket)
++      })
++      socket.once('connect_error', reject)
++    })
++  }
++
++  it('authentifie un compte confirmé par le jeton de la poignée de main, sans Origin', async () => {
++    const client = await new NativeClient().verifiedAccount('paul')
++    const socket = await connect({ token: client.token })
++    expect(socket.connected).toBe(true)
++  })
++
++  it('refuse un jeton absent, mal formé ou inconnu', async () => {
++    for (const token of [null, 'court', 'a'.repeat(43)]) {
++      await expect(connect({ token })).rejects.toThrow('unauthenticated')
++    }
++  })
++
++  it('exige un compte confirmé, comme pour un navigateur', async () => {
++    const guest = await new NativeClient().guest()
++    await expect(connect({ token: guest.token })).rejects.toThrow('account_required')
++  })
++
++  it('ignore le cookie en mode natif', async () => {
++    const browser = new Client(ctx.app)
++    await browser.guest()
++    await expect(
++      connect({ token: null, headers: { cookie: browser.cookie ?? '' } }),
++    ).rejects.toThrow('unauthenticated')
++  })
++
++  it('n’accepte pas le jeton d’un client qui ne s’annonce pas natif', async () => {
++    const client = await new NativeClient().verifiedAccount('rita')
++    await expect(
++      connect({ token: client.token, native: false, headers: { origin: 'https://evil.example' } }),
++    ).rejects.toThrow()
++    await expect(connect({ token: client.token, native: false })).rejects.toThrow('unauthenticated')
++  })
++})
+diff -ruN -x generated a/packages/contracts/src/session.ts b/packages/contracts/src/session.ts
+--- a/packages/contracts/src/session.ts	2026-10-20 18:50:54.582353276 +0000
++++ b/packages/contracts/src/session.ts	2026-10-20 18:50:54.584744725 +0000
+@@ -18,5 +18,17 @@
+ export const sessionResponseSchema = z.strictObject({
+   user: currentUserSchema.nullable(),
+   csrfToken: z.string().nullable(),
++  /**
++   * Jeton de session brut, renvoyé uniquement à un client natif quand une session s'ouvre
++   * (invité, connexion, confirmation d'e-mail). Un navigateur ne le reçoit jamais : il a le cookie.
++   */
++  sessionToken: z.string().optional(),
+ })
+ export type SessionResponse = z.infer<typeof sessionResponseSchema>
++
++/**
++ * Les clients natifs (app mobile) n'ont ni cookie de navigateur ni en-tête `Origin` : ils
++ * s'annoncent par cet en-tête et s'authentifient par `Authorization: Bearer <jeton>`.
++ */
++export const NATIVE_CLIENT_HEADER = 'x-crossverse-client'
++export const NATIVE_CLIENT_VALUE = 'native'

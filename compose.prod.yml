@@ -1,0 +1,88 @@
+# Déploiement de production sur un serveur unique : `make prod-up` (après avoir rempli .env.prod).
+# Seul Caddy est exposé (80/443) ; PostgreSQL et l'API restent sur le réseau interne.
+name: crossverse-prod
+
+services:
+  postgres:
+    image: postgres:18.6-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?définir POSTGRES_USER dans .env.prod}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans .env.prod}
+      POSTGRES_DB: ${POSTGRES_DB:?définir POSTGRES_DB dans .env.prod}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/prod.Dockerfile
+      target: api
+    # Image publiée par la CI (release.yml) ; `make prod-up` la reconstruit localement si besoin.
+    # CROSSVERSE_VERSION=sha-<commit> permet un retour arrière immédiat.
+    image: ghcr.io/madoxsio/crossverse-api:${CROSSVERSE_VERSION:-latest}
+    pull_policy: missing
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_HOST: 0.0.0.0
+      API_PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      WEB_ORIGINS: https://${DOMAIN:?définir DOMAIN dans .env.prod}
+      WEB_BASE_URL: https://${DOMAIN}
+      # Caddy est le seul proxy devant l'API : un seul saut de confiance (X-Forwarded-For forgé ignoré).
+      TRUST_PROXY: '1'
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SMTP_HOST: ${SMTP_HOST:?définir SMTP_HOST dans .env.prod}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:?définir MAIL_FROM dans .env.prod}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/prod.Dockerfile
+      target: web
+    image: ghcr.io/madoxsio/crossverse-web:${CROSSVERSE_VERSION:-latest}
+    pull_policy: missing
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      # Certificats TLS conservés entre les redémarrages (limites de Let's Encrypt).
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

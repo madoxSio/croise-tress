@@ -1,0 +1,4 @@
+pnpm-lock.yaml
+docs/CONTEXT.md
+.env.example
+apps/api/src/generated/
