@@ -1,7 +1,7 @@
 import type { SessionResponse } from '@crossverse/contracts'
 import type { FastifyInstance } from 'fastify'
 import type { Config } from '../../config.ts'
-import { setSessionCookie } from '../../plugins/auth.ts'
+import { issueSession } from '../../plugins/auth.ts'
 import type { AuthContext, SessionService } from './service.ts'
 
 function toResponse(auth: AuthContext | null): SessionResponse {
@@ -22,8 +22,7 @@ export function sessionRoutes(
       // Une session valide existe déjà : on la réutilise plutôt que de multiplier les invités.
       if (request.auth) return toResponse(request.auth)
       const { token, auth } = await sessions.createGuest()
-      setSessionCookie(reply, config, token)
-      return reply.code(201).send(toResponse(auth))
+      return reply.code(201).send(issueSession(request, reply, config, token, auth))
     },
   )
 }

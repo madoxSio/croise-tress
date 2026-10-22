@@ -43,6 +43,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @crossverse/api db:generate
+      # Types et tsconfig générés par Nuxt (.nuxt/) : requis par ESLint (typage) sur apps/web.
+      - run: pnpm --filter @crossverse/web exec nuxt prepare
       - run: pnpm lint
       - run: pnpm typecheck
       - run: pnpm test

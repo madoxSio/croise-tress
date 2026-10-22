@@ -18,5 +18,17 @@ export type CurrentUser = z.infer<typeof currentUserSchema>
 export const sessionResponseSchema = z.strictObject({
   user: currentUserSchema.nullable(),
   csrfToken: z.string().nullable(),
+  /**
+   * Jeton de session brut, renvoyé uniquement à un client natif quand une session s'ouvre
+   * (invité, connexion, confirmation d'e-mail). Un navigateur ne le reçoit jamais : il a le cookie.
+   */
+  sessionToken: z.string().optional(),
 })
 export type SessionResponse = z.infer<typeof sessionResponseSchema>
+
+/**
+ * Les clients natifs (app mobile) n'ont ni cookie de navigateur ni en-tête `Origin` : ils
+ * s'annoncent par cet en-tête et s'authentifient par `Authorization: Bearer <jeton>`.
+ */
+export const NATIVE_CLIENT_HEADER = 'x-crossverse-client'
+export const NATIVE_CLIENT_VALUE = 'native'

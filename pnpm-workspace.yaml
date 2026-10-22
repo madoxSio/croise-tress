@@ -9,3 +9,11 @@ onlyBuiltDependencies:
   - argon2
   - esbuild
   - prisma
+
+# Alertes sans version corrigée, limitées à l'outillage de build d'Expo (jamais embarqué dans
+# l'app ni dans les images) : node-forge via @expo/cli (certificats HTTPS de dev), braces via
+# metro-file-map. À retirer dès qu'un correctif est publié.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-86w9-cpqp-85rv
+    - GHSA-vfj7-8cjw-p6xm
