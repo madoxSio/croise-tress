@@ -1,8 +1,10 @@
 # Livraison continue : à chaque push sur main (ou tag vX.Y.Z), la CI complète tourne, puis les
-# images `api` et `web` sont publiées sur GitHub Container Registry (GHCR) et déployées.
-# Déploiement provisoire (en attendant le VPS) : API sur Render (image GHCR), web sur Vercel.
-# Chaque déploiement ne s'exécute que si ses variables de dépôt sont définies : sans elles,
-# le workflow s'arrête après la publication des images. Guide : docs/deploy/README.md.
+# images `api` et `web` sont publiées sur GitHub Container Registry (GHCR) et déployées :
+# - hébergement provisoire : API sur Render (image GHCR) et web sur Vercel, si API_PUBLIC_URL
+#   et VERCEL_PROJECT_ID sont définies ;
+# - cible finale : le VPS, si VPS_HOST est définie.
+# Sans ces variables, le workflow s'arrête après la publication des images.
+# Guide : docs/deploy/README.md.
 name: Release
 
 on:
@@ -80,8 +82,47 @@ jobs:
             echo
             echo "Digest : \`${DIGEST}\`"
             echo
-            echo "$TAGS" | sed 's/^/- /'
+            while read -r tag; do echo "- ${tag}"; done <<< "$TAGS"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Production sur le VPS : le serveur récupère compose.prod.yml et le Makefile du commit, puis
+  # tire les images sha-<commit> construites ci-dessus (make prod-pull : migrations au démarrage
+  # de l'API, Caddy pour TLS). Inactif tant que la variable VPS_HOST n'est pas définie.
+  deploy-vps:
+    needs: images
+    if: vars.VPS_HOST != '' && github.ref_type == 'branch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: https://${{ vars.VPS_DOMAIN }}
+    env:
+      HOST: ${{ vars.VPS_HOST }}
+      USER_NAME: ${{ vars.VPS_USER || 'deploy' }}
+      DOMAIN: ${{ vars.VPS_DOMAIN }}
+      SHA: ${{ github.sha }}
+    steps:
+      - name: Clé SSH et empreinte du serveur
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          test -n "$SSH_KEY" || { echo "::error::secret VPS_SSH_KEY manquant"; exit 1; }
+          test -n "$KNOWN_HOSTS" || { echo "::error::secret VPS_KNOWN_HOSTS manquant"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          # Empreinte épinglée : jamais de StrictHostKeyChecking=no.
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Déployer
+        run: |
+          ssh -i ~/.ssh/id_deploy -o BatchMode=yes "${USER_NAME}@${HOST}" \
+            "set -eu
+             cd /opt/crossverse
+             git fetch --quiet --depth 1 origin '${SHA}'
+             git checkout --quiet --force FETCH_HEAD
+             CROSSVERSE_VERSION='sha-${SHA}' make prod-pull"
+      - name: Vérifier l'API publique
+        run: curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "https://${DOMAIN}/api/v1/health"
 
   # API provisoire sur Render : service « Existing image » qui tire l'image GHCR. Le hook de
   # déploiement (secret) reçoit le tag immuable sha-<commit> construit ci-dessus, jamais `latest`.
