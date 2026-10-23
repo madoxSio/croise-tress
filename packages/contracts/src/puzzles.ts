@@ -20,7 +20,13 @@ export const puzzleSummarySchema = z.strictObject({
   id: uuidSchema,
   slug: z.string(),
   title: z.string(),
+  /** Nom affichable du (sous-)thème de la grille. */
   theme: z.string(),
+  themeSlug: z.string(),
+  /** Thème parent quand la grille est rangée dans un sous-thème. */
+  parentThemeSlug: z.string().nullable(),
+  /** Clé d'habillage résolue (voir `catalog.ts`). */
+  skin: z.string(),
   difficulty: difficultySchema,
   width: z.int(),
   height: z.int(),
@@ -37,7 +43,8 @@ export type PublicPuzzleDto = z.infer<typeof publicPuzzleSchema>
 
 export const listPuzzlesQuerySchema = z.strictObject({
   difficulty: difficultySchema.optional(),
-  theme: z.string().max(40).optional(),
+  /** Slug d'un thème (sous-thèmes inclus) ou d'un sous-thème ; inconnu = liste vide. */
+  theme: z.string().max(60).optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   /** Pagination par curseur : `id` du dernier élément de la page précédente. */
   cursor: uuidSchema.optional(),

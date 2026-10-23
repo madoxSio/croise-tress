@@ -8,6 +8,7 @@ import {
   adminOverviewSchema,
   adminPuzzleListSchema,
   adminPuzzleSchema,
+  adminThemeListSchema,
   adminUserDetailSchema,
   adminUserListSchema,
   auditListSchema,
@@ -19,6 +20,7 @@ import type {
   AdminPuzzle,
   AdminPuzzleBody,
   AdminPuzzleList,
+  AdminThemeList,
   AdminUserDetail,
   AdminUserList,
   AuditList,
@@ -92,6 +94,10 @@ export const adminApi = {
       `/admin/puzzles${query({ status: params.status, cursor: params.cursor })}`,
       adminPuzzleListSchema,
     )
+  },
+
+  listThemes(): Promise<AdminThemeList> {
+    return request('GET', '/admin/themes', adminThemeListSchema)
   },
 
   getPuzzle(id: string): Promise<AdminPuzzle> {

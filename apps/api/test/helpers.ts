@@ -6,6 +6,8 @@ import { createDb, type Db } from '../src/db.ts'
 import { MemoryMailer } from '../src/modules/mail/mailer.ts'
 import { generateToken, hashToken } from '../src/modules/session/tokens.ts'
 import { SEED_PUZZLES } from '../prisma/seed/puzzles.ts'
+import { syncCatalog } from '../prisma/seed/sync.ts'
+import { SEED_THEMES } from '../prisma/seed/themes.ts'
 
 export const ORIGIN = 'http://localhost:3000'
 
@@ -56,18 +58,25 @@ export async function createTestContext(
 }
 
 export async function resetDatabase(db: Db): Promise<void> {
-  await db.$executeRaw`TRUNCATE "audit_log", "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "auth_tokens", "sessions", "users", "puzzles" CASCADE`
+  await db.$executeRaw`TRUNCATE "audit_log", "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "auth_tokens", "sessions", "users", "puzzles", "themes" CASCADE`
 }
 
-/** Insère les puzzles de démonstration et renvoie leurs identifiants par slug. */
+/**
+ * Insère les thèmes du catalogue et les six grilles de découverte (pas le catalogue complet,
+ * pour garder des jeux de données courts), puis renvoie les identifiants des grilles par slug.
+ */
 export async function seedPuzzles(db: Db): Promise<Record<string, string>> {
+  await syncCatalog(db, SEED_THEMES, [])
+  const themeIds = new Map(
+    (await db.theme.findMany({ select: { id: true, slug: true } })).map((t) => [t.slug, t.id]),
+  )
   const ids: Record<string, string> = {}
   for (const seed of SEED_PUZZLES) {
     const row = await db.puzzle.create({
       data: {
         slug: seed.slug,
         title: seed.title,
-        theme: seed.theme,
+        themeId: themeIds.get(seed.theme) ?? '',
         difficulty: seed.difficulty,
         status: 'published',
         width: 5,

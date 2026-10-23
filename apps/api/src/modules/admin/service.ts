@@ -27,6 +27,8 @@ export type AuditAction =
   | 'puzzle.update'
   | 'puzzle.publish'
   | 'puzzle.unpublish'
+  | 'theme.create'
+  | 'theme.update'
   | 'cli.account.create'
   | 'cli.role.grant'
   | 'cli.role.revoke'
@@ -57,7 +59,7 @@ const puzzleSummarySelect = {
   id: true,
   slug: true,
   title: true,
-  theme: true,
+  theme: { select: { slug: true, name: true } },
   difficulty: true,
   status: true,
   width: true,
@@ -433,7 +435,7 @@ export class AdminService {
 
   /** Crée une grille en brouillon ; elle n'apparaît au catalogue qu'une fois publiée. */
   async createPuzzle(body: AdminPuzzleBody): Promise<AdminPuzzle> {
-    const data = validatedData(body)
+    const data = { ...validatedData(body), themeId: await this.themeIdOf(body.themeSlug) }
     try {
       const row = await this.db.puzzle.create({
         data: { ...data, slug: body.slug, status: 'draft' },
@@ -450,7 +452,7 @@ export class AdminService {
    * (les grilles en cours et les scores en dépendent) : seuls les textes changent.
    */
   async updatePuzzle(id: string, body: AdminPuzzleBody): Promise<AdminPuzzle> {
-    const data = validatedData(body)
+    const data = { ...validatedData(body), themeId: await this.themeIdOf(body.themeSlug) }
     const current = await this.db.puzzle.findUnique({
       where: { id },
       select: { grid: true, _count: { select: { playSessions: true, matches: true } } },
@@ -474,6 +476,12 @@ export class AdminService {
     const updated = await this.db.puzzle.updateMany({ where: { id }, data: { status } })
     if (updated.count === 0) throw notFound('Grille introuvable.')
     return this.getPuzzle(id)
+  }
+
+  private async themeIdOf(slug: string): Promise<string> {
+    const theme = await this.db.theme.findUnique({ where: { slug }, select: { id: true } })
+    if (!theme) throw new AppError(400, ERROR_CODES.validation, 'Thème inconnu.')
+    return theme.id
   }
 
   private async completedCounts(puzzleIds: string[]): Promise<Map<string, number>> {
@@ -537,7 +545,8 @@ function toPuzzleSummary(row: PuzzleSummaryRow, completed = 0): AdminPuzzleSumma
     id: row.id,
     slug: row.slug,
     title: row.title,
-    theme: row.theme,
+    theme: row.theme.name,
+    themeSlug: row.theme.slug,
     difficulty: row.difficulty,
     status: row.status,
     width: row.width,
@@ -569,7 +578,6 @@ function validatedData(body: AdminPuzzleBody) {
   }
   return {
     title: body.title,
-    theme: body.theme,
     difficulty: body.difficulty,
     estimatedMinutes: body.estimatedMinutes,
     width: checked.value.width,

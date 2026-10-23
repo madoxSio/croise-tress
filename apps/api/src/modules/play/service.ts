@@ -217,7 +217,11 @@ export class PlayService {
     return this.db.playSession.findFirst({
       where: { userId, status: 'in_progress', puzzle: { status: 'published' } },
       orderBy: { updatedAt: 'desc' },
-      include: { puzzle: { select: { id: true, title: true, difficulty: true, theme: true } } },
+      include: {
+        puzzle: {
+          select: { id: true, title: true, difficulty: true, theme: { select: { name: true } } },
+        },
+      },
     })
   }
 

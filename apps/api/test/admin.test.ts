@@ -51,7 +51,7 @@ async function playerClient(email = 'bob@example.com', username = 'bob'): Promis
 const newPuzzle = {
   slug: 'le-port',
   title: 'Le port',
-  theme: 'mer',
+  themeSlug: 'voyages',
   difficulty: 'easy',
   estimatedMinutes: 4,
   grid: ['TABLE', 'A#A#L', 'BALLE', 'L#L#V', 'ELEVE'],
@@ -210,7 +210,7 @@ describe('gestion des grilles', () => {
     const current = (await admin.request('GET', `/api/v1/admin/puzzles/${id}`)).json<{
       slug: string
       title: string
-      theme: string
+      themeSlug: string
       difficulty: string
       estimatedMinutes: number
       grid: string[]
@@ -221,7 +221,7 @@ describe('gestion des grilles', () => {
     const body = {
       slug: current.slug,
       title: current.title,
-      theme: current.theme,
+      themeSlug: current.themeSlug,
       difficulty: current.difficulty,
       estimatedMinutes: current.estimatedMinutes,
       grid: current.grid,
