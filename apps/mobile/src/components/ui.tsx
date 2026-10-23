@@ -60,7 +60,7 @@ export function Card({ children, style }: { children: ReactNode; style?: StylePr
   )
 }
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger'
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'neon'
 
 export function Button({
   label,
@@ -80,6 +80,8 @@ export function Button({
     primary: { bg: palette.fg, fg: palette.bg, border: palette.fg },
     secondary: { bg: palette.surface, fg: palette.fg, border: palette.line },
     danger: { bg: palette.danger, fg: '#ffffff', border: palette.danger },
+    // Citron sur encre (contraste 15:1), réservé à l'appel principal « Partie rapide ».
+    neon: { bg: '#c8f53c', fg: '#16132a', border: '#c8f53c' },
   }
   const color = colors[variant]
   return (

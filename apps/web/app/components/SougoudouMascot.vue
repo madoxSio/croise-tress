@@ -1,123 +1,248 @@
 <script setup lang="ts">
 /**
- * Sougoudou, la mascotte : une case de mots croisés avec un visage et un crayon.
+ * Sougoudou, la mascotte : un mini ourson doudou, écharpe violette à damier de grille et
+ * crayon à la patte (le lien avec les mots croisés).
  * Purement décorative (aria-hidden) : le texte qui l'accompagne porte l'information.
- * Les animations (respiration, clignement, crayon) s'arrêtent avec la réduction des animations.
+ *
+ * - `mood` choisit la pose et le mouvement : `idle` (respiration, clignement, oreilles),
+ *   `wave` (la patte salue), `cheer` (petits sauts de joie, yeux rieurs).
+ * - `entrance` joue une arrivée par rebond (~900 ms) avant l'humeur.
+ *
+ * La pose de chaque humeur est portée par un `transform` CSS de base, et non par l'animation :
+ * quand la réduction des animations les ramène à 0,01 ms (main.css), l'ourson reste visible,
+ * en place et dans la bonne pose (patte levée pour `wave` et `cheer`).
  */
-withDefaults(defineProps<{ animated?: boolean }>(), { animated: true })
+type SougoudouMood = 'idle' | 'wave' | 'cheer'
+
+withDefaults(defineProps<{ animated?: boolean; mood?: SougoudouMood; entrance?: boolean }>(), {
+  animated: true,
+  mood: 'idle',
+  entrance: false,
+})
 
 // Identifiants de dégradés uniques : plusieurs mascottes peuvent cohabiter sur une page.
 const uid = useId()
-const bodyGradient = `sgd-body-${uid}`
-const shineGradient = `sgd-shine-${uid}`
+const furGradient = `sgd-fur-${uid}`
+const scarfGradient = `sgd-scarf-${uid}`
+
+// Couleurs partagées par les formes du dessin (une seule source pour rester cohérent).
+const fur = '#c98a5a'
+const furLight = '#f3d4ae'
+const outline = '#7a4a2b'
+const ink = '#16132a'
 </script>
 
 <template>
   <svg
-    viewBox="0 0 220 230"
+    viewBox="0 0 240 240"
     aria-hidden="true"
     focusable="false"
     class="sougoudou"
-    :class="{ 'is-animated': animated }"
+    :class="[`is-${mood}`, { 'is-animated': animated, 'has-entrance': animated && entrance }]"
   >
     <defs>
-      <linearGradient :id="bodyGradient" x1="0" y1="0" x2="1" y2="1">
+      <linearGradient :id="furGradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#d89a69" />
+        <stop offset="1" stop-color="#c07f50" />
+      </linearGradient>
+      <linearGradient :id="scarfGradient" x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" stop-color="#8366ff" />
         <stop offset="1" stop-color="#4521de" />
       </linearGradient>
-      <linearGradient :id="shineGradient" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="0.45" />
-        <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
-      </linearGradient>
     </defs>
 
-    <ellipse class="sgd-shadow" cx="108" cy="216" rx="56" ry="8" fill="#16132a" opacity="0.14" />
+    <ellipse class="sgd-shadow" cx="120" cy="229" rx="62" ry="7" :fill="ink" opacity="0.14" />
 
-    <g class="sgd-body">
-      <!-- Pieds -->
-      <rect x="70" y="186" width="26" height="20" rx="10" fill="#ff5c39" />
-      <rect x="120" y="186" width="26" height="20" rx="10" fill="#ff5c39" />
-
-      <!-- Bras gauche (salut) -->
-      <g class="sgd-wave">
-        <path
-          d="M42 128 C26 122 18 108 20 94"
-          fill="none"
-          stroke="#5a37ef"
-          stroke-width="12"
-          stroke-linecap="round"
+    <g class="sgd-arrive">
+      <g class="sgd-figure">
+        <!-- Corps assis et ventre clair -->
+        <ellipse
+          cx="120"
+          cy="178"
+          rx="58"
+          ry="48"
+          :fill="`url(#${furGradient})`"
+          :stroke="outline"
+          stroke-width="3"
         />
-        <circle cx="20" cy="90" r="9" fill="#ffffff" stroke="#5a37ef" stroke-width="4" />
-      </g>
+        <ellipse cx="120" cy="188" rx="35" ry="29" :fill="furLight" />
 
-      <!-- Corps : la case -->
-      <rect x="36" y="44" width="144" height="146" rx="38" :fill="`url(#${bodyGradient})`" />
-      <rect x="44" y="50" width="128" height="58" rx="30" :fill="`url(#${shineGradient})`" />
-      <text
-        x="58"
-        y="82"
-        font-family="'Bricolage Grotesque Variable', system-ui, sans-serif"
-        font-size="22"
-        font-weight="800"
-        fill="#ffffff"
-        opacity="0.85"
-      >
-        1
-      </text>
-
-      <!-- Pastille citron « S » -->
-      <g transform="rotate(12 166 48)">
-        <rect x="146" y="28" width="40" height="40" rx="11" fill="#c8f53c" />
-        <text
-          x="166"
-          y="57"
-          text-anchor="middle"
-          font-family="'Bricolage Grotesque Variable', system-ui, sans-serif"
-          font-size="26"
-          font-weight="800"
-          fill="#16132a"
-        >
-          S
-        </text>
-      </g>
-
-      <!-- Visage -->
-      <g class="sgd-eyes">
-        <ellipse cx="86" cy="118" rx="15" ry="17" fill="#ffffff" />
-        <ellipse cx="132" cy="118" rx="15" ry="17" fill="#ffffff" />
-        <circle cx="90" cy="121" r="8" fill="#16132a" />
-        <circle cx="136" cy="121" r="8" fill="#16132a" />
-        <circle cx="93" cy="117" r="3" fill="#ffffff" />
-        <circle cx="139" cy="117" r="3" fill="#ffffff" />
-      </g>
-      <ellipse cx="70" cy="146" rx="9" ry="6" fill="#ff8fa3" opacity="0.75" />
-      <ellipse cx="148" cy="146" rx="9" ry="6" fill="#ff8fa3" opacity="0.75" />
-      <path
-        d="M96 144 Q109 162 122 144 Z"
-        fill="#16132a"
-        stroke="#16132a"
-        stroke-width="4"
-        stroke-linejoin="round"
-      />
-      <ellipse cx="109" cy="153" rx="6" ry="3.5" fill="#ff5c39" />
-
-      <!-- Bras droit et crayon -->
-      <g class="sgd-pencil">
-        <path
-          d="M178 140 C192 136 198 126 198 114"
-          fill="none"
-          stroke="#5a37ef"
-          stroke-width="12"
-          stroke-linecap="round"
-        />
-        <g transform="rotate(-28 200 92)">
-          <rect x="192" y="58" width="16" height="50" rx="3" fill="#ffd84d" />
-          <rect x="192" y="58" width="16" height="10" rx="3" fill="#ff8fa3" />
-          <rect x="192" y="66" width="16" height="4" fill="#d9d4ea" />
-          <path d="M192 108 L200 124 L208 108 Z" fill="#f4dcb4" />
-          <path d="M197.5 119 L200 124 L202.5 119 Z" fill="#16132a" />
+        <!-- Pieds et coussinets -->
+        <g :fill="fur" :stroke="outline" stroke-width="3">
+          <ellipse cx="84" cy="215" rx="23" ry="15" />
+          <ellipse cx="156" cy="215" rx="23" ry="15" />
         </g>
-        <circle cx="198" cy="112" r="9" fill="#ffffff" stroke="#5a37ef" stroke-width="4" />
+        <ellipse cx="84" cy="217" rx="12" ry="8" :fill="furLight" />
+        <ellipse cx="156" cy="217" rx="12" ry="8" :fill="furLight" />
+
+        <!-- Bras gauche : celui qui salue (pivot à l'épaule, voir le CSS) -->
+        <g class="sgd-arm">
+          <ellipse
+            cx="68"
+            cy="184"
+            rx="14"
+            ry="25"
+            transform="rotate(25 68 184)"
+            :fill="fur"
+            :stroke="outline"
+            stroke-width="3"
+          />
+        </g>
+
+        <!-- Bras droit et crayon tenu dans la patte -->
+        <ellipse
+          cx="172"
+          cy="184"
+          rx="14"
+          ry="25"
+          transform="rotate(-25 172 184)"
+          :fill="fur"
+          :stroke="outline"
+          stroke-width="3"
+        />
+        <g transform="translate(184 200) rotate(24)">
+          <path
+            d="M-7 10 L0 25 L7 10 Z"
+            fill="#f4dcb4"
+            :stroke="ink"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+          />
+          <path d="M-2.6 19 L0 25 L2.6 19 Z" :fill="ink" />
+          <rect
+            x="-7"
+            y="-46"
+            width="14"
+            height="56"
+            fill="#ffd84d"
+            :stroke="ink"
+            stroke-width="2.5"
+          />
+          <rect x="-1.8" y="-46" width="3.6" height="56" fill="#f2b632" />
+          <rect
+            x="-7"
+            y="-53"
+            width="14"
+            height="7"
+            fill="#d9d4ea"
+            :stroke="ink"
+            stroke-width="2.5"
+          />
+          <rect
+            x="-7"
+            y="-63"
+            width="14"
+            height="11"
+            rx="5"
+            fill="#ff8fa3"
+            :stroke="ink"
+            stroke-width="2.5"
+          />
+          <ellipse cx="-1" cy="-4" rx="11" ry="10" :fill="fur" :stroke="outline" stroke-width="3" />
+        </g>
+
+        <g class="sgd-head">
+          <!-- Oreilles rondes, intérieur clair -->
+          <g class="sgd-ear sgd-ear-left">
+            <circle cx="64" cy="46" r="26" :fill="fur" :stroke="outline" stroke-width="3" />
+            <circle cx="67" cy="49" r="14" :fill="furLight" />
+          </g>
+          <g class="sgd-ear sgd-ear-right">
+            <circle cx="176" cy="46" r="26" :fill="fur" :stroke="outline" stroke-width="3" />
+            <circle cx="173" cy="49" r="14" :fill="furLight" />
+          </g>
+
+          <!-- Tête ronde et reflet doux -->
+          <ellipse
+            cx="120"
+            cy="94"
+            rx="70"
+            ry="60"
+            :fill="`url(#${furGradient})`"
+            :stroke="outline"
+            stroke-width="3"
+          />
+          <ellipse
+            cx="94"
+            cy="58"
+            rx="30"
+            ry="13"
+            fill="#ffffff"
+            opacity="0.14"
+            transform="rotate(-12 94 58)"
+          />
+
+          <!-- Yeux : rieurs pour la victoire, grands et brillants sinon -->
+          <path
+            v-if="mood === 'cheer'"
+            d="M84 101 Q94 88 104 101 M136 101 Q146 88 156 101"
+            fill="none"
+            :stroke="ink"
+            stroke-width="5"
+            stroke-linecap="round"
+          />
+          <g v-else class="sgd-eyes">
+            <ellipse cx="94" cy="98" rx="9.5" ry="12" :fill="ink" />
+            <ellipse cx="146" cy="98" rx="9.5" ry="12" :fill="ink" />
+            <circle cx="97.5" cy="93" r="4" fill="#ffffff" />
+            <circle cx="149.5" cy="93" r="4" fill="#ffffff" />
+            <circle cx="91.5" cy="103" r="1.8" fill="#ffffff" />
+            <circle cx="143.5" cy="103" r="1.8" fill="#ffffff" />
+          </g>
+
+          <!-- Joues -->
+          <ellipse cx="74" cy="120" rx="12" ry="7.5" fill="#ff8fa3" opacity="0.8" />
+          <ellipse cx="166" cy="120" rx="12" ry="7.5" fill="#ff8fa3" opacity="0.8" />
+
+          <!-- Museau, truffe et bouche -->
+          <ellipse cx="120" cy="123" rx="25" ry="19" :fill="furLight" />
+          <path
+            d="M110 113 Q120 108 130 113 Q130 120 120 124 Q110 120 110 113 Z"
+            :fill="ink"
+            :stroke="ink"
+            stroke-width="2"
+            stroke-linejoin="round"
+          />
+          <ellipse cx="116" cy="112.5" rx="3" ry="1.6" fill="#ffffff" opacity="0.7" />
+          <path
+            v-if="mood === 'cheer'"
+            d="M110 127 Q120 141 130 127 Z"
+            :fill="ink"
+            :stroke="ink"
+            stroke-width="2.6"
+            stroke-linejoin="round"
+          />
+          <path
+            v-else
+            d="M120 124 V128 M111 128 Q115.5 134 120 128 Q124.5 134 129 128"
+            fill="none"
+            :stroke="ink"
+            stroke-width="2.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </g>
+
+        <!-- Écharpe violette, pan à damier de grille et franges citron -->
+        <path
+          d="M70 140 Q120 158 170 140 L172 157 Q120 177 68 157 Z"
+          :fill="`url(#${scarfGradient})`"
+          :stroke="`url(#${scarfGradient})`"
+          stroke-width="5"
+          stroke-linejoin="round"
+        />
+        <g transform="rotate(8 104 160)">
+          <rect x="94" y="158" width="21" height="44" rx="4" fill="#5634f0" />
+          <rect x="95.5" y="181" width="9" height="9" rx="1.5" fill="#ffffff" />
+          <rect x="104.5" y="190" width="9" height="9" rx="1.5" fill="#ffffff" />
+          <path
+            d="M98 203 v6 M104.5 203 v6 M111 203 v6"
+            stroke="#c8f53c"
+            stroke-width="3"
+            stroke-linecap="round"
+          />
+        </g>
+        <rect x="98" y="149" width="22" height="17" rx="7" fill="#4521de" />
       </g>
     </g>
   </svg>
@@ -128,51 +253,183 @@ const shineGradient = `sgd-shine-${uid}`
   overflow: visible;
 }
 
-.sougoudou * {
+/*
+ * fill-box seulement sur les groupes animés : sur les formes portant un attribut transform
+ * (rotate(a cx cy)), il déplacerait l'origine de cet attribut et décalerait le dessin.
+ */
+.sgd-shadow,
+.sgd-arrive,
+.sgd-figure,
+.sgd-head,
+.sgd-ear,
+.sgd-eyes,
+.sgd-arm {
   transform-box: fill-box;
 }
 
-.is-animated .sgd-body {
-  animation: sgd-bob 3.2s ease-in-out infinite;
+.sgd-shadow,
+.sgd-eyes {
+  transform-origin: center;
 }
 
-.is-animated .sgd-shadow {
-  transform-origin: center;
-  animation: sgd-shadow 3.2s ease-in-out infinite;
+/* Bas du personnage : il respire, saute et atterrit sur ses pieds. */
+.sgd-arrive,
+.sgd-figure {
+  transform-origin: 50% 100%;
+}
+
+.sgd-head {
+  transform-origin: 50% 85%;
+}
+
+/* Base de chaque oreille, côté tête. */
+.sgd-ear-left {
+  transform-origin: 85% 85%;
+}
+
+.sgd-ear-right {
+  transform-origin: 15% 85%;
+}
+
+/*
+ * Épaule : haut du bras, côté corps. Pourcentages de la boîte englobante du groupe telle que
+ * Chromium la calcule pour l'ellipse pivotée (x 44,7 → 91,3 ; y 155,4 → 212,6), soit (76, 165).
+ */
+.sgd-arm {
+  transform-origin: 67% 17%;
+}
+
+/* Poses portées hors animation : elles survivent à la réduction des animations. */
+.is-wave .sgd-arm {
+  transform: rotate(112deg);
+}
+
+.is-cheer .sgd-arm {
+  transform: rotate(118deg);
+}
+
+/* --- Humeur idle --- */
+.is-animated.is-idle .sgd-figure {
+  animation: sgd-breathe 3.4s ease-in-out infinite;
+}
+
+.is-animated.is-idle .sgd-head {
+  animation: sgd-tilt 6.8s ease-in-out infinite;
+}
+
+.is-animated.is-idle .sgd-ear-left {
+  animation: sgd-ear-left 5.6s ease-in-out infinite;
+}
+
+.is-animated.is-idle .sgd-ear-right {
+  animation: sgd-ear-right 5.6s ease-in-out 0.3s infinite;
 }
 
 .is-animated .sgd-eyes {
-  transform-origin: center;
   animation: sgd-blink 5s infinite;
 }
 
-.is-animated .sgd-wave {
-  transform-origin: 100% 100%;
+/* --- Humeur wave --- */
+.is-animated.is-wave .sgd-figure {
+  animation: sgd-breathe 3.4s ease-in-out infinite;
+}
+
+.is-animated.is-wave .sgd-arm {
   animation: sgd-wave 2.4s ease-in-out infinite;
 }
 
-.is-animated .sgd-pencil {
-  transform-origin: 0% 100%;
-  animation: sgd-scribble 1.6s ease-in-out infinite;
+/* --- Humeur cheer --- */
+.is-animated.is-cheer .sgd-figure {
+  animation: sgd-jump 1.1s ease-in-out infinite;
 }
 
-@keyframes sgd-bob {
+.is-animated.is-cheer .sgd-shadow {
+  animation: sgd-jump-shadow 1.1s ease-in-out infinite;
+}
+
+.is-animated.is-cheer .sgd-arm {
+  animation: sgd-cheer-arm 0.55s ease-in-out infinite alternate;
+}
+
+/*
+ * --- Arrivée : rebond puis humeur ---
+ * Les animations d'humeur attendent la fin de l'arrivée. Le sélecteur porte quatre classes pour
+ * l'emporter sur les raccourcis `animation` des humeurs, qui remettraient le délai à 0.
+ */
+.sougoudou.has-entrance .sgd-arrive {
+  animation: sgd-arrive 0.9s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.sougoudou.has-entrance .sgd-shadow {
+  animation: sgd-arrive-shadow 0.9s ease-out;
+}
+
+.sougoudou.is-animated.has-entrance .sgd-figure,
+.sougoudou.is-animated.has-entrance .sgd-head,
+.sougoudou.is-animated.has-entrance .sgd-ear,
+.sougoudou.is-animated.has-entrance .sgd-eyes,
+.sougoudou.is-animated.has-entrance .sgd-arm {
+  animation-delay: 0.9s;
+}
+
+/*
+ * L'ombre de cheer prend le relais après l'arrivée : deux animations sur le même élément,
+ * la seconde retardée.
+ */
+.sougoudou.has-entrance.is-cheer .sgd-shadow {
+  animation:
+    sgd-arrive-shadow 0.9s ease-out,
+    sgd-jump-shadow 1.1s ease-in-out 0.9s infinite;
+}
+
+@keyframes sgd-breathe {
   0%,
   100% {
-    transform: translateY(0);
+    transform: scale(1, 1);
   }
   50% {
-    transform: translateY(-8px);
+    transform: scale(0.985, 1.025);
   }
 }
 
-@keyframes sgd-shadow {
+@keyframes sgd-tilt {
   0%,
   100% {
-    transform: scaleX(1);
+    transform: rotate(0deg);
   }
-  50% {
-    transform: scaleX(0.82);
+  30% {
+    transform: rotate(-2.5deg);
+  }
+  70% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes sgd-ear-left {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg);
+  }
+  78% {
+    transform: rotate(-10deg);
+  }
+  86% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes sgd-ear-right {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0deg);
+  }
+  78% {
+    transform: rotate(10deg);
+  }
+  86% {
+    transform: rotate(-4deg);
   }
 }
 
@@ -191,23 +448,89 @@ const shineGradient = `sgd-shine-${uid}`
   0%,
   60%,
   100% {
-    transform: rotate(0deg);
+    transform: rotate(112deg);
   }
-  20% {
-    transform: rotate(16deg);
+  15%,
+  45% {
+    transform: rotate(126deg);
   }
-  40% {
-    transform: rotate(-6deg);
+  30% {
+    transform: rotate(94deg);
   }
 }
 
-@keyframes sgd-scribble {
-  0%,
-  100% {
-    transform: rotate(0deg);
+@keyframes sgd-cheer-arm {
+  from {
+    transform: rotate(108deg);
   }
-  50% {
-    transform: rotate(-8deg);
+  to {
+    transform: rotate(124deg);
+  }
+}
+
+@keyframes sgd-jump {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  12% {
+    transform: translateY(0) scale(1.06, 0.92);
+  }
+  35% {
+    transform: translateY(-18px) scale(0.95, 1.06);
+  }
+  55% {
+    transform: translateY(0) scale(1.06, 0.94);
+  }
+}
+
+@keyframes sgd-jump-shadow {
+  0%,
+  70%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.14;
+  }
+  35% {
+    transform: scaleX(0.7);
+    opacity: 0.08;
+  }
+}
+
+@keyframes sgd-arrive {
+  0% {
+    opacity: 0;
+    transform: translateY(70px) scale(0.9, 1.1);
+  }
+  45% {
+    opacity: 1;
+    transform: translateY(-16px) scale(0.94, 1.08);
+  }
+  65% {
+    transform: translateY(0) scale(1.1, 0.88);
+  }
+  82% {
+    transform: translateY(-3px) scale(0.97, 1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+@keyframes sgd-arrive-shadow {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.3);
+  }
+  65% {
+    opacity: 0.14;
+    transform: scaleX(1.1);
+  }
+  100% {
+    opacity: 0.14;
+    transform: scaleX(1);
   }
 }
 </style>

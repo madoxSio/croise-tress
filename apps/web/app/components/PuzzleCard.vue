@@ -1,25 +1,43 @@
 <script setup lang="ts">
 import type { PuzzleSummary } from '@crossverse/contracts'
-import { difficultyLabel } from '~/utils/labels'
+import type { ThemeLook } from '~/composables/useCatalog'
+import { levelOf } from '~/services/catalog'
 
 /**
  * Carte de grille. Le lien du titre couvre toute la carte (pseudo-élément) ; le bouton
  * favori, facultatif, reste un contrôle distinct au-dessus (pas de bouton dans un lien).
  */
 // Défaut explicite : sans lui, Vue convertit un booléen absent en `false` (bouton affiché).
-withDefaults(defineProps<{ puzzle: PuzzleSummary; favorite?: boolean | undefined }>(), {
-  favorite: undefined,
-})
+// `look` : habillage du thème (bandeau à motif) ; absent, la carte reste sobre.
+withDefaults(
+  defineProps<{
+    puzzle: PuzzleSummary
+    favorite?: boolean | undefined
+    look?: ThemeLook | undefined
+  }>(),
+  { favorite: undefined, look: undefined },
+)
 const emit = defineEmits<{ 'toggle-favorite': [] }>()
 </script>
 
 <template>
   <article
-    class="bg-surface border-line hover:border-accent group has-[a:focus-visible]:outline-accent relative flex h-full flex-col gap-3 rounded-2xl border p-4 transition-colors has-[a:focus-visible]:outline-3"
+    class="bg-surface border-line hover:border-accent group has-[a:focus-visible]:outline-accent shadow-card relative flex h-full flex-col gap-3 overflow-hidden rounded-2xl border p-4 transition-all hover:-translate-y-0.5 has-[a:focus-visible]:outline-3"
   >
+    <div
+      v-if="look"
+      aria-hidden="true"
+      class="cv-skin -mx-4 -mt-4 mb-1 flex h-16 items-center px-4"
+      :data-skin="look.skin"
+      :style="{ '--skin-a': look.accent, '--skin-b': look.accentAlt }"
+    >
+      <span class="grid size-10 place-items-center rounded-xl bg-white/90 text-xl shadow">{{
+        look.icon
+      }}</span>
+    </div>
     <div class="flex items-center gap-2 text-xs font-semibold">
       <span class="bg-accent-soft rounded-full px-2 py-0.5">{{
-        difficultyLabel(puzzle.difficulty)
+        levelOf(puzzle.difficulty).label
       }}</span>
       <span class="text-muted">{{ puzzle.theme }}</span>
     </div>
@@ -39,7 +57,7 @@ const emit = defineEmits<{ 'toggle-favorite': [] }>()
     <button
       v-if="favorite !== undefined"
       type="button"
-      class="text-accent hover:bg-surface-2 absolute top-2 right-2 z-10 grid size-11 place-items-center rounded-full"
+      class="text-accent bg-surface/90 hover:bg-surface absolute top-2.5 right-2.5 z-10 grid size-11 shadow-sm place-items-center rounded-full"
       :aria-pressed="favorite"
       :aria-label="`Favori : ${puzzle.title}`"
       @click="emit('toggle-favorite')"

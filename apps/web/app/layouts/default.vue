@@ -82,6 +82,7 @@ const isCurrent = (to: string): boolean =>
         </nav>
         <!-- Sur mobile, une icône (nom accessible conservé) ; l'inscription est proposée depuis /login. -->
         <div class="flex items-center gap-1 text-sm font-semibold">
+          <ThemeSwitch />
           <NuxtLink
             :to="accountLink.to"
             class="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl md:px-3"
@@ -204,5 +205,6 @@ const isCurrent = (to: string): boolean =>
         </li>
       </ul>
     </nav>
+    <AccountGateDialog />
   </div>
 </template>

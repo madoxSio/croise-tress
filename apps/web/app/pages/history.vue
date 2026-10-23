@@ -34,11 +34,23 @@ onMounted(load)
     <h1 class="text-3xl font-extrabold tracking-tight">Mes parties terminées</h1>
 
     <p v-if="loading" role="status" class="text-muted">Chargement…</p>
-    <AccountRequired
-      v-else-if="isGuest"
-      title="Gardez la trace de vos parties"
-      reason="Sans compte, vous pouvez jouer toutes les grilles en solo. L'historique et le suivi de vos parties demandent un compte : celles jouées en invité sur cet appareil y seront rattachées."
-    />
+    <LockedPreview v-else-if="isGuest">
+      <template #preview>
+        <ul class="divide-line bg-surface border-line divide-y rounded-2xl border">
+          <li v-for="n in 5" :key="n" class="flex items-center gap-4 p-4">
+            <div class="flex-1">
+              <p class="font-bold">Grille n° {{ n }}</p>
+              <p class="text-muted text-sm">Hier · {{ 2 + n }} min</p>
+            </div>
+            <p class="text-lg font-extrabold">{{ 1500 - n * 90 }}</p>
+          </li>
+        </ul>
+      </template>
+      <AccountRequired
+        title="Gardez la trace de vos parties"
+        reason="Sans compte, vous pouvez jouer toutes les grilles en solo. L'historique et le suivi de vos parties demandent un compte : celles jouées en invité sur cet appareil y seront rattachées."
+      />
+    </LockedPreview>
     <div v-else-if="error" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4 text-sm">
       {{ error }}
       <button type="button" class="ml-2 font-semibold underline" @click="load">Réessayer</button>
