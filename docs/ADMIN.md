@@ -54,6 +54,29 @@ make prod-account email=… username=… [admin=1]
 make account-role email=… role=admin|player       # ou prod-account-role
 ```
 
+### Sans machine locale
+
+**Le plus simple (e-mails de confirmation fonctionnels)** : s'inscrire sur le site, cliquer le
+lien reçu, puis dans le SQL Editor de Neon :
+
+```sql
+UPDATE users SET role = 'admin' WHERE email = 'moi@example.com';
+```
+
+Le rôle est relu à chaque requête : recharger la page suffit. Tant que l'e-mail n'est pas
+confirmé, la ligne `users` n'a encore ni e-mail ni mot de passe (ils attendent dans
+`auth_tokens`) : la requête ne trouve rien, et mettre `email_verified_at` à la main ne crée pas
+de compte. Pour un compte de test, s'inscrire avec un alias (`moi+test@gmail.com`).
+
+**Si les e-mails n'arrivent pas** : workflow GitHub Actions « Compte (production) »
+(`.github/workflows/account.yml`), Actions → Run workflow sur `main`, avec l'e-mail, le pseudo et
+la case « admin ». Prérequis : secret `PROD_DATABASE_URL` (chaîne Neon). Mot de passe : secret
+`ACCOUNT_PASSWORD` s'il existe, sinon aléatoire jamais affiché suivi d'un e-mail « mot de passe
+oublié ». La case « existing » change seulement le rôle d'un compte existant. Le dépôt est
+public : le workflow n'écrit aucun secret dans ses journaux.
+
+### Depuis un clone
+
 Hébergement provisoire (API sur Render, base Neon) : lancer le script depuis un clone du dépôt
 en visant la base Neon ; les variables passées en ligne de commande priment sur le `.env` local.
 
