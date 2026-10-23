@@ -58,7 +58,7 @@ async function submit(): Promise<void> {
       </p>
       <NuxtLink
         to="/login"
-        class="bg-fg text-bg inline-flex min-h-11 items-center self-start rounded-full px-5 font-semibold"
+        class="bg-accent text-accent-fg shadow-cta inline-flex min-h-11 items-center self-start rounded-full px-5 font-semibold"
         >Se connecter</NuxtLink
       >
     </section>
@@ -96,7 +96,7 @@ async function submit(): Promise<void> {
       </div>
       <button
         type="submit"
-        class="bg-fg text-bg min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
+        class="bg-accent text-accent-fg shadow-cta min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
         :disabled="pending"
       >
         {{ pending ? 'Enregistrement…' : 'Enregistrer le mot de passe' }}

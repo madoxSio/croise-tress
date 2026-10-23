@@ -40,13 +40,14 @@ async function fetchPage(reset: boolean): Promise<void> {
   }
 }
 
-/** Favoris du joueur (invité compris) ; `null` tant qu'ils ne sont pas chargés : pas de bouton. */
+/** Favoris du compte ; `null` pour un invité ou tant qu'ils ne sont pas chargés : pas de bouton. */
 const favoriteIds = ref<Set<string> | null>(null)
 const favoriteError = ref<string | null>(null)
 
 async function loadFavorites(): Promise<void> {
   try {
-    await api.ensureSession()
+    const session = await api.ensureSession()
+    if (session.user?.isGuest !== false) return
     favoriteIds.value = new Set((await api.getFavorites()).items.map((p) => p.id))
   } catch {
     // Confort seulement : sans favoris, le catalogue reste utilisable.

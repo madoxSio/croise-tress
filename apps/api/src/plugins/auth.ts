@@ -93,6 +93,17 @@ export function requireAuth(request: FastifyRequest): AuthContext {
   return request.auth
 }
 
+/**
+ * Garde de route : exige un compte (pas un invité). L'invité joue en solo, mais le suivi
+ * (historique, statistiques, succès, favoris) et les duels sont réservés aux comptes.
+ * Les parties jouées en invité restent en base et rejoignent le compte à la connexion.
+ */
+export function requireAccount(request: FastifyRequest): AuthContext {
+  const auth = requireAuth(request)
+  if (auth.user.isGuest) throw new AppError(403, ERROR_CODES.forbidden, 'Compte requis.')
+  return auth
+}
+
 export function setSessionCookie(reply: FastifyReply, config: Config, token: string): void {
   void reply.setCookie(config.sessionCookieName, token, {
     httpOnly: true,

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
+  accountClient,
   Client,
   createTestContext,
   resetDatabase,
@@ -40,7 +41,7 @@ function unlocked(body: { items: { code: string; unlockedAt: string | null }[] }
 
 describe('succès', () => {
   it('attribue les succès à la fin d’une grille, une seule fois', async () => {
-    const client = await new Client(ctx.app).guest()
+    const client = await accountClient(ctx)
     const daily = (await client.request('GET', '/api/v1/daily')).json<{
       puzzle: { slug: string }
     }>()
@@ -62,7 +63,7 @@ describe('succès', () => {
   })
 
   it('aucun succès quand la solution complète a été révélée', async () => {
-    const client = await new Client(ctx.app).guest()
+    const client = await accountClient(ctx)
     const start = (
       await client.request('POST', '/api/v1/play-sessions', { puzzleId: ids['la-table'] })
     ).json<{ id: string }>()
@@ -76,8 +77,8 @@ describe('succès', () => {
 
 describe('statistiques', () => {
   it('sont dérivées des parties terminées du joueur uniquement', async () => {
-    const alice = await new Client(ctx.app).guest()
-    const bob = await new Client(ctx.app).guest()
+    const alice = await accountClient(ctx)
+    const bob = await accountClient(ctx)
     await solve(alice, 'la-table', 2)
     await solve(alice, 'motif-floral', 4)
     await solve(bob, 'le-salon')
@@ -91,9 +92,38 @@ describe('statistiques', () => {
   })
 })
 
+describe('réservé aux comptes', () => {
+  it('refuse le suivi à un invité mais lui laisse sa partie en cours', async () => {
+    const guest = await new Client(ctx.app).guest()
+    const table = ids['la-table'] ?? ''
+    for (const [method, url] of [
+      ['GET', '/api/v1/me/history'],
+      ['GET', '/api/v1/me/stats'],
+      ['GET', '/api/v1/me/achievements'],
+      ['GET', '/api/v1/me/favorites'],
+      ['PUT', `/api/v1/me/favorites/${table}`],
+      ['DELETE', `/api/v1/me/favorites/${table}`],
+    ] as const) {
+      const res = await guest.request(method, url)
+      expect(res.statusCode, `${method} ${url}`).toBe(403)
+      expect(res.json<{ error: { code: string } }>().error.code).toBe('forbidden')
+    }
+    expect(
+      (await guest.request('POST', '/api/v1/play-sessions', { puzzleId: table })).statusCode,
+    ).toBe(201)
+    expect((await guest.request('GET', '/api/v1/me/resume')).statusCode).toBe(200)
+    expect(await ctx.db.favorite.count()).toBe(0)
+  })
+
+  it('refuse le suivi sans session', async () => {
+    const anonymous = new Client(ctx.app)
+    expect((await anonymous.request('GET', '/api/v1/me/history')).statusCode).toBe(401)
+  })
+})
+
 describe('favoris et préférences', () => {
   it('ajoute, liste et retire un favori de façon idempotente', async () => {
-    const client = await new Client(ctx.app).guest()
+    const client = await accountClient(ctx)
     const url = `/api/v1/me/favorites/${ids['la-table'] ?? ''}`
     expect((await client.request('PUT', url)).statusCode).toBe(204)
     expect((await client.request('PUT', url)).statusCode).toBe(204)
@@ -113,7 +143,7 @@ describe('favoris et préférences', () => {
   })
 
   it('enregistre des préférences valides et refuse les autres', async () => {
-    const client = await new Client(ctx.app).guest()
+    const client = await accountClient(ctx)
     expect((await client.request('GET', '/api/v1/me/preferences')).json()).toEqual({
       theme: 'minimal',
       textScale: 1,

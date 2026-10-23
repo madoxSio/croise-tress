@@ -33,7 +33,7 @@ onMounted(() => {
       <div class="mt-3 flex flex-wrap gap-2 text-sm font-semibold">
         <NuxtLink
           to="/register"
-          class="bg-fg text-bg inline-flex min-h-11 items-center rounded-full px-4"
+          class="bg-accent text-accent-fg shadow-cta inline-flex min-h-11 items-center rounded-full px-4"
           >Créer un compte</NuxtLink
         >
         <NuxtLink

@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#f7f4ee"
+      "backgroundColor": "#f7f6fb"
     },
     "ios": {
       "supportsTablet": true,
@@ -22,7 +22,7 @@
     "android": {
       "package": "app.crossverse.mobile",
       "adaptiveIcon": {
-        "backgroundColor": "#f7f4ee",
+        "backgroundColor": "#5634f0",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
