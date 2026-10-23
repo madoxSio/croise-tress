@@ -71,7 +71,7 @@ async function submit(): Promise<void> {
       </div>
       <button
         type="submit"
-        class="bg-fg text-bg min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
+        class="bg-accent text-accent-fg shadow-cta min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
         :disabled="pending"
       >
         {{ pending ? 'Connexion…' : 'Se connecter' }}

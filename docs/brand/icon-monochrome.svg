@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <g transform="translate(256 256) scale(0.62) translate(-256 -256)">
+  <g fill="#fff">
+    <rect x="354" y="58" width="96" height="96" rx="26" transform="rotate(12 402 106)"/>
+    <path fill-rule="evenodd" d="M128 270a58 66 0 1 0 116 0a58 66 0 1 0-116 0ZM170 282a30 30 0 1 1 60 0a30 30 0 1 1-60 0Z"/>
+    <path fill-rule="evenodd" d="M268 270a58 66 0 1 0 116 0a58 66 0 1 0-116 0ZM310 282a30 30 0 1 1 60 0a30 30 0 1 1-60 0Z"/>
+    <path d="M212 360 Q256 424 300 360 Z" stroke="#fff" stroke-width="14" stroke-linejoin="round"/>
+  </g>
+  </g>
+</svg>

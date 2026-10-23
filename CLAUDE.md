@@ -15,6 +15,7 @@ Au 2026-10-20 (rien n'est encore commité) — détail et preuves dans [`docs/PR
 - **Fait et testé** (204 tests Vitest et 15 E2E Playwright verts, lint et types verts) : socle, moteur, contrats, API complète (solo, défi, comptes, progression, duels, Elo), web complet, pile de production (Caddy + API) jouée hors Docker.
 - **Points ouverts** : voir PROGRESS.md.
 - **Écrit, non vérifié** : `docker-compose.yml`, `compose.prod.yml` et les cibles Docker du `Makefile` (`make init`, `make start`, `make prod-up` : jamais exécutés faute de démon Docker dans l'environnement de travail), CI GitHub Actions (jamais exécutée).
+- **Refonte visuelle (2026-10-23)** : landing page, mascotte Sougoudou, page « Comment jouer », icônes ; invité limité au solo (D10).
 - **Pas commencé** : back-office, observabilité, E2E en CI, PWA/Capacitor.
 
 Mettre à jour cette section à chaque étape livrée.

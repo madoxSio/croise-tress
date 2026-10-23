@@ -25,7 +25,12 @@ export default function Account() {
     setError(null)
     try {
       // Relu à chaque visite : l'adresse a pu être confirmée depuis la boîte mail.
-      await api.reloadSession()
+      const current = await api.reloadSession()
+      // Statistiques et succès sont réservés aux comptes (refusés par le serveur aux invités).
+      if (current.user?.isGuest !== false) {
+        setProgress(null)
+        return
+      }
       const [stats, achievements] = await Promise.all([api.getStats(), api.getAchievements()])
       setProgress({ stats, achievements })
     } catch (cause) {
@@ -63,8 +68,9 @@ export default function Account() {
       {user?.isGuest ? (
         <Card>
           <Muted>
-            Vous jouez en invité. Créez un compte pour garder votre progression sur tous vos
-            appareils et affronter d’autres joueurs.
+            Vous jouez en invité : toutes les grilles solo sont accessibles. Créez un compte pour
+            l’historique, les statistiques, les succès, les duels et le classement ; vos parties
+            jouées en invité y seront rattachées.
           </Muted>
           <Button
             label="Se connecter"

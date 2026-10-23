@@ -4,3 +4,9 @@ declare namespace NodeJS {
     readonly EXPO_PUBLIC_API_URL?: string
   }
 }
+
+// Images importées : Metro les remplace par un identifiant de ressource (ImageSourcePropType).
+declare module '*.png' {
+  const source: number
+  export default source
+}
