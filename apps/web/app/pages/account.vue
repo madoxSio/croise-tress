@@ -7,7 +7,10 @@ useHead({ title: 'Mon compte — Crossverse' })
 
 const { user, status, isGuest, ensure, apply: applySession } = useSession()
 
-onMounted(() => void ensure())
+const admin = useAdmin()
+onMounted(async () => {
+  if (await ensure()) await admin.check(true)
+})
 
 const sessionsPanel = ref<{ load: () => Promise<void> } | null>(null)
 
@@ -17,6 +20,7 @@ const logoutAction = useFormAction()
 async function logout(): Promise<void> {
   const ok = await logoutAction.run(async () => {
     applySession(await api.logout())
+    admin.reset()
   })
   if (ok) await navigateTo('/')
 }
@@ -38,6 +42,7 @@ async function confirmDelete(): Promise<void> {
   confirmingDelete.value = false
   const ok = await deleteAction.run(async () => {
     applySession(await api.deleteAccount(deletePassword.value))
+    admin.reset()
   })
   deletePassword.value = ''
   if (ok) await navigateTo('/')
@@ -87,6 +92,12 @@ async function confirmDelete(): Promise<void> {
             {{ user?.emailVerified ? 'Adresse e-mail confirmée' : 'Adresse e-mail non confirmée' }}
           </p>
         </div>
+        <NuxtLink
+          v-if="admin.access.value === 'granted'"
+          to="/admin"
+          class="bg-accent text-accent-fg inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold"
+          >Administration</NuxtLink
+        >
         <button
           type="button"
           class="border-line hover:bg-surface-2 min-h-11 rounded-full border px-5 text-sm font-semibold disabled:opacity-60"

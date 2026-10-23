@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parsePuzzle, type Puzzle, type PuzzleSource } from '../src/index.js'
+import { gridSlots, parsePuzzle, type Puzzle, type PuzzleSource } from '../src/index.js'
 import { TABLE_PUZZLE } from './fixtures.js'
 
 function parsed(source: PuzzleSource): Puzzle {
@@ -90,5 +90,24 @@ describe('parsePuzzle', () => {
       clues: [...TABLE_PUZZLE.clues, first, { direction: 'across', number: 9, text: ' ' }],
     })
     expect(codes.sort()).toEqual(['duplicate_clue', 'empty_clue', 'unknown_clue'])
+  })
+})
+
+describe('gridSlots', () => {
+  it('liste les mots dans l’ordre de numérotation avec leur réponse', () => {
+    expect(gridSlots(['TABLE', 'A#A#L', 'BALLE', 'L#L#V', 'ELEVE'])).toEqual([
+      { direction: 'across', number: 1, length: 5, answer: 'TABLE' },
+      { direction: 'down', number: 1, length: 5, answer: 'TABLE' },
+      { direction: 'down', number: 2, length: 5, answer: 'BALLE' },
+      { direction: 'down', number: 3, length: 5, answer: 'ELEVE' },
+      { direction: 'across', number: 4, length: 5, answer: 'BALLE' },
+      { direction: 'across', number: 5, length: 5, answer: 'ELEVE' },
+    ])
+  })
+
+  it('ignore les cases isolées (moins de deux lettres)', () => {
+    expect(gridSlots(['A#B', '###', 'CD#'])).toEqual([
+      { direction: 'across', number: 1, length: 2, answer: 'CD' },
+    ])
   })
 })

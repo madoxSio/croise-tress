@@ -55,7 +55,7 @@ export async function createTestContext(
 }
 
 export async function resetDatabase(db: Db): Promise<void> {
-  await db.$executeRaw`TRUNCATE "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "auth_tokens", "sessions", "users", "puzzles" CASCADE`
+  await db.$executeRaw`TRUNCATE "audit_log", "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "auth_tokens", "sessions", "users", "puzzles" CASCADE`
 }
 
 /** Insère les puzzles de démonstration et renvoie leurs identifiants par slug. */
