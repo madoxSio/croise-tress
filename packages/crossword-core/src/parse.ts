@@ -89,6 +89,23 @@ export function parsePuzzle(source: PuzzleSource): Result<Puzzle, PuzzleError> {
   return { ok: true, value: { id: source.id, title: source.title, width, height, cells, clues } }
 }
 
+/**
+ * Mots d'une grille éditoriale (`#` = case noire), dans l'ordre de numérotation, sans valider
+ * les définitions. Sert à l'éditeur d'administration à proposer un champ par mot ; toute
+ * autre lettre que `#` compte comme une case ouverte (la validation complète reste `parsePuzzle`).
+ */
+export function gridSlots(
+  grid: readonly string[],
+): { direction: Direction; number: number; length: number; answer: string }[] {
+  const letters = grid.map((line) => Array.from(line, (ch) => (ch === BLOCK ? null : ch)))
+  return findSlots(letters).map((slot) => ({
+    direction: slot.direction,
+    number: slot.number,
+    length: slot.length,
+    answer: slot.cells.map((cell) => letters[cell.row]?.[cell.col] ?? '').join(''),
+  }))
+}
+
 /** Numérotation classique : une case reçoit un numéro si elle commence un mot dans au moins une direction. */
 function findSlots(letters: readonly (readonly (string | null)[])[]): Slot[] {
   const height = letters.length

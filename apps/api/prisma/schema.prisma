@@ -80,6 +80,7 @@ model User {
   matches      MatchParticipant[]
   matchEvents  MatchEvent[]
   rating       Rating?
+  auditEntries AuditLog[]
 
   @@map("users")
 }
@@ -298,4 +299,20 @@ model Rating {
 
   @@index([rating(sort: Desc)])
   @@map("ratings")
+}
+
+/// Journal des actions d'administration (création, publication de grilles, consultation d'un
+/// parcours joueur…). `target` est un identifiant ou un slug, jamais une donnée personnelle.
+/// L'auteur devient NULL si son compte est supprimé : la trace de l'action est conservée.
+model AuditLog {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  actorUserId String?  @map("actor_user_id") @db.Uuid
+  action      String
+  target      String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt(sort: Desc)])
+  @@map("audit_log")
 }

@@ -25,6 +25,7 @@ Application de mots croisés mobile-first : modes solo, défi quotidien, progres
 | [docs/SECURITY.md](docs/SECURITY.md)                     | règles de sécurité                                           |
 | [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md)             | modèle de menace                                             |
 | [docs/SECURITY-TEST-PLAN.md](docs/SECURITY-TEST-PLAN.md) | plan de tests de sécurité                                    |
+| [docs/ADMIN.md](docs/ADMIN.md)                           | espace d'administration, comptes de test et administrateurs  |
 
 ## Stack
 
@@ -93,3 +94,5 @@ Ce chemin a été joué ici sans Docker (mêmes binaires : API en mode productio
 | `make install-local`, `make check-local`          | mêmes contrôles sur la machine                          | oui                                                             |
 | `pnpm lint`, `pnpm typecheck`, `pnpm test`        | appelés par les cibles `*-local`                        | oui                                                             |
 | `make e2e-local` / `make e2e` (`pnpm e2e`)        | parcours Playwright, voir `apps/e2e/README.md`          | `e2e-local` oui ; `e2e` non (Docker requis)                     |
+| `make account-local email=… username=… [admin=1]` | compte confirmé (test, admin), voir `docs/ADMIN.md`     | oui                                                             |
+| `make account` / `account-role` / `prod-account…` | idem dans Docker / en production                        | non (Docker requis)                                             |

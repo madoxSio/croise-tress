@@ -6,6 +6,8 @@ import Fastify, { type FastifyInstance } from 'fastify'
 import type { Config } from './config.ts'
 import type { Db } from './db.ts'
 import { registerErrorHandler } from './http/errors.ts'
+import { adminRoutes } from './modules/admin/routes.ts'
+import { AdminService } from './modules/admin/service.ts'
 import { authRoutes } from './modules/auth/routes.ts'
 import { AuthService } from './modules/auth/service.ts'
 import { SmtpMailer, type Mailer } from './modules/mail/mailer.ts'
@@ -79,6 +81,7 @@ export async function buildApp({
   const play = new PlayService(db, puzzles, now, (session) => progress.onCompleted(session))
   const auth = new AuthService(db, config, sessions, mailer)
   const matches = new MatchService(db, puzzles, now)
+  const admin = new AdminService(db, now)
 
   await app.register(
     (api, _opts, done) => {
@@ -90,6 +93,7 @@ export async function buildApp({
       playRoutes(api, play)
       progressRoutes(api, play, progress)
       matchRoutes(api, matches)
+      adminRoutes(api, admin)
       done()
     },
     { prefix: API_PREFIX },
