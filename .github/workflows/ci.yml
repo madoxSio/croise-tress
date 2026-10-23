@@ -62,3 +62,7 @@ jobs:
       - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Version épinglée : .gitleaks.toml utilise la syntaxe [[allowlists]] (gitleaks ≥ 8.25).
+          # Avec la version par défaut de l'action, l'exception est ignorée et un scan complet de
+          # l'historique (Run workflow) signale les jetons factices des tests.
+          GITLEAKS_VERSION: 8.28.0
