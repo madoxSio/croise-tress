@@ -32,7 +32,7 @@ cd apps/mobile
 npx eas-cli@24.10.0 login
 npx eas-cli@24.10.0 init                # lie le projet : ajoute owner et extra.eas.projectId à app.json
 # eas.json est déjà dans apps/mobile : y remplacer REMPLIR_APPLE_ID_NUMERIQUE par l'ascAppId,
-# et EXPO_PUBLIC_API_URL si l'API n'est pas sur crossverse-api.onrender.com
+# et EXPO_PUBLIC_API_URL par https://<domaine du VPS> (voir README.md)
 npx eas-cli@24.10.0 credentials -p ios  # connexion Apple : certificat de distribution,
                                         # profil de provisionnement, et clé App Store Connect (.p8)
 ```
