@@ -2,7 +2,7 @@
 # Prépare un VPS Ubuntu 24.04 neuf pour Crossverse. À lancer UNE fois, en root :
 #   curl -fsSL https://raw.githubusercontent.com/madoxSio/croise-tress/main/docs/deploy/vps-bootstrap.sh -o bootstrap.sh
 #   less bootstrap.sh            # le relire avant de l'exécuter
-#   bash bootstrap.sh crossverse.duckdns.org "ssh-ed25519 AAAA… crossverse-deploy"
+#   sudo bash bootstrap.sh crossverse.duckdns.org "ssh-ed25519 AAAA… crossverse-deploy"
 # Résultat : Docker, pare-feu (22, 80, 443), mises à jour de sécurité automatiques, utilisateur
 # `deploy` (clé SSH de la CI), dépôt dans /opt/crossverse, .env.prod à compléter (SMTP),
 # sauvegarde quotidienne de la base (14 jours conservés).

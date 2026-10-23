@@ -92,24 +92,24 @@ SPA, relais `/api` et `/ws`), l'API et PostgreSQL (jamais exposé). Les images v
 le serveur ne compile rien. Le web et l'API partagent la même origine : cookie `SameSite=Lax`,
 CSP `connect-src 'self'` et WebSocket fonctionnent sans réglage.
 
-| Brique  | Choix                                                           | Coût                                                     |
-| ------- | --------------------------------------------------------------- | -------------------------------------------------------- |
-| Serveur | DigitalOcean Droplet, Ubuntu 24.04, 2 Go, Frankfurt             | ~12 $/mois, couvert par le crédit GitHub Student (200 $) |
-| Domaine | `<nom>.duckdns.org` (DuckDNS) ou `.me` Namecheap (Student Pack) | gratuit                                                  |
-| E-mails | Brevo (SMTP)                                                    | gratuit (300 e-mails/jour)                               |
+| Brique  | Choix                                                                      | Coût                                                    |
+| ------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Serveur | VM Azure B1ms (2 Go), Ubuntu 24.04, Germany West Central ou France Central | sur le crédit Azure for Students (100 $/an, sans carte) |
+| Domaine | `<nom>.duckdns.org` (DuckDNS) ou `.me` Namecheap (Student Pack)            | gratuit                                                 |
+| E-mails | Brevo (SMTP)                                                               | gratuit (300 e-mails/jour)                              |
 
 ## Mise en place 👤
 
-1. **Droplet** : Ubuntu 24.04, 2 Go de RAM, région Frankfurt, authentification par clé SSH.
-2. **DNS** : sur duckdns.org, créer le sous-domaine et y mettre l'IPv4 du Droplet.
+1. **VM Azure** (Azure for Students) : Ubuntu 24.04, taille B1ms, authentification par clé SSH, ports entrants 22, 80 et 443 ouverts (onglet Networking).
+2. **DNS** : sur duckdns.org, créer le sous-domaine et y mettre l'IPv4 publique de la VM.
 3. **Brevo** : créer le compte, vérifier l'adresse d'envoi, récupérer les identifiants SMTP
    (Settings → SMTP & API).
-4. **Bootstrap** (en root sur le Droplet, avec la clé publique de déploiement fournie) :
+4. **Bootstrap** (sur la VM, via `sudo`, avec la clé publique de déploiement fournie) :
 
    ```sh
    curl -fsSL https://raw.githubusercontent.com/madoxSio/croise-tress/main/docs/deploy/vps-bootstrap.sh -o bootstrap.sh
    less bootstrap.sh
-   bash bootstrap.sh crossverse.duckdns.org "ssh-ed25519 AAAA… crossverse-deploy"
+   sudo bash bootstrap.sh crossverse.duckdns.org "ssh-ed25519 AAAA… crossverse-deploy"
    ```
 
    Il installe Docker, le pare-feu, les mises à jour de sécurité, l'utilisateur `deploy`, clone
@@ -126,7 +126,7 @@ Settings → Secrets and variables → Actions :
 
 | Type     | Nom               | Valeur                                                              |
 | -------- | ----------------- | ------------------------------------------------------------------- |
-| Variable | `VPS_HOST`        | IPv4 du Droplet                                                     |
+| Variable | `VPS_HOST`        | IPv4 de la VM                                                       |
 | Variable | `VPS_DOMAIN`      | `crossverse.duckdns.org`                                            |
 | Variable | `VPS_USER`        | `deploy` (valeur par défaut)                                        |
 | Secret   | `VPS_SSH_KEY`     | clé privée ed25519 dédiée à la CI (sa clé publique va au bootstrap) |
