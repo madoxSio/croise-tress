@@ -58,6 +58,17 @@ enum PlayStatus {
   completed
 }
 
+enum PointReason {
+  welcome
+  puzzle_completed
+  no_hint_bonus
+  path_step
+  path_completed
+  daily_challenge
+  match_result
+  hint_purchase
+}
+
 /// Compte joueur. Un invité n'a ni e-mail ni mot de passe ; l'inscription complète la même ligne.
 model User {
   id              String    @id @default(uuid(7)) @db.Uuid
@@ -81,6 +92,8 @@ model User {
   matchEvents  MatchEvent[]
   rating       Rating?
   auditEntries AuditLog[]
+  wallet       Wallet?
+  pointEntries PointTransaction[]
 
   @@map("users")
 }
@@ -144,6 +157,7 @@ model Puzzle {
   playSessions    PlaySession[]
   favorites       Favorite[]
   matches         Match[]
+  pathSteps       PathStep[]
 
   @@index([status, difficulty, theme])
   @@map("puzzles")
@@ -315,4 +329,74 @@ model AuditLog {
 
   @@index([createdAt(sort: Desc)])
   @@map("audit_log")
+}
+
+/// Parcours : suite ordonnée de grilles d'un thème. Chaque étape se débloque quand la
+/// précédente est terminée sans révéler la solution (règle appliquée par le serveur).
+/// `theme` est le slug du thème ou sous-thème du catalogue (ex. `rois-de-france`).
+model Path {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  slug        String       @unique
+  title       String
+  description String
+  theme       String
+  /// Ordre d'affichage dans la liste des parcours.
+  sortOrder   Int          @default(0) @map("sort_order") @db.SmallInt
+  status      PuzzleStatus @default(draft)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  steps PathStep[]
+
+  @@index([status, sortOrder])
+  @@map("paths")
+}
+
+/// Étape d'un parcours. Une grille n'apparaît qu'une fois dans un même parcours.
+model PathStep {
+  pathId   String @map("path_id") @db.Uuid
+  /// Rang de l'étape, à partir de 1.
+  position Int    @db.SmallInt
+  title    String
+  puzzleId String @map("puzzle_id") @db.Uuid
+
+  path   Path   @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  puzzle Puzzle @relation(fields: [puzzleId], references: [id], onDelete: Restrict)
+
+  @@id([pathId, position])
+  @@unique([pathId, puzzleId])
+  @@index([puzzleId])
+  @@map("path_steps")
+}
+
+/// Solde de Coumba points d'un compte confirmé. Ne bouge qu'avec une ligne du journal,
+/// dans la même transaction (le solde ne peut pas devenir négatif : contrainte CHECK).
+model Wallet {
+  userId    String   @id @map("user_id") @db.Uuid
+  balance   Int      @default(0)
+  earned    Int      @default(0)
+  spent     Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("wallets")
+}
+
+/// Journal des gains et dépenses (montant signé). La clé d'idempotence, unique par joueur,
+/// garantit qu'une récompense ou un achat n'est jamais compté deux fois.
+model PointTransaction {
+  id             String      @id @default(uuid(7)) @db.Uuid
+  userId         String      @map("user_id") @db.Uuid
+  amount         Int
+  balanceAfter   Int         @map("balance_after")
+  reason         PointReason
+  idempotencyKey String      @map("idempotency_key")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, id(sort: Desc)])
+  @@map("point_transactions")
 }

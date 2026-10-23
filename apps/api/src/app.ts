@@ -11,8 +11,13 @@ import { AdminService } from './modules/admin/service.ts'
 import { authRoutes } from './modules/auth/routes.ts'
 import { AuthService } from './modules/auth/service.ts'
 import { SmtpMailer, type Mailer } from './modules/mail/mailer.ts'
+import { pathRoutes } from './modules/paths/routes.ts'
+import { PathService } from './modules/paths/service.ts'
 import { playRoutes } from './modules/play/routes.ts'
 import { PlayService } from './modules/play/service.ts'
+import { RewardService } from './modules/points/rewards.ts'
+import { pointsRoutes } from './modules/points/routes.ts'
+import { PointsService } from './modules/points/service.ts'
 import { progressRoutes } from './modules/progress/routes.ts'
 import { ProgressService } from './modules/progress/service.ts'
 import { puzzleRoutes } from './modules/puzzles/routes.ts'
@@ -78,7 +83,16 @@ export async function buildApp({
   const sessions = new SessionService(db, config)
   const puzzles = new PuzzleRepository(db)
   const progress = new ProgressService(db)
-  const play = new PlayService(db, puzzles, now, (session) => progress.onCompleted(session))
+  const points = new PointsService(db)
+  const paths = new PathService(db)
+  const rewards = new RewardService(db, points, paths)
+  const play = new PlayService(db, puzzles, now, points, {
+    onCompleted: async (session) => {
+      await progress.onCompleted(session)
+      await rewards.onPuzzleCompleted(session)
+    },
+    beforeStart: (userId, puzzleId) => paths.assertCanStart(userId, puzzleId),
+  })
   const auth = new AuthService(db, config, sessions, mailer)
   const matches = new MatchService(db, puzzles, now)
   const admin = new AdminService(db, now)
@@ -92,6 +106,8 @@ export async function buildApp({
       puzzleRoutes(api, puzzles, now)
       playRoutes(api, play)
       progressRoutes(api, play, progress)
+      pointsRoutes(api, points)
+      pathRoutes(api, paths)
       matchRoutes(api, matches)
       adminRoutes(api, admin)
       done()

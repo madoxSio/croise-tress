@@ -205,6 +205,26 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 | D8  | 2026-10-20 | Production MVP : un serveur, Caddy (TLS, SPA, proxy) + API + PostgreSQL      | appliquée |
 | D9  | 2026-10-20 | Socket.IO en transports par défaut (polling puis WebSocket)                  | appliquée |
 | D10 | 2026-10-23 | Admin : rôle relu en base, 404 aux non-admins, rôle donné en CLI seulement   | appliquée |
+| D12 | 2026-10-23 | Parcours à étapes et Coumba points : solde + journal idempotent en base      | appliquée |
+
+### Notes sur D12 (parcours et Coumba points)
+
+- **Parcours** (`paths`, `path_steps`) : une étape est ouverte quand toutes les précédentes sont
+  réussies (grille terminée sans révéler la solution). Le verrou est appliqué à la création d'une
+  partie (`POST /play-sessions` → 403 `step_locked`) : contourner l'interface n'y change rien.
+  Un invité n'a accès qu'à la première étape. Le thème est un slug texte (`theme`) en attendant
+  la table des thèmes du catalogue ; il deviendra une clé étrangère après sa fusion.
+- **Portefeuille** (`wallets`) et **journal** (`point_transactions`, montant signé, solde après
+  écriture). Toute écriture passe par `PointsService.apply` : ligne du portefeuille verrouillée
+  (`FOR UPDATE`), clé d'idempotence unique par joueur (`puzzle:<id>`, `path-step:<parcours>:<grille>`,
+  `daily:<jour>`, `hint:<partie>:<révision>`…), contraintes CHECK (solde ≥ 0, montant ≠ 0).
+- **Indices** : 3 gratuits par partie (lettre ou mot), puis payants avec consentement explicite
+  (`usePoints: true`, sinon 409 `hint_limit_reached`). Le débit et la révélation sont écrits dans
+  la même transaction que la partie (révision optimiste) : un refus ou un conflit n'enlève rien.
+- **Barème** dans `apps/api/src/modules/points/rules.ts`, renvoyé aux clients par `GET /me/wallet`.
+  Proposé le 2026-10-23, en attente de validation.
+- Risque résiduel : les gains sont versés juste après la transaction qui termine la partie (pas
+  dans la même) ; un arrêt de l'API entre les deux perd la récompense, sans jamais la doubler.
 
 ### Notes sur D8 et D9
 

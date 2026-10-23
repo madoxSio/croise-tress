@@ -98,6 +98,20 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - CI/CD : ✅ CI (lint, types, tests, E2E, audit, gitleaks) et images GHCR exécutées et vertes sur GitHub (2026-10-22). 🟡 Déploiements Render + Vercel (provisoire), VPS (`deploy-vps`, `docs/deploy/vps-bootstrap.sh`) et TestFlight écrits, jamais exécutés. Voir `docs/deploy/README.md`.
 - App mobile Expo (`apps/mobile`) : ajoutée par un autre fil. Son authentification native par jeton (validée par madox) attend son intégration dans l'API.
 
+### 2026-10-23 — Parcours, indices limités et Coumba points ✅ (hors Docker)
+
+- API : parcours thématiques à étapes débloquées une à une (`GET /paths`, `GET /paths/:slug`,
+  verrou serveur au démarrage d'une partie), 3 indices gratuits par partie puis indices payants,
+  portefeuille et journal (`GET /me/wallet`, `GET /me/wallet/transactions`), gains à la première
+  réussite d'une grille, bonus sans indice, étape et parcours terminés, défi du jour. Voir D12.
+- Web : pages `/parcours` et `/parcours/:slug`, coût des indices et dialogue d'achat dans la
+  partie, gain affiché en fin de grille, solde et journal dans la page compte.
+- Preuves : `test/points.test.ts` (16 tests : invité, consentement, solde insuffisant sans effet,
+  achats concurrents, idempotence des gains, verrous de parcours) ; 3 tests web ; parcours
+  vérifié à la main dans Chromium (Pixel 7) contre l'API locale.
+- Reste : barème à valider ; contenu des parcours (grilles du fil catalogue) ; lien de navigation
+  (fil design) ; indices payants et gains en duel ; app mobile (affiche l'erreur de l'API).
+
 ### 2026-10-23 — Espace d'administration et comptes de test ✅ (hors Docker)
 
 - API `/admin/*` : indicateurs (comptes, actifs, parties, duels, grilles, 30 jours), liste et parcours des joueurs, grilles (brouillon, édition validée par le moteur, lettres figées après la première partie, publication), journal d'audit (dont chaque consultation d'un parcours). Garde de rôle relue en base, 404 aux non-administrateurs. Guide : [ADMIN.md](ADMIN.md).
@@ -150,7 +164,7 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 | ---------------- | ------------------------------------------------------------------------------------------------ |
 | `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                               |
 | `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                                |
-| `pnpm test`      | core 54/54, web 60/60, mobile 37/37, api 117/117 : **268 tests verts**                           |
+| `pnpm test`      | core 54/54, web 63/63, mobile 37/37, api 133/133 : **287 tests verts**                           |
 | `make e2e-local` | **13 passed, 2 skipped (45.4s)** : les 2 ignorés lisent le build statique, absent (pas de build) |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.

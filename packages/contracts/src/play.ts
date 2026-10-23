@@ -70,9 +70,21 @@ export const checkResponseSchema = z.strictObject({
   session: playSessionSchema,
 })
 
+/**
+ * Au-delà des indices gratuits de la partie, une lettre ou un mot se paie en Coumba points :
+ * `usePoints` doit alors valoir true (consentement explicite à la dépense).
+ */
 export const hintBodySchema = z.discriminatedUnion('type', [
-  z.strictObject({ type: z.literal('letter'), cell: positionSchema }),
-  z.strictObject({ type: z.literal('word'), word: wordRefSchema }),
+  z.strictObject({
+    type: z.literal('letter'),
+    cell: positionSchema,
+    usePoints: z.literal(true).optional(),
+  }),
+  z.strictObject({
+    type: z.literal('word'),
+    word: wordRefSchema,
+    usePoints: z.literal(true).optional(),
+  }),
   z.strictObject({ type: z.literal('explain'), word: wordRefSchema }),
   /** Révélation complète : `confirm` doit valoir true (confirmation explicite côté UI). */
   z.strictObject({ type: z.literal('solution'), confirm: z.literal(true) }),

@@ -3,7 +3,14 @@
  * débouncée avec révision, vérifications et indices. L'état de jeu lui-même vit dans
  * `useCrosswordGame` ; le score et la fin de partie viennent exclusivement du serveur.
  */
-import type { CheckBody, HintBody, PlaySessionDto, PublicPuzzleDto } from '@crossverse/contracts'
+import { ERROR_CODES } from '@crossverse/contracts'
+import type {
+  CheckBody,
+  HintBody,
+  PlaySessionDto,
+  PublicPuzzleDto,
+  WalletDto,
+} from '@crossverse/contracts'
 import type { PublicPuzzle } from '@crossverse/crossword-core'
 import { ApiRequestError, api, errorMessage } from '~/services/api'
 import { useCrosswordGame } from '~/composables/useCrosswordGame'
@@ -16,6 +23,7 @@ const RETRY_DELAY_MS = 4000
 export type SaveState = 'idle' | 'pending' | 'saving' | 'saved' | 'error'
 export type CheckScope = 'cell' | 'word' | 'grid'
 export type HintKind = 'letter' | 'word' | 'explain' | 'solution'
+export type PaidHintKind = 'letter' | 'word'
 
 export function usePlaySession(puzzleId: string) {
   const details = shallowRef<PublicPuzzleDto | null>(null)
@@ -32,8 +40,29 @@ export function usePlaySession(puzzleId: string) {
   const actionError = ref<string | null>(null)
   const explanation = ref<{ label: string; text: string } | null>(null)
   const busy = ref(false)
+  /** Portefeuille de Coumba points : affichage des coûts seulement, le serveur décide. */
+  const wallet = shallowRef<WalletDto | null>(null)
+  /** Gain de la partie, mesuré par différence de solde à la fin (affichage). */
+  const pointsGained = ref<number | null>(null)
+  /** Indice payant en attente du consentement du joueur. */
+  const paidHintOffer = ref<{ kind: PaidHintKind; cost: number } | null>(null)
 
   const completed = computed(() => session.value?.status === 'completed')
+
+  const freeHintsLeft = computed(() => {
+    const rules = wallet.value?.rules
+    const hints = session.value?.hints
+    if (!rules || !hints) return null
+    return Math.max(0, rules.freeHintsPerGame - hints.lettersRevealed - hints.wordsRevealed)
+  })
+
+  async function refreshWallet(): Promise<void> {
+    try {
+      wallet.value = await api.getWallet()
+    } catch {
+      // Confort seulement : sans portefeuille, le jeu reste utilisable.
+    }
+  }
 
   let timer: ReturnType<typeof setTimeout> | undefined
   let inFlight: Promise<void> | null = null
@@ -142,6 +171,7 @@ export function usePlaySession(puzzleId: string) {
         },
       )
       saveState.value = 'saved'
+      void refreshWallet()
     } catch (error) {
       notFound.value = error instanceof ApiRequestError && error.isNotFound
       loadError.value = notFound.value ? 'Cette grille est introuvable.' : errorMessage(error)
@@ -201,7 +231,9 @@ export function usePlaySession(puzzleId: string) {
     })
   }
 
-  function hint(kind: HintKind): Promise<void> {
+  /** `usePoints` : le joueur a accepté de payer l'indice en Coumba points. */
+  function hint(kind: HintKind, usePoints = false): Promise<void> {
+    paidHintOffer.value = null
     return withLock(async () => {
       const currentGame = game.value
       // Les indices s'appliquent à la grille stockée : on envoie d'abord la saisie en attente.
@@ -220,7 +252,14 @@ export function usePlaySession(puzzleId: string) {
       } else {
         body = { type: 'solution', confirm: true }
       }
-      const response = await api.hint(current.id, body)
+      if (usePoints && (body.type === 'letter' || body.type === 'word')) body.usePoints = true
+      let response
+      try {
+        response = await api.hint(current.id, body)
+      } catch (error) {
+        if (!(await handlePaidHintError(error, kind))) throw error
+        return
+      }
       adopt(response.session, { replaceGrid: true })
       currentGame.applyRevealed(response.revealed)
       if (response.explanation !== null && clue) {
@@ -238,8 +277,43 @@ export function usePlaySession(puzzleId: string) {
             : `${response.revealed.length} lettres ont été révélées.`
       }
       saveState.value = 'saved'
+      if (usePoints) void refreshWallet()
     })
   }
+
+  /**
+   * Indices gratuits épuisés (409) : propose l'achat au lieu d'afficher une erreur.
+   * Les autres refus métier (solde insuffisant, invité) sont affichés tels quels, sans
+   * déclencher le rechargement réservé aux conflits de révision.
+   */
+  async function handlePaidHintError(error: unknown, kind: HintKind): Promise<boolean> {
+    if (!(error instanceof ApiRequestError)) return false
+    if (error.code === ERROR_CODES.hintLimitReached && error.status === 409) {
+      if (!wallet.value) await refreshWallet()
+      const rules = wallet.value?.rules
+      if ((kind === 'letter' || kind === 'word') && rules) {
+        paidHintOffer.value = { kind, cost: rules.hintCost[kind] }
+        return true
+      }
+    }
+    if (
+      error.code === ERROR_CODES.hintLimitReached ||
+      error.code === ERROR_CODES.insufficientPoints
+    ) {
+      actionError.value = error.message
+      void refreshWallet()
+      return true
+    }
+    return false
+  }
+
+  watch(completed, async (done, before) => {
+    if (!done || before) return
+    const previous = wallet.value?.balance
+    await refreshWallet()
+    const next = wallet.value?.balance
+    if (previous !== undefined && next !== undefined) pointsGained.value = next - previous
+  })
 
   function onVisibilityChange(): void {
     if (document.visibilityState === 'hidden' && dirty) void flush({ keepalive: true })
@@ -273,6 +347,10 @@ export function usePlaySession(puzzleId: string) {
     explanation,
     busy,
     completed,
+    wallet,
+    freeHintsLeft,
+    paidHintOffer,
+    pointsGained,
     load,
     flush,
     check,

@@ -11,7 +11,7 @@ const puzzleId = (Array.isArray(rawId) ? rawId[0] : rawId) ?? ''
 const play = usePlaySession(puzzleId)
 const { details, session, game, loading, loadError, notFound, saveState, notice, actionError } =
   play
-const { explanation, busy, completed } = play
+const { explanation, busy, completed, wallet, freeHintsLeft, paidHintOffer, pointsGained } = play
 
 useHead({
   title: () => (details.value ? `${details.value.title} — Crossverse` : 'Partie — Crossverse'),
@@ -63,14 +63,27 @@ const checkItems = computed<MenuItem[]>(() => [
   { id: 'grid', label: 'Vérifier la grille' },
 ])
 
+/** Coût affiché d'une lettre ou d'un mot : gratuit tant qu'il reste des indices gratuits. */
+function hintPrice(kind: 'letter' | 'word'): string {
+  const rules = wallet.value?.rules
+  if (!rules || freeHintsLeft.value === null) return ''
+  if (freeHintsLeft.value > 0) return ' · gratuit'
+  return wallet.value?.eligible ? ` · ${String(rules.hintCost[kind])} pts` : ' · compte requis'
+}
+
 const hintItems = computed<MenuItem[]>(() => [
   {
     id: 'letter',
     label: 'Révéler une lettre',
-    hint: 'La case active',
+    hint: `La case active${hintPrice('letter')}`,
     disabled: !game.value?.active,
   },
-  { id: 'word', label: 'Révéler le mot', hint: 'Le mot sélectionné', disabled: !activeClue.value },
+  {
+    id: 'word',
+    label: 'Révéler le mot',
+    hint: `Le mot sélectionné${hintPrice('word')}`,
+    disabled: !activeClue.value,
+  },
   {
     id: 'explain',
     label: 'Explication',
@@ -97,6 +110,19 @@ async function onHint(id: string): Promise<void> {
     return
   }
   await play.hint(id)
+  gridRef.value?.focus()
+}
+
+const freeHintsLabel = computed(() => {
+  const left = freeHintsLeft.value ?? 0
+  if (left === 0) return 'Indices gratuits épuisés'
+  return left === 1 ? '1 indice gratuit restant' : `${String(left)} indices gratuits restants`
+})
+
+async function buyHint(): Promise<void> {
+  const offer = paidHintOffer.value
+  if (!offer) return
+  await play.hint(offer.kind, true)
   gridRef.value?.focus()
 }
 
@@ -250,6 +276,9 @@ const gridLabel = computed(() =>
                 <dd class="text-xl font-bold tabular-nums">{{ session.score ?? '—' }}</dd>
               </div>
             </dl>
+            <p v-if="pointsGained !== null && pointsGained > 0" class="mt-3 font-bold">
+              +{{ pointsGained }} Coumba points
+            </p>
             <p v-if="session.hints.solutionRevealed" class="mt-3 text-sm opacity-90">
               Solution révélée : la partie ne rapporte pas de points.
             </p>
@@ -277,6 +306,10 @@ const gridLabel = computed(() =>
           <div v-else class="flex flex-wrap items-center justify-center gap-2">
             <ActionMenu label="Vérifier" :items="checkItems" :disabled="busy" @choose="onCheck" />
             <ActionMenu label="Indice" :items="hintItems" :disabled="busy" @choose="onHint" />
+            <p v-if="freeHintsLeft !== null" class="text-muted w-full text-center text-xs">
+              {{ freeHintsLabel }}
+              <template v-if="wallet?.eligible"> · {{ wallet.balance }} Coumba points</template>
+            </p>
           </div>
 
           <aside
@@ -316,6 +349,18 @@ const gridLabel = computed(() =>
       >
         Toutes les lettres de la grille seront révélées et la partie ne rapportera aucun point.
         Cette action est définitive.
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        :open="paidHintOffer !== null"
+        :title="`Utiliser ${paidHintOffer?.cost ?? 0} Coumba points ?`"
+        :confirm-label="`Payer ${paidHintOffer?.cost ?? 0} points`"
+        @confirm="buyHint"
+        @cancel="paidHintOffer = null"
+      >
+        Vos indices gratuits pour cette partie sont épuisés.
+        {{ paidHintOffer?.kind === 'word' ? 'Révéler ce mot' : 'Révéler cette lettre' }} coûte
+        {{ paidHintOffer?.cost }} points. Solde actuel : {{ wallet?.balance ?? 0 }} points.
       </ConfirmDialog>
     </template>
   </div>

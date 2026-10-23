@@ -14,13 +14,27 @@ import {
   type PlayerGrid,
   type Puzzle,
 } from '@crossverse/crossword-core'
-import type { CheckBody, HintBody, PlaySessionDto } from '@crossverse/contracts'
+import {
+  ERROR_CODES,
+  type CheckBody,
+  type HintBody,
+  type PlaySessionDto,
+} from '@crossverse/contracts'
 import type { Db } from '../../db.ts'
 import type { PlaySession, Prisma } from '../../generated/prisma/client.ts'
 import { AppError, conflict, notFound } from '../../http/errors.ts'
+import type { PointsService, Tx } from '../points/service.ts'
+import { POINT_RULES } from '../points/rules.ts'
 import type { PuzzleRepository } from '../puzzles/repository.ts'
 
 type Counter = 'cellChecks' | 'wordChecks' | 'lettersRevealed' | 'wordsRevealed'
+
+export interface PlayHooks {
+  /** Appelé après chaque partie terminée (succès, récompenses). */
+  readonly onCompleted?: (session: PlaySession) => Promise<void>
+  /** Appelé avant de créer une partie : lève une erreur si la grille est verrouillée (parcours). */
+  readonly beforeStart?: (userId: string, puzzleId: string) => Promise<void>
+}
 
 interface Loaded {
   readonly session: PlaySession
@@ -59,8 +73,9 @@ export class PlayService {
     private readonly db: Db,
     private readonly puzzles: PuzzleRepository,
     private readonly now: () => Date,
-    /** Appelé après chaque partie terminée (succès, statistiques). */
-    private readonly onCompleted: (session: PlaySession) => Promise<void> = () => Promise.resolve(),
+    /** Paiement des indices au-delà des indices gratuits. */
+    private readonly points: PointsService,
+    private readonly hooks: PlayHooks = {},
   ) {}
 
   async start(
@@ -71,6 +86,7 @@ export class PlayService {
     if (!loaded) throw notFound('Puzzle introuvable.')
     const existing = await this.findInProgress(userId, puzzleId)
     if (existing) return { session: existing, created: false }
+    await this.hooks.beforeStart?.(userId, puzzleId)
     try {
       const session = await this.db.playSession.create({
         data: {
@@ -158,6 +174,10 @@ export class PlayService {
 
     let revealed: { row: number; col: number; letter: string }[]
     let counter: Counter | undefined
+    let cost = 0
+    if (body.type === 'letter' || body.type === 'word') {
+      cost = await this.hintCost(session, body.type, body.usePoints === true)
+    }
     if (body.type === 'letter') {
       this.assertOpen(puzzle, body.cell)
       revealed = [{ ...body.cell, letter: solutionAt(puzzle, body.cell) }]
@@ -175,12 +195,55 @@ export class PlayService {
           revealed.find((cell) => cell.row === row && cell.col === col)?.letter ?? value,
       ),
     )
-    const updated = await this.write(loaded, session.revision, {
-      grid,
-      ...(counter ? { increment: counter } : {}),
-      ...(body.type === 'solution' ? { solutionRevealed: true } : {}),
-    })
+    const updated = await this.write(
+      loaded,
+      session.revision,
+      {
+        grid,
+        ...(counter ? { increment: counter } : {}),
+        ...(body.type === 'solution' ? { solutionRevealed: true } : {}),
+      },
+      cost > 0
+        ? (tx) =>
+            this.points.apply(tx, {
+              userId,
+              amount: -cost,
+              reason: 'hint_purchase',
+              // Une révision n'est écrite qu'une fois : un même achat ne peut pas être débité deux fois.
+              key: `hint:${session.id}:${session.revision}`,
+            })
+        : undefined,
+    )
     return { revealed, explanation: null, session: updated }
+  }
+
+  /**
+   * Coût en Coumba points d'une lettre ou d'un mot révélé : 0 tant qu'il reste des indices
+   * gratuits dans la partie. Au-delà, le client doit consentir à la dépense (`usePoints`).
+   */
+  private async hintCost(
+    session: PlaySession,
+    type: 'letter' | 'word',
+    usePoints: boolean,
+  ): Promise<number> {
+    const used = session.lettersRevealed + session.wordsRevealed
+    if (used < POINT_RULES.freeHintsPerGame) return 0
+    if (!(await this.points.isEligible(session.userId))) {
+      throw new AppError(
+        403,
+        ERROR_CODES.hintLimitReached,
+        'Indices gratuits épuisés : créez un compte pour utiliser des Coumba points.',
+      )
+    }
+    const cost = POINT_RULES.hintCost[type]
+    if (!usePoints) {
+      throw new AppError(
+        409,
+        ERROR_CODES.hintLimitReached,
+        `Indices gratuits épuisés : cet indice coûte ${String(cost)} Coumba points.`,
+      )
+    }
+    return cost
   }
 
   async history(userId: string, limit: number, cursor: string | undefined) {
@@ -259,6 +322,8 @@ export class PlayService {
     { session, puzzle, targetMs }: Loaded,
     expectedRevision: number,
     change: { grid: PlayerGrid; increment?: Counter; solutionRevealed?: boolean },
+    /** Écriture liée (paiement d'un indice), validée ou annulée avec la partie. */
+    alongside?: (tx: Tx) => Promise<unknown>,
   ): Promise<PlaySession> {
     const now = this.now()
     const counters = {
@@ -284,24 +349,30 @@ export class PlayService {
       })
     }
 
-    const result = await this.db.playSession.updateMany({
-      where: {
-        id: session.id,
-        userId: session.userId,
-        revision: expectedRevision,
-        status: 'in_progress',
-      },
-      data: {
-        grid: change.grid,
-        revision: { increment: 1 },
-        ...counters,
-        solutionRevealed,
-        ...completion,
-      },
-    })
-    if (result.count === 0) throw conflict('La partie a été modifiée ailleurs : rechargez-la.')
+    const update = async (client: Tx): Promise<void> => {
+      const result = await client.playSession.updateMany({
+        where: {
+          id: session.id,
+          userId: session.userId,
+          revision: expectedRevision,
+          status: 'in_progress',
+        },
+        data: {
+          grid: change.grid,
+          revision: { increment: 1 },
+          ...counters,
+          solutionRevealed,
+          ...completion,
+        },
+      })
+      if (result.count === 0) throw conflict('La partie a été modifiée ailleurs : rechargez-la.')
+      await alongside?.(client)
+    }
+    // Transaction seulement si une écriture liée l'exige : les sauvegardes de grille restent légères.
+    if (alongside) await this.db.$transaction(update)
+    else await update(this.db)
     const updated = await this.get(session.userId, session.id)
-    if (updated.status === 'completed') await this.onCompleted(updated)
+    if (updated.status === 'completed') await this.hooks.onCompleted?.(updated)
     return updated
   }
 }

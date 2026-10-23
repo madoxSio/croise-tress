@@ -28,6 +28,11 @@ export const ERROR_CODES = {
   rateLimited: 'rate_limited',
   internal: 'internal_error',
   mailUnavailable: 'mail_unavailable',
+  /** Indices gratuits épuisés : le client doit confirmer la dépense de Coumba points. */
+  hintLimitReached: 'hint_limit_reached',
+  insufficientPoints: 'insufficient_points',
+  /** Étape de parcours non débloquée (étape précédente non réussie, ou invité). */
+  stepLocked: 'step_locked',
 } as const
 
 /** En-tête porteur du jeton anti-CSRF pour toute requête mutante. */

@@ -19,13 +19,17 @@ import {
   favoriteListSchema,
   hintResponseSchema,
   historyResponseSchema,
+  pathDetailSchema,
+  pathListSchema,
   playSessionSchema,
+  pointTransactionPageSchema,
   publicPuzzleSchema,
   puzzleListSchema,
   resumeResponseSchema,
   sessionListSchema,
   sessionResponseSchema,
   statsSchema,
+  walletSchema,
 } from '@crossverse/contracts'
 import type {
   CheckBody,
@@ -34,12 +38,16 @@ import type {
   HintResponse,
   HistoryResponse,
   Difficulty,
+  PathDetail,
+  PathList,
+  PointTransactionPage,
   PlaySessionDto,
   PublicPuzzleDto,
   PuzzleList,
   ResumeResponse,
   SessionResponse,
   Stats,
+  WalletDto,
 } from '@crossverse/contracts'
 import { z } from 'zod'
 
@@ -387,6 +395,29 @@ export const api = {
   async deleteAccount(password: string): Promise<SessionResponse> {
     await request('DELETE', '/auth/account', noContentSchema, { body: { password } })
     return restartSession()
+  },
+
+  // --- Parcours et Coumba points ---
+
+  listPaths(): Promise<PathList> {
+    return request('GET', '/paths', pathListSchema)
+  },
+
+  getPath(slug: string): Promise<PathDetail> {
+    return request('GET', `/paths/${segment(slug)}`, pathDetailSchema)
+  },
+
+  /** Solde et règles (indices gratuits, coûts) ; `eligible` est faux pour un invité. */
+  getWallet(): Promise<WalletDto> {
+    return request('GET', '/me/wallet', walletSchema)
+  },
+
+  getWalletTransactions(cursor?: string): Promise<PointTransactionPage> {
+    return request(
+      'GET',
+      `/me/wallet/transactions${query({ limit: 20, cursor })}`,
+      pointTransactionPageSchema,
+    )
   },
 
   // --- Progression ---
