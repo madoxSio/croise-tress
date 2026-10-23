@@ -204,13 +204,18 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 | D7  | 2026-10-17 | Fuseau du défi quotidien : UTC (bascule à 00:00 UTC)                          | validée   |
 | D8  | 2026-10-20 | Production MVP : un serveur, Caddy (TLS, SPA, proxy) + API + PostgreSQL       | appliquée |
 | D9  | 2026-10-20 | Socket.IO en transports par défaut (polling puis WebSocket)                   | appliquée |
-| D10 | 2026-10-23 | Invité : solo seulement ; suivi (historique, stats, succès, favoris) = compte | demandée  |
+| D10 | 2026-10-23 | Admin : rôle relu en base, 404 aux non-admins, rôle donné en CLI seulement    | appliquée |
+| D11 | 2026-10-23 | Invité : solo seulement ; suivi (historique, stats, succès, favoris) = compte | demandée  |
 
 ### Notes sur D8 et D9
 
 - **D8** (`compose.prod.yml`, `docker/prod.Dockerfile`, `docker/Caddyfile`) : Caddy est l'unique point d'entrée (80/443, certificat Let's Encrypt automatique), sert le build statique et relaie `/api` et `/ws` vers l'API ; PostgreSQL et l'API ne sont pas publiés. Les migrations sont appliquées au démarrage de l'API. La CSP du web est générée au build (`docker/csp.mjs`) avec les empreintes SHA-256 des scripts inline de Nuxt, sans `'unsafe-inline'` pour les scripts. L'API s'exécute avec `tsx` (pas d'étape de compilation) : coût au démarrage seulement, à remplacer par une compilation si la mesure le justifie. En production, la configuration refuse toute origine ou URL publique non HTTPS.
 - **D9** : le proxy de développement de Nuxt ne relaie pas l'upgrade WebSocket ; le client démarre donc en long polling puis passe en WebSocket quand le chemin le permet (vérifié derrière Caddy). Le long polling de même origine n'envoie pas d'en-tête `Origin` : la passerelle l'accepte seulement si `Sec-Fetch-Site` vaut `same-origin` (ou est absent, client non navigateur), et refuse toute origine hors liste blanche.
-- **D10** (demande de madox, 2026-10-23) : on joue sans compte (toutes les grilles solo, défi du jour, indices, reprise de la partie en cours), mais l'historique, les statistiques, les succès, les favoris et les duels exigent un compte. Côté API, garde `requireAccount` (403 `forbidden` pour un invité) sur `/me/history`, `/me/stats`, `/me/achievements` et `/me/favorites*` ; les duels exigeaient déjà un compte confirmé. Les parties jouées en invité restent en base et rejoignent le compte à la connexion ou à l'inscription. Expliqué aux joueurs sur `/comment-jouer#compte`.
+- **D11** (demande de madox, 2026-10-23) : on joue sans compte (toutes les grilles solo, défi du jour, indices, reprise de la partie en cours), mais l'historique, les statistiques, les succès, les favoris et les duels exigent un compte. Côté API, garde `requireAccount` (403 `forbidden` pour un invité) sur `/me/history`, `/me/stats`, `/me/achievements` et `/me/favorites*` ; les duels exigeaient déjà un compte confirmé. Les parties jouées en invité restent en base et rejoignent le compte à la connexion ou à l'inscription. Expliqué aux joueurs sur `/comment-jouer#compte`.
+
+### Note sur D10
+
+Module `apps/api/src/modules/admin` (routes → service, Prisma dans le service comme `play` et `progress`) : indicateurs, parcours des joueurs, catalogue (brouillon → publication), journal `audit_log` (migration `20261023201031_admin_audit`, auteur `ON DELETE SET NULL`). Le rôle n'est pas exposé dans `currentUser` (schéma strict partagé avec l'app mobile déjà distribuable : un champ de plus casserait les anciennes versions) ; le web interroge `GET /admin/me`. Une grille déjà jouée garde ses lettres (parties en cours et scores en dépendent). Détails : `docs/ADMIN.md`.
 
 ### Hébergement (2026-10-23)
 

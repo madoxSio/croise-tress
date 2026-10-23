@@ -9,7 +9,8 @@ EXEC_API := $(COMPOSE) exec -T api
 
 .PHONY: help init start stop restart logs ps migrate migration seed reset-db backup restore test lint \
 	typecheck check format install-local test-local lint-local typecheck-local check-local e2e e2e-local \
-	prod-check prod-up prod-pull prod-down prod-logs prod-ps prod-seed prod-backup mobile
+	prod-check prod-up prod-pull prod-down prod-logs prod-ps prod-seed prod-backup mobile \
+	account account-role account-local prod-account prod-account-role
 
 help: ## Affiche cette aide
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-16s %s\n", $$1, $$2}'
@@ -52,6 +53,25 @@ migration: ## Crée une migration à partir du schéma Prisma (make migration na
 
 seed: ## Charge les puzzles de démonstration (idempotent)
 	$(EXEC_API) pnpm --filter @crossverse/api db:seed
+
+# --- Comptes (test, équipe, administrateurs) ------------------------------------
+# Mot de passe : variable ACCOUNT_PASSWORD (jamais en argument), sinon généré et affiché une fois.
+ACCOUNT_ARGS = --email "$(email)" --username "$(username)" $(if $(admin),--admin)
+ROLE_CMD = $(if $(filter admin,$(role)),promote,demote)
+check-account = @test -n "$(email)" -a -n "$(username)" || { echo "Usage : make $@ email=<e-mail> username=<pseudo> [admin=1]"; exit 1; }
+check-role = @test -n "$(email)" -a -n "$(role)" || { echo "Usage : make $@ email=<e-mail> role=admin|player"; exit 1; }
+
+account: ## Crée un compte confirmé (make account email=… username=… [admin=1])
+	$(check-account)
+	$(COMPOSE) exec -T -e ACCOUNT_PASSWORD api pnpm --filter @crossverse/api account create $(ACCOUNT_ARGS)
+
+account-role: ## Donne ou retire le rôle admin (make account-role email=… role=admin|player)
+	$(check-role)
+	$(COMPOSE) exec -T api pnpm --filter @crossverse/api account $(ROLE_CMD) --email "$(email)"
+
+account-local: ## Comme `account`, sans Docker (base du .env)
+	$(check-account)
+	pnpm --filter @crossverse/api account create $(ACCOUNT_ARGS)
 
 reset-db: ## DESTRUCTIF : vide la base de développement puis migre et recharge la démo
 	@printf "Toutes les données de la base de développement seront supprimées. Taper 'oui' pour confirmer : "; \
@@ -148,6 +168,14 @@ prod-ps: ## État des services de production
 
 prod-seed: ## Charge les grilles de démonstration en production (idempotent)
 	$(PROD) exec -T api pnpm exec tsx prisma/seed.ts
+
+prod-account: ## Crée un compte confirmé en production (make prod-account email=… username=… [admin=1])
+	$(check-account)
+	$(PROD) exec -T -e ACCOUNT_PASSWORD api pnpm exec tsx scripts/account.ts create $(ACCOUNT_ARGS)
+
+prod-account-role: ## Rôle admin en production (make prod-account-role email=… role=admin|player)
+	$(check-role)
+	$(PROD) exec -T api pnpm exec tsx scripts/account.ts $(ROLE_CMD) --email "$(email)"
 
 prod-backup: ## Sauvegarde la base de production dans backups/
 	@mkdir -p backups

@@ -84,7 +84,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 
 - **Bug bloquant corrigé** : le proxy de dev Nuxt ne relaie pas l'upgrade WebSocket, donc les duels ne marchaient pas via `make start`. Le client démarre en long polling puis passe en WebSocket (D9). La passerelle accepte le polling de même origine (`Sec-Fetch-Site`) et refuse le reste (test `match.test.ts`).
 - **Faille corrigée** : la limite « 5 connexions / 15 min par adresse » était en réalité par IP, car le corps n'était pas encore lu. Elle est maintenant par adresse, avec un second plafond par IP (30 connexions / 15 min, 10 « mot de passe oublié » / h). Tests de non-régression ajoutés.
-- Connexion depuis un invité : parties, favoris et succès rejoignent le compte (test `auth.test.ts`). Depuis D10, l'invité n'a plus de favoris.
+- Connexion depuis un invité : parties, favoris et succès rejoignent le compte (test `auth.test.ts`). Depuis D11, l'invité n'a plus de favoris.
 - Production (D8) : `compose.prod.yml`, `docker/prod.Dockerfile`, Caddy (TLS automatique, SPA, proxy `/api` et `/ws`), CSP générée au build sans `unsafe-inline` pour les scripts, HTTPS imposé par la configuration, `make prod-check|prod-up|prod-down|prod-logs|prod-seed|prod-backup`, `make backup|restore`.
 - Preuve de la prod hors Docker : API en `NODE_ENV=production` derrière Caddy 2.10.2 (binaire officiel, somme SHA-512 vérifiée), en HTTPS. Dans Chromium : aucune violation CSP, cookie `__Host-` Secure, partie solo, puis duel complet à deux comptes, avec passage en WebSocket (`wss://…/ws`).
 - Suite Playwright versionnée (`apps/e2e`, Playwright 1.56.1) : solo, compte, duel, sécurité, accessibilité, en mobile et en bureau. `make e2e-local` → **15 passed (44 s)**. Les e-mails sont lus via l'API de Mailpit, ou par un faux Mailpit en local.
@@ -98,13 +98,21 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - CI/CD : ✅ CI (lint, types, tests, E2E, audit, gitleaks) et images GHCR exécutées et vertes sur GitHub (2026-10-22). 🟡 Déploiements Render + Vercel (provisoire), VPS (`deploy-vps`, `docs/deploy/vps-bootstrap.sh`) et TestFlight écrits, jamais exécutés. Voir `docs/deploy/README.md`.
 - App mobile Expo (`apps/mobile`) : ajoutée par un autre fil. Son authentification native par jeton (validée par madox) attend son intégration dans l'API.
 
+### 2026-10-23 — Espace d'administration et comptes de test ✅ (hors Docker)
+
+- API `/admin/*` : indicateurs (comptes, actifs, parties, duels, grilles, 30 jours), liste et parcours des joueurs, grilles (brouillon, édition validée par le moteur, lettres figées après la première partie, publication), journal d'audit (dont chaque consultation d'un parcours). Garde de rôle relue en base, 404 aux non-administrateurs. Guide : [ADMIN.md](ADMIN.md).
+- Web `/admin` : vue d'ensemble, joueurs, parcours, grilles et éditeur (un champ par mot, aperçu), journal ; lien depuis « Mon compte » pour un administrateur.
+- Script `apps/api/scripts/account.ts` (`make account-local`, `account`, `prod-account`, `*-role`) : compte confirmé, mot de passe lu dans `ACCOUNT_PASSWORD` ou généré et affiché une fois.
+- Moteur : `gridSlots` (mots d'une grille, pour l'éditeur).
+- Preuves : `admin.test.ts` (10 tests), 2 tests `gridSlots` ; parcours réel dans Chromium contre API et web locaux (joueur → « Page introuvable », administrateur : vue d'ensemble, création puis publication d'une grille, parcours joueur, journal ; aucun débordement à 320 px). `make account-local` exécuté (mot de passe fourni et généré, refus d'un compte inconnu). Cibles Docker non exécutées.
+
 ### 2026-10-23 — Refonte visuelle, landing page, mascotte Sougoudou ✅
 
 - Identité : palette violet / corail / citron (thèmes clair et sombre, contraste élevé inchangé), Inter et Bricolage Grotesque auto-hébergées (Fontsource, OFL, `font-src 'self'`), fond d'ambiance, en-tête et barre d'onglets mobile « verre » avec icônes. Sources dans `docs/brand/`.
 - Mascotte **Sougoudou** (`SougoudouMascot.vue`, SVG animé, décoratif) et sa phrase (`utils/mascot.ts`) sur l'accueil web et mobile.
 - Accueil transformé en landing page : héros animé, défi du jour, trois modes, démonstration de grille animée (`HowToDemo.vue`), comparatif sans compte / avec compte. Nouvelle page `/comment-jouer` (règles, commandes, aides, duel, comparatif, FAQ). Apparitions au défilement (`v-reveal`) neutralisées par la réduction des animations.
 - Icône d'application : `favicon.svg`, `apple-touch-icon.png`, `icon-192/512.png` ; icônes iOS/Android et écran de démarrage de l'app mobile régénérés (`docs/brand/render-icons.mjs`).
-- Invité limité au solo (D10) : API `requireAccount`, encart `AccountRequired` sur `/history`, favoris masqués pour l'invité, onglet Compte mobile sans appel refusé. Correctif : `PuzzleCard` affichait le bouton favori sans favoris chargés (booléen absent converti en `false`).
+- Invité limité au solo (D11) : API `requireAccount`, encart `AccountRequired` sur `/history`, favoris masqués pour l'invité, onglet Compte mobile sans appel refusé. Correctif : `PuzzleCard` affichait le bouton favori sans favoris chargés (booléen absent converti en `false`).
 - Vérifié : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 52, web 60, mobile 37, api 109), E2E locaux 15/15 (dont build statique), captures mobile / tablette / bureau en clair et sombre.
 
 ## Points ouverts (repérés pendant la construction)
@@ -114,6 +122,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Sessions sans libellé d'appareil ; favoris plafonnés à 100.
 - E2E non branchés dans la CI ; limites d'inscription (5/h par IP, en mémoire) : redémarrer l'API entre deux exécutions E2E.
 - Limites de débit en mémoire : remises à zéro au redémarrage, et une seule instance.
+- Admin : pas de MFA (T17), pas de modération des pseudos ni d'export/suppression RGPD par l'administrateur, durée de conservation de `audit_log` à fixer ; série « inscriptions » datée par la confirmation d'e-mail (décalée par un changement d'adresse).
 
 ## Couverture du plan de tests de sécurité
 
@@ -129,7 +138,7 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 | CSRF-03 (aucun GET mutant)         | 🟡   | revue manuelle ; `GET /daily` écrit l'attribution du jour (idempotente, sans donnée utilisateur)                                                                           |
 | AUTHZ-01, AUTHZ-04                 | ✅   | `play.test.ts`, `auth.test.ts`                                                                                                                                             |
 | AUTHZ-02                           | 🟡   | sessions et historique testés ; favoris et préférences filtrés par construction, sans test croisé                                                                          |
-| AUTHZ-03 (admin)                   | ⬜   | pas encore de routes admin                                                                                                                                                 |
+| AUTHZ-03 (admin)                   | ✅   | `admin.test.ts` : 404 pour invité, joueur et sans session sur les routes `/admin` ; rôle retiré → accès coupé et sessions fermées                                          |
 | SOL-01, SOL-03, SOL-04, SOL-05     | ✅   | `puzzles.test.ts`, `play.test.ts`                                                                                                                                          |
 | SOL-02 (bundle sans solution)      | ✅   | `apps/e2e/tests/security.spec.ts` (JS servi et build)                                                                                                                      |
 | VAL-01, VAL-04                     | ✅   | `session.test.ts`, `puzzles.test.ts`, `match.test.ts`                                                                                                                      |
@@ -144,13 +153,13 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 
 ## Dernière vérification complète
 
-2026-10-20 (soir), depuis la racine, Node 24.22.0, PostgreSQL 16.15 locale (hors Docker) :
+2026-10-23, depuis la racine, Node 24.22.0, PostgreSQL 16 locale (hors Docker) :
 
-| Commande         | Résultat réel                                                      |
-| ---------------- | ------------------------------------------------------------------ |
-| `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! » |
-| `pnpm typecheck` | 5 paquets « Done » (core, contracts, e2e, api, web)                |
-| `pnpm test`      | core 52/52, web 60/60, api 93/93 : **205 tests verts**             |
-| `make e2e-local` | **15 passed (44.0s)**, mobile et bureau, API et web réels          |
+| Commande         | Résultat réel                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------ |
+| `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                               |
+| `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                                |
+| `pnpm test`      | core 54/54, web 60/60, mobile 37/37, api 117/117 : **268 tests verts**                           |
+| `make e2e-local` | **13 passed, 2 skipped (45.4s)** : les 2 ignorés lisent le build statique, absent (pas de build) |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.

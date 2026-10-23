@@ -1,6 +1,13 @@
 export * from './types.js'
 export { normalizeAnswer, normalizeLetter } from './normalize.js'
-export { parsePuzzle, MIN_SIZE, MAX_SIZE, type PuzzleError, type PuzzleErrorCode } from './parse.js'
+export {
+  parsePuzzle,
+  gridSlots,
+  MIN_SIZE,
+  MAX_SIZE,
+  type PuzzleError,
+  type PuzzleErrorCode,
+} from './parse.js'
 export { toPublicPuzzle } from './public.js'
 export {
   createEmptyGrid,
