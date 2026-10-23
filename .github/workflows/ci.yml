@@ -66,3 +66,58 @@ jobs:
           # Avec la version par défaut de l'action, l'exception est ignorée et un scan complet de
           # l'historique (Run workflow) signale les jetons factices des tests.
           GITLEAKS_VERSION: 8.28.0
+
+  # Parcours Playwright (mobile et bureau) contre l'API et le web lancés sur le runner, avec la
+  # base seedée et le faux Mailpit de apps/e2e (E2E_SMTP_SINK). Le build statique du web est
+  # produit d'abord pour que SOL-02 contrôle aussi apps/web/.output/public.
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18.6-alpine
+        env:
+          POSTGRES_USER: crossverse
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: crossverse
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U crossverse -d crossverse"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://crossverse:ci-only-password@127.0.0.1:5432/crossverse
+      NODE_ENV: development
+      API_HOST: 127.0.0.1
+      API_PORT: 3001
+      WEB_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: 1025
+      LOG_LEVEL: warn
+      E2E_SMTP_SINK: '1'
+      E2E_START_SERVERS: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @crossverse/api db:generate
+      - run: pnpm --filter @crossverse/api db:migrate
+      - run: pnpm --filter @crossverse/api db:seed
+      - run: pnpm --filter @crossverse/web build
+      - run: pnpm --filter @crossverse/e2e exec playwright install --with-deps chromium
+      - run: pnpm e2e
+      - name: Rapport Playwright (échec)
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            apps/e2e/playwright-report/
+            apps/e2e/test-results/
+          retention-days: 7
