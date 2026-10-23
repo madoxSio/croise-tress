@@ -7,7 +7,7 @@ import {
 import type { FastifyInstance } from 'fastify'
 import { z } from 'zod'
 import { parseInput } from '../../http/errors.ts'
-import { requireAuth } from '../../plugins/auth.ts'
+import { requireAccount, requireAuth } from '../../plugins/auth.ts'
 import { toDto, type PlayService } from '../play/service.ts'
 import type { ProgressService } from './service.ts'
 
@@ -23,8 +23,9 @@ export function progressRoutes(
   play: PlayService,
   progress: ProgressService,
 ): void {
+  // Suivi réservé aux comptes ; la partie en cours (resume) reste accessible à l'invité.
   app.get('/me/history', async (request): Promise<HistoryResponse> => {
-    const auth = requireAuth(request)
+    const auth = requireAccount(request)
     const query = parseInput(historyQuerySchema, request.query)
     return play.history(auth.user.id, query.limit, query.cursor)
   })
@@ -37,25 +38,25 @@ export function progressRoutes(
     return { session: toDto(session), puzzle }
   })
 
-  app.get('/me/stats', async (request) => progress.stats(requireAuth(request).user.id))
+  app.get('/me/stats', async (request) => progress.stats(requireAccount(request).user.id))
 
   app.get('/me/achievements', async (request) => ({
-    items: await progress.achievements(requireAuth(request).user.id),
+    items: await progress.achievements(requireAccount(request).user.id),
   }))
 
   app.get('/me/favorites', async (request) => ({
-    items: await progress.favorites(requireAuth(request).user.id),
+    items: await progress.favorites(requireAccount(request).user.id),
   }))
 
   app.put('/me/favorites/:puzzleId', async (request, reply) => {
-    const auth = requireAuth(request)
+    const auth = requireAccount(request)
     const { puzzleId } = parseInput(puzzleParamsSchema, request.params)
     await progress.addFavorite(auth.user.id, puzzleId)
     return reply.code(204).send()
   })
 
   app.delete('/me/favorites/:puzzleId', async (request, reply) => {
-    const auth = requireAuth(request)
+    const auth = requireAccount(request)
     const { puzzleId } = parseInput(puzzleParamsSchema, request.params)
     await progress.removeFavorite(auth.user.id, puzzleId)
     return reply.code(204).send()

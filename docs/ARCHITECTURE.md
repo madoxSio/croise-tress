@@ -193,23 +193,25 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 
 ## 7. Décisions
 
-| #   | Date       | Décision                                                                     | Statut    |
-| --- | ---------- | ---------------------------------------------------------------------------- | --------- |
-| D1  | 2026-10-17 | Monolithe modulaire, monorepo pnpm (web, api, crossword-core, contracts)     | validée   |
-| D2  | 2026-10-17 | Nuxt en `ssr: false`                                                         | validée   |
-| D3  | 2026-10-17 | Sessions serveur opaques en cookie, même origine via reverse proxy           | validée   |
-| D4  | 2026-10-17 | Vérification des réponses solo côté serveur (pas de solution chez le client) | validée   |
-| D5  | 2026-10-17 | Prisma 7.x stable, Node 24 LTS, PostgreSQL 18                                | validée   |
-| D6  | 2026-10-17 | Format de duel : course sur la même grille, validation par mot               | validée   |
-| D7  | 2026-10-17 | Fuseau du défi quotidien : UTC (bascule à 00:00 UTC)                         | validée   |
-| D8  | 2026-10-20 | Production MVP : un serveur, Caddy (TLS, SPA, proxy) + API + PostgreSQL      | appliquée |
-| D9  | 2026-10-20 | Socket.IO en transports par défaut (polling puis WebSocket)                  | appliquée |
-| D10 | 2026-10-23 | Admin : rôle relu en base, 404 aux non-admins, rôle donné en CLI seulement   | appliquée |
+| #   | Date       | Décision                                                                      | Statut    |
+| --- | ---------- | ----------------------------------------------------------------------------- | --------- |
+| D1  | 2026-10-17 | Monolithe modulaire, monorepo pnpm (web, api, crossword-core, contracts)      | validée   |
+| D2  | 2026-10-17 | Nuxt en `ssr: false`                                                          | validée   |
+| D3  | 2026-10-17 | Sessions serveur opaques en cookie, même origine via reverse proxy            | validée   |
+| D4  | 2026-10-17 | Vérification des réponses solo côté serveur (pas de solution chez le client)  | validée   |
+| D5  | 2026-10-17 | Prisma 7.x stable, Node 24 LTS, PostgreSQL 18                                 | validée   |
+| D6  | 2026-10-17 | Format de duel : course sur la même grille, validation par mot                | validée   |
+| D7  | 2026-10-17 | Fuseau du défi quotidien : UTC (bascule à 00:00 UTC)                          | validée   |
+| D8  | 2026-10-20 | Production MVP : un serveur, Caddy (TLS, SPA, proxy) + API + PostgreSQL       | appliquée |
+| D9  | 2026-10-20 | Socket.IO en transports par défaut (polling puis WebSocket)                   | appliquée |
+| D10 | 2026-10-23 | Admin : rôle relu en base, 404 aux non-admins, rôle donné en CLI seulement    | appliquée |
+| D11 | 2026-10-23 | Invité : solo seulement ; suivi (historique, stats, succès, favoris) = compte | demandée  |
 
 ### Notes sur D8 et D9
 
 - **D8** (`compose.prod.yml`, `docker/prod.Dockerfile`, `docker/Caddyfile`) : Caddy est l'unique point d'entrée (80/443, certificat Let's Encrypt automatique), sert le build statique et relaie `/api` et `/ws` vers l'API ; PostgreSQL et l'API ne sont pas publiés. Les migrations sont appliquées au démarrage de l'API. La CSP du web est générée au build (`docker/csp.mjs`) avec les empreintes SHA-256 des scripts inline de Nuxt, sans `'unsafe-inline'` pour les scripts. L'API s'exécute avec `tsx` (pas d'étape de compilation) : coût au démarrage seulement, à remplacer par une compilation si la mesure le justifie. En production, la configuration refuse toute origine ou URL publique non HTTPS.
 - **D9** : le proxy de développement de Nuxt ne relaie pas l'upgrade WebSocket ; le client démarre donc en long polling puis passe en WebSocket quand le chemin le permet (vérifié derrière Caddy). Le long polling de même origine n'envoie pas d'en-tête `Origin` : la passerelle l'accepte seulement si `Sec-Fetch-Site` vaut `same-origin` (ou est absent, client non navigateur), et refuse toute origine hors liste blanche.
+- **D11** (demande de madox, 2026-10-23) : on joue sans compte (toutes les grilles solo, défi du jour, indices, reprise de la partie en cours), mais l'historique, les statistiques, les succès, les favoris et les duels exigent un compte. Côté API, garde `requireAccount` (403 `forbidden` pour un invité) sur `/me/history`, `/me/stats`, `/me/achievements` et `/me/favorites*` ; les duels exigeaient déjà un compte confirmé. Les parties jouées en invité restent en base et rejoignent le compte à la connexion ou à l'inscription. Expliqué aux joueurs sur `/comment-jouer#compte`.
 
 ### Note sur D10
 

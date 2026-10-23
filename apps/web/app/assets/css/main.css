@@ -15,6 +15,8 @@
   --color-accent: var(--cv-accent);
   --color-accent-fg: var(--cv-accent-fg);
   --color-accent-soft: var(--cv-accent-soft);
+  --color-accent-2: var(--cv-accent-2);
+  --color-highlight: var(--cv-highlight);
   --color-danger: var(--cv-danger);
   --color-danger-soft: var(--cv-danger-soft);
   --color-danger-fg: var(--cv-danger-fg);
@@ -26,59 +28,82 @@
   --color-cursor-fg: var(--cv-cursor-fg);
   --color-revealed: var(--cv-revealed);
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --radius-card: 1rem;
+    'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-display:
+    'Bricolage Grotesque Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --radius-card: 1.25rem;
+  --shadow-card: var(--cv-shadow-card);
+  --shadow-cta: var(--cv-shadow-cta);
 }
 
+/*
+ * Palette « Crossverse » : encre violette, accent violet électrique, corail et citron en
+ * touches décoratives (jamais porteurs d'information seuls). Contrastes texte ≥ 4.5:1
+ * vérifiés pour fg/muted sur bg et surface, et accent-fg sur accent.
+ */
 :root,
 [data-theme='minimal'] {
   color-scheme: light;
-  --cv-bg: #f6f6f3;
+  --cv-bg: #f7f6fb;
   --cv-surface: #ffffff;
-  --cv-surface-2: #efefeb;
-  --cv-fg: #17181c;
-  --cv-muted: #5c5f6a;
-  --cv-line: #d9d9d3;
-  --cv-accent: #2f4fd8;
+  --cv-surface-2: #efedf7;
+  --cv-fg: #16132a;
+  --cv-muted: #5b5873;
+  --cv-line: #e1ddf0;
+  --cv-accent: #5634f0;
   --cv-accent-fg: #ffffff;
-  --cv-accent-soft: #e3e8ff;
+  --cv-accent-soft: #ebe6ff;
+  --cv-accent-2: #ff5c39;
+  --cv-highlight: #c8f53c;
   --cv-danger: #b42318;
   --cv-danger-fg: #ffffff;
   --cv-danger-soft: #fde4e1;
   --cv-success: #17803d;
   --cv-cell: #ffffff;
-  --cv-block: #1d1e23;
-  --cv-word: #dfe6ff;
+  --cv-block: #16132a;
+  --cv-word: #e4ddff;
   --cv-cursor: #ffd84d;
-  --cv-cursor-fg: #17181c;
-  --cv-revealed: #6d3fc4;
+  --cv-cursor-fg: #16132a;
+  --cv-revealed: #b4237a;
   --cv-grid-border: 1px;
-  --cv-focus: #2f4fd8;
+  --cv-focus: #5634f0;
+  --cv-glow-1: rgb(86 52 240 / 0.16);
+  --cv-glow-2: rgb(255 92 57 / 0.12);
+  --cv-glow-3: rgb(200 245 60 / 0.16);
+  --cv-shadow-card: 0 1px 2px rgb(22 19 42 / 0.04), 0 8px 24px -12px rgb(22 19 42 / 0.12);
+  --cv-shadow-cta: 0 10px 24px -10px rgb(86 52 240 / 0.6);
 }
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --cv-bg: #111216;
-  --cv-surface: #1a1c22;
-  --cv-surface-2: #23262e;
-  --cv-fg: #ecedf1;
-  --cv-muted: #a3a7b3;
-  --cv-line: #343844;
-  --cv-accent: #8ea2ff;
-  --cv-accent-fg: #0d0f1a;
-  --cv-accent-soft: #262d4d;
+  --cv-bg: #0d0b17;
+  --cv-surface: #161323;
+  --cv-surface-2: #201c31;
+  --cv-fg: #f2f0fa;
+  --cv-muted: #aaa5c2;
+  --cv-line: #2d2843;
+  --cv-accent: #a291ff;
+  --cv-accent-fg: #0d0b17;
+  --cv-accent-soft: #2a2352;
+  --cv-accent-2: #ff7a5c;
+  --cv-highlight: #c8f53c;
   --cv-danger: #ff8a7d;
   --cv-danger-fg: #1a0b09;
   --cv-danger-soft: #4a1f1c;
   --cv-success: #6fd394;
-  --cv-cell: #20232b;
-  --cv-block: #05060a;
-  --cv-word: #2b3560;
-  --cv-cursor: #e7c13a;
-  --cv-cursor-fg: #111216;
-  --cv-revealed: #c8a6ff;
+  --cv-cell: #1b182a;
+  --cv-block: #05040a;
+  --cv-word: #2f2763;
+  --cv-cursor: #f2c94c;
+  --cv-cursor-fg: #0d0b17;
+  --cv-revealed: #ff8fc8;
   --cv-grid-border: 1px;
-  --cv-focus: #8ea2ff;
+  --cv-focus: #a291ff;
+  --cv-glow-1: rgb(130 108 255 / 0.22);
+  --cv-glow-2: rgb(255 122 92 / 0.12);
+  --cv-glow-3: rgb(200 245 60 / 0.07);
+  --cv-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+  --cv-shadow-cta: 0 10px 28px -10px rgb(162 145 255 / 0.55);
 }
 
 [data-theme='contrast'] {
@@ -92,6 +117,8 @@
   --cv-accent: #0000c8;
   --cv-accent-fg: #ffffff;
   --cv-accent-soft: #ffffff;
+  --cv-accent-2: #000000;
+  --cv-highlight: #ffe600;
   --cv-danger: #b00000;
   --cv-danger-fg: #ffffff;
   --cv-danger-soft: #ffffff;
@@ -104,32 +131,43 @@
   --cv-revealed: #5a00b4;
   --cv-grid-border: 2px;
   --cv-focus: #000000;
+  --cv-glow-1: transparent;
+  --cv-glow-2: transparent;
+  --cv-glow-3: transparent;
+  --cv-shadow-card: none;
+  --cv-shadow-cta: none;
 }
 
-/* Thème automatique : sombre si l'appareil le demande, minimal sinon (valeurs de :root). */
+/* Thème automatique : sombre si l'appareil le demande, clair sinon (valeurs de :root). */
 @media (prefers-color-scheme: dark) {
   [data-theme='auto'] {
     color-scheme: dark;
-    --cv-bg: #111216;
-    --cv-surface: #1a1c22;
-    --cv-surface-2: #23262e;
-    --cv-fg: #ecedf1;
-    --cv-muted: #a3a7b3;
-    --cv-line: #343844;
-    --cv-accent: #8ea2ff;
-    --cv-accent-fg: #0d0f1a;
-    --cv-accent-soft: #262d4d;
+    --cv-bg: #0d0b17;
+    --cv-surface: #161323;
+    --cv-surface-2: #201c31;
+    --cv-fg: #f2f0fa;
+    --cv-muted: #aaa5c2;
+    --cv-line: #2d2843;
+    --cv-accent: #a291ff;
+    --cv-accent-fg: #0d0b17;
+    --cv-accent-soft: #2a2352;
+    --cv-accent-2: #ff7a5c;
     --cv-danger: #ff8a7d;
     --cv-danger-fg: #1a0b09;
     --cv-danger-soft: #4a1f1c;
     --cv-success: #6fd394;
-    --cv-cell: #20232b;
-    --cv-block: #05060a;
-    --cv-word: #2b3560;
-    --cv-cursor: #e7c13a;
-    --cv-cursor-fg: #111216;
-    --cv-revealed: #c8a6ff;
-    --cv-focus: #8ea2ff;
+    --cv-cell: #1b182a;
+    --cv-block: #05040a;
+    --cv-word: #2f2763;
+    --cv-cursor: #f2c94c;
+    --cv-cursor-fg: #0d0b17;
+    --cv-revealed: #ff8fc8;
+    --cv-focus: #a291ff;
+    --cv-glow-1: rgb(130 108 255 / 0.22);
+    --cv-glow-2: rgb(255 122 92 / 0.12);
+    --cv-glow-3: rgb(200 245 60 / 0.07);
+    --cv-shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+    --cv-shadow-cta: 0 10px 28px -10px rgb(162 145 255 / 0.55);
   }
 }
 
@@ -145,7 +183,23 @@ body {
   background: var(--cv-bg);
   color: var(--cv-fg);
   font-family: var(--font-sans);
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Titres : police d'affichage, approche resserrée. */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: var(--cv-accent-soft);
+  color: var(--cv-fg);
 }
 
 :focus-visible {
@@ -191,4 +245,113 @@ body {
 
 dialog::backdrop {
   background: rgb(0 0 0 / 0.45);
+}
+
+/* ——— Fond d'ambiance : halos flous fixes derrière le contenu (décoratifs). ——— */
+.cv-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(40rem 28rem at 12% -6%, var(--cv-glow-1), transparent 70%),
+    radial-gradient(34rem 24rem at 100% 8%, var(--cv-glow-2), transparent 70%),
+    radial-gradient(36rem 26rem at 50% 110%, var(--cv-glow-3), transparent 70%);
+}
+
+/* Trame de grille très légère, rappel des mots croisés. */
+.cv-backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--cv-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--cv-line) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.35;
+  mask-image: radial-gradient(ellipse 80% 55% at 50% 0%, #000 30%, transparent 75%);
+}
+
+[data-theme='contrast'] .cv-backdrop {
+  display: none;
+}
+
+/* Texte en dégradé (titres de la landing). Couleur pleine en contraste élevé. */
+.cv-gradient-text {
+  background: linear-gradient(100deg, var(--cv-accent) 10%, var(--cv-accent-2) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+[data-theme='contrast'] .cv-gradient-text {
+  background: none;
+  color: var(--cv-accent);
+}
+
+/* ——— Animations ——— */
+@keyframes cv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cv-rise {
+  animation: cv-rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--cv-delay, 0ms);
+}
+
+@keyframes cv-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--cv-rotate, 0deg));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--cv-rotate, 0deg));
+  }
+}
+
+.cv-float {
+  animation: cv-float var(--cv-duration, 5s) ease-in-out infinite;
+  animation-delay: var(--cv-delay, 0ms);
+}
+
+/* Apparition au défilement (directive v-reveal) : sans JS ni observateur, tout reste visible. */
+.cv-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 700ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--cv-delay, 0ms);
+}
+
+.cv-reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+[data-motion='reduced'] .cv-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Carte « verre » : surface translucide floutée. */
+.cv-glass {
+  background: color-mix(in srgb, var(--cv-surface) 78%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
 }

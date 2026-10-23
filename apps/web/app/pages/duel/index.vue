@@ -162,7 +162,7 @@ const resultLabels = { win: 'Victoire', loss: 'Défaite', draw: 'Égalité' } as
           </p>
           <button
             type="button"
-            class="bg-fg text-bg mt-4 inline-flex min-h-11 items-center rounded-full px-5 font-semibold disabled:opacity-60"
+            class="bg-accent text-accent-fg shadow-cta mt-4 inline-flex min-h-11 items-center rounded-full px-5 font-semibold disabled:opacity-60"
             :disabled="status !== 'connected' || busy || queue !== 'idle'"
             @click="match.createInvite"
           >
@@ -195,7 +195,7 @@ const resultLabels = { win: 'Victoire', loss: 'Défaite', draw: 'Égalité' } as
           </div>
           <button
             type="submit"
-            class="bg-fg text-bg inline-flex min-h-11 items-center rounded-full px-5 font-semibold disabled:opacity-60"
+            class="bg-accent text-accent-fg shadow-cta inline-flex min-h-11 items-center rounded-full px-5 font-semibold disabled:opacity-60"
             :disabled="status !== 'connected' || busy || queue !== 'idle' || code.trim() === ''"
           >
             Rejoindre

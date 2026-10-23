@@ -253,7 +253,6 @@ describe('connexion (AUTH-04, SESS-02)', () => {
       revision: session.revision,
     })
     await guest.request('POST', '/api/v1/play-sessions', { puzzleId: salon })
-    await guest.request('PUT', `/api/v1/me/favorites/${table}`)
 
     const res = await guest.request('POST', '/api/v1/auth/login', {
       email: 'alice@example.com',
