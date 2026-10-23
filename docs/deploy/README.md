@@ -1,8 +1,9 @@
 # Déploiement de Crossverse
 
-> État au 2026-10-23 : CI et publication des images GHCR **exécutées et vertes** sur `main`. Le
-> déploiement sur le VPS est écrit (`actionlint`, `shellcheck`) mais **jamais exécuté** : il
-> attend le serveur. Les étapes marquées 👤 sont à faire par le porteur du projet.
+> État au 2026-10-23 : CI et publication des images GHCR **exécutées et vertes** sur `main`. Les
+> déploiements (Render + Vercel en provisoire, VPS ensuite) sont écrits (`actionlint`,
+> `shellcheck`) mais **jamais exécutés**. Les étapes marquées 👤 sont à faire par le porteur du
+> projet.
 
 ## Vue d'ensemble
 
@@ -12,19 +13,79 @@ push sur main     ──► release.yml
                        ├─ ci          (ci.yml)
                        ├─ images      ghcr.io/madoxsio/crossverse-api et crossverse-web
                        │              tags : sha-<commit>, latest, X.Y.Z (sur tag vX.Y.Z)
+                       ├─ deploy-api  Render tire crossverse-api:sha-<commit>   (si API_PUBLIC_URL)
+                       ├─ deploy-web  build Nuxt → Vercel (statique)             (si VERCEL_PROJECT_ID)
                        └─ deploy-vps  SSH → git checkout <commit> → make prod-pull  (si VPS_HOST)
 tag mobile-vX.Y.Z ──► mobile.yml ── ci ── EAS Build (iOS) ── EAS Submit ──► TestFlight
 ```
 
-| Fichier                                | Rôle                                                  |
-| -------------------------------------- | ----------------------------------------------------- |
-| `.github/workflows/ci.yml`             | Contrôles qualité (PR, et appelé par les deux autres) |
-| `.github/workflows/release.yml`        | Images GHCR + déploiement sur le VPS                  |
-| `.github/workflows/mobile.yml`         | Build iOS signé et envoi TestFlight                   |
-| [vps-bootstrap.sh](vps-bootstrap.sh)   | Préparation unique d'un VPS Ubuntu 24.04              |
-| [IOS-TESTFLIGHT.md](IOS-TESTFLIGHT.md) | Pas à pas Apple, Expo, TestFlight puis App Store      |
+| Fichier                                | Rôle                                                    |
+| -------------------------------------- | ------------------------------------------------------- |
+| `.github/workflows/ci.yml`             | Contrôles qualité (PR, et appelé par les deux autres)   |
+| `.github/workflows/release.yml`        | Images GHCR + déploiements Render, Vercel, VPS          |
+| `.github/scripts/vercel-config.mjs`    | `vercel.json` : relais `/api` et `/ws` vers Render, CSP |
+| `.github/workflows/mobile.yml`         | Build iOS signé et envoi TestFlight                     |
+| [vps-bootstrap.sh](vps-bootstrap.sh)   | Préparation unique d'un VPS Ubuntu 24.04                |
+| [IOS-TESTFLIGHT.md](IOS-TESTFLIGHT.md) | Pas à pas Apple, Expo, TestFlight puis App Store        |
 
-## Hébergement : un VPS
+## Provisoire : Render (API) + Vercel (web) + Neon (base)
+
+Vercel n'héberge que le web statique : ses fonctions serverless ne gardent ni WebSocket ni
+processus long. L'API tourne sur Render à partir de l'image GHCR, la base sur Neon. Le
+`vercel.json` généré par la CI relaie `/api` et `/ws` vers Render : le navigateur reste sur
+l'origine Vercel (cookie et CSP inchangés). Limite : Vercel ne relaie pas l'upgrade WebSocket,
+les duels web passent en long polling. L'app iOS appelle Render directement.
+
+1. 👤 **Neon** (neon.tech, connexion GitHub) : projet en région Frankfurt ; copier la chaîne de
+   connexion **directe** (sans `-pooler`), avec `?sslmode=require`.
+2. 👤 **Brevo** : compte, adresse d'envoi vérifiée, identifiants SMTP.
+3. 👤 **Vercel** : Add New → Project → importer `madoxSio/croise-tress`, puis Settings → Git →
+   **Disconnect** (c'est la CI qui construit et envoie ; un build Vercel n'aurait pas les
+   relais vers l'API). Noter l'URL `https://<projet>.vercel.app`, l'ID d'équipe et l'ID du projet
+   (Settings → General), et créer un jeton (Account Settings → Tokens).
+4. 👤 **Render** : New → Web Service → **Existing Image** →
+   `ghcr.io/madoxsio/crossverse-api:latest` (image publique, aucun identifiant), région
+   Frankfurt, offre Starter (l'offre gratuite s'endort après 15 min), port 3001, health check
+   `/api/v1/health`. Variables d'environnement :
+
+   ```sh
+   NODE_ENV=production
+   API_HOST=0.0.0.0
+   API_PORT=3001
+   DATABASE_URL=<chaîne Neon directe>
+   WEB_ORIGINS=https://<projet>.vercel.app
+   WEB_BASE_URL=https://<projet>.vercel.app
+   # Vercel puis le proxy de Render : 2 sauts. Un client qui appelle Render en direct peut
+   # falsifier X-Forwarded-For : risque accepté en provisoire, absent sur le VPS (1 saut, Caddy).
+   TRUST_PROXY=2
+   LOG_LEVEL=info
+   SMTP_HOST=smtp-relay.brevo.com
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=<identifiant Brevo>
+   SMTP_PASSWORD=<clé SMTP Brevo>
+   MAIL_FROM=Crossverse <adresse vérifiée chez Brevo>
+   ```
+
+   Puis Settings → **Deploy Hook** : copier l'URL.
+
+5. 👤 **GitHub** (Settings → Secrets and variables → Actions) :
+
+   | Type     | Nom                      | Valeur                           |
+   | -------- | ------------------------ | -------------------------------- |
+   | Secret   | `RENDER_DEPLOY_HOOK_URL` | Deploy Hook de Render            |
+   | Secret   | `VERCEL_TOKEN`           | jeton Vercel                     |
+   | Variable | `API_PUBLIC_URL`         | `https://<service>.onrender.com` |
+   | Variable | `WEB_PUBLIC_URL`         | `https://<projet>.vercel.app`    |
+   | Variable | `VERCEL_ORG_ID`          | ID d'équipe Vercel               |
+   | Variable | `VERCEL_PROJECT_ID`      | ID du projet Vercel              |
+
+6. Actions → Release → **Run workflow** sur `main` : images, puis Render, puis Vercel.
+
+Au passage au VPS : supprimer `API_PUBLIC_URL` et `VERCEL_PROJECT_ID` (les deux jobs
+s'arrêtent), exporter la base Neon (`pg_dump`) et l'importer sur le VPS.
+
+## Cible : un VPS
 
 Tout tourne sur une machine avec `compose.prod.yml` : Caddy (TLS Let's Encrypt automatique,
 SPA, relais `/api` et `/ws`), l'API et PostgreSQL (jamais exposé). Les images viennent de GHCR,

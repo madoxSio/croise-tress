@@ -212,4 +212,4 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 
 ### Hébergement (2026-10-23)
 
-La cible D8 est retenue dès maintenant : un VPS DigitalOcean (crédit GitHub Student) avec Caddy, l'API et PostgreSQL via `compose.prod.yml`, images tirées de GHCR et déployées par `release.yml` (SSH, `make prod-pull`). L'hébergement provisoire Vercel + Render + Neon envisagé le 2026-10-20 est abandonné : il imposait le long polling aux duels web et une API joignable hors du proxy. Guide : `docs/deploy/README.md`.
+Cible D8 : un VPS (DigitalOcean, crédit GitHub Student) avec Caddy, l'API et PostgreSQL via `compose.prod.yml`, images tirées de GHCR et déployées par `release.yml` (SSH, `make prod-pull`). En attendant, hébergement provisoire : web sur Vercel, API sur Render (image GHCR), base sur Neon. Ce provisoire impose le long polling aux duels web (Vercel ne relaie pas l'upgrade WebSocket, D9) et laisse l'API joignable hors du proxy : `TRUST_PROXY=2` y est un compromis accepté jusqu'au VPS. Guide : `docs/deploy/README.md`.

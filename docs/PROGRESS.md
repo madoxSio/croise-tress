@@ -95,7 +95,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 
 - `TRUST_PROXY` accepte un nombre de sauts (1 à 5) : seul ce nombre de proxys est cru dans `X-Forwarded-For`, un en-tête forgé par le client ne contourne plus les limites par IP. `compose.prod.yml` passe à `1` (Caddy seul). Test `production.test.ts`.
 - `compose.prod.yml` tire les images GHCR publiées par la CI (`CROSSVERSE_VERSION`, retour arrière par `sha-<commit>`), `make prod-pull` ; `make prod-up` reconstruit toujours en local.
-- CI/CD : ✅ CI (lint, types, tests, E2E, audit, gitleaks) et images GHCR exécutées et vertes sur GitHub (2026-10-22). 🟡 Déploiement VPS (`deploy-vps`, `docs/deploy/vps-bootstrap.sh`) et TestFlight écrits, jamais exécutés. Voir `docs/deploy/README.md`.
+- CI/CD : ✅ CI (lint, types, tests, E2E, audit, gitleaks) et images GHCR exécutées et vertes sur GitHub (2026-10-22). 🟡 Déploiements Render + Vercel (provisoire), VPS (`deploy-vps`, `docs/deploy/vps-bootstrap.sh`) et TestFlight écrits, jamais exécutés. Voir `docs/deploy/README.md`.
 - App mobile Expo (`apps/mobile`) : ajoutée par un autre fil. Son authentification native par jeton (validée par madox) attend son intégration dans l'API.
 
 ## Points ouverts (repérés pendant la construction)

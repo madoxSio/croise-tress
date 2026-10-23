@@ -1,6 +1,9 @@
 # Livraison continue : à chaque push sur main (ou tag vX.Y.Z), la CI complète tourne, puis les
-# images `api` et `web` sont publiées sur GitHub Container Registry (GHCR) et déployées sur le
-# VPS. Sans les variables VPS_*, le workflow s'arrête après la publication des images.
+# images `api` et `web` sont publiées sur GitHub Container Registry (GHCR) et déployées :
+# - hébergement provisoire : API sur Render (image GHCR) et web sur Vercel, si API_PUBLIC_URL
+#   et VERCEL_PROJECT_ID sont définies ;
+# - cible finale : le VPS, si VPS_HOST est définie.
+# Sans ces variables, le workflow s'arrête après la publication des images.
 # Guide : docs/deploy/README.md.
 name: Release
 
@@ -79,7 +82,7 @@ jobs:
             echo
             echo "Digest : \`${DIGEST}\`"
             echo
-            echo "$TAGS" | sed 's/^/- /'
+            while read -r tag; do echo "- ${tag}"; done <<< "$TAGS"
           } >> "$GITHUB_STEP_SUMMARY"
 
   # Production sur le VPS : le serveur récupère compose.prod.yml et le Makefile du commit, puis
@@ -120,3 +123,70 @@ jobs:
              CROSSVERSE_VERSION='sha-${SHA}' make prod-pull"
       - name: Vérifier l'API publique
         run: curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "https://${DOMAIN}/api/v1/health"
+
+  # API provisoire sur Render : service « Existing image » qui tire l'image GHCR. Le hook de
+  # déploiement (secret) reçoit le tag immuable sha-<commit> construit ci-dessus, jamais `latest`.
+  deploy-api:
+    needs: images
+    if: vars.API_PUBLIC_URL != '' && github.ref_type == 'branch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production-api
+      url: ${{ vars.API_PUBLIC_URL }}
+    steps:
+      - name: Déclencher le déploiement Render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          IMAGE: ghcr.io/${{ github.repository_owner }}/crossverse-api:sha-${{ github.sha }}
+        run: |
+          test -n "$HOOK" || { echo "::error::secret RENDER_DEPLOY_HOOK_URL manquant"; exit 1; }
+          image="$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')"
+          curl -fsS -X POST --get "$HOOK" --data-urlencode "imgURL=${image}" -o /dev/null
+      - name: Attendre que l'API réponde
+        env:
+          API: ${{ vars.API_PUBLIC_URL }}
+        # Render remplace l'instance sans coupure : ce contrôle confirme que l'API publique est
+        # saine, pas que la nouvelle version est déjà en ligne (suivi dans le tableau de bord).
+        run: |
+          sleep 30
+          for _ in $(seq 1 60); do
+            if curl -fsS --max-time 5 "${API%/}/api/v1/health" -o /dev/null; then exit 0; fi
+            sleep 10
+          done
+          echo "::error::${API}/api/v1/health ne répond pas après 10 minutes"
+          exit 1
+
+  # Web provisoire sur Vercel : le build statique de la CI est envoyé tel quel (aucun build
+  # côté Vercel), avec un vercel.json qui relaie /api et /ws vers l'API.
+  deploy-web:
+    needs: [images, deploy-api]
+    if: vars.VERCEL_PROJECT_ID != '' && vars.API_PUBLIC_URL != '' && github.ref_type == 'branch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment:
+      name: production-web
+      url: ${{ vars.WEB_PUBLIC_URL }}
+    env:
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --filter @crossverse/web...
+      - run: pnpm --filter @crossverse/web build
+      - run: node .github/scripts/vercel-config.mjs apps/web/.output/public "$API"
+        env:
+          API: ${{ vars.API_PUBLIC_URL }}
+      - name: Déployer sur Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          test -n "$VERCEL_TOKEN" || { echo "::error::secret VERCEL_TOKEN manquant"; exit 1; }
+          npx --yes vercel@62.2.0 deploy apps/web/.output/public --prod --yes --token "$VERCEL_TOKEN"
