@@ -10,6 +10,12 @@ const route = useRoute()
 const { check } = useAdmin()
 const detail = ref<AdminUserDetail | null>(null)
 const error = ref<string | null>(null)
+const notice = ref<string | null>(null)
+
+async function onChanged(message: string): Promise<void> {
+  await load()
+  notice.value = message
+}
 
 async function load(): Promise<void> {
   error.value = null
@@ -78,6 +84,7 @@ const stats = computed(() => {
         <p>
           <strong>{{ detail.user.email ?? 'Invité, sans e-mail' }}</strong>
           <span v-if="detail.user.role === 'admin'"> · administrateur</span>
+          <span v-if="detail.user.suspended" class="text-danger font-semibold"> · suspendu</span>
         </p>
         <p class="text-muted">
           {{ detail.user.emailVerified ? 'E-mail confirmé' : 'E-mail non confirmé' }} · créé le
@@ -88,6 +95,9 @@ const stats = computed(() => {
           Consultation enregistrée dans le journal d'administration.
         </p>
       </section>
+
+      <p v-if="notice" role="status" class="text-success text-sm font-semibold">{{ notice }}</p>
+      <AdminUserActions :detail="detail" @changed="onChanged" />
 
       <ul class="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <li

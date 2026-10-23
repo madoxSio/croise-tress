@@ -288,3 +288,140 @@ describe('comptes en ligne de commande', () => {
     await expect(setRole(ctx.db, 'nobody@example.com', true)).rejects.toThrow(AccountError)
   })
 })
+
+describe('gestion des comptes par l’administrateur', () => {
+  async function bobId(): Promise<string> {
+    return (await ctx.db.user.findFirstOrThrow({ where: { username: 'bob' } })).id
+  }
+
+  it('suspend : sessions coupées, connexion refusée, puis réactivation', async () => {
+    const admin = await adminClient()
+    const player = await playerClient()
+    const id = await bobId()
+
+    const res = await admin.request('POST', `/api/v1/admin/users/${id}/suspend`, {
+      reason: 'Pseudo injurieux',
+    })
+    expect(res.statusCode).toBe(204)
+    // La session ouverte du joueur ne vaut plus rien, y compris pour une requête mutante.
+    expect((await player.request('GET', '/api/v1/session')).json()).toMatchObject({ user: null })
+    const relogin = await new Client(ctx.app)
+      .guest()
+      .then((c) =>
+        c.request('POST', '/api/v1/auth/login', { email: 'bob@example.com', password: PASSWORD }),
+      )
+    expect(relogin.statusCode).toBe(403)
+    expect(relogin.json()).toMatchObject({ error: { code: 'account_suspended' } })
+    // Un mauvais mot de passe ne révèle pas la suspension.
+    const wrong = await new Client(ctx.app).guest().then((c) =>
+      c.request('POST', '/api/v1/auth/login', {
+        email: 'bob@example.com',
+        password: 'mauvais mot de passe',
+      }),
+    )
+    expect(wrong.statusCode).toBe(401)
+
+    const detail = (await admin.request('GET', `/api/v1/admin/users/${id}`)).json<{
+      user: { suspended: boolean }
+      suspension: { reason: string | null } | null
+    }>()
+    expect(detail.user.suspended).toBe(true)
+    expect(detail.suspension?.reason).toBe('Pseudo injurieux')
+    const filtered = (await admin.request('GET', '/api/v1/admin/users?suspended=true')).json<{
+      items: { username: string }[]
+    }>()
+    expect(filtered.items.map((u) => u.username)).toEqual(['bob'])
+
+    expect((await admin.request('POST', `/api/v1/admin/users/${id}/reactivate`)).statusCode).toBe(
+      204,
+    )
+    await login('bob@example.com')
+    const actions = (await ctx.db.auditLog.findMany()).map((entry) => entry.action)
+    expect(actions).toEqual(expect.arrayContaining(['user.suspend', 'user.reactivate']))
+  })
+
+  it('ferme toutes les sessions d’un joueur', async () => {
+    const admin = await adminClient()
+    const player = await playerClient()
+    const res = await admin.request('POST', `/api/v1/admin/users/${await bobId()}/revoke-sessions`)
+    expect(res.statusCode).toBe(204)
+    expect((await player.request('GET', '/api/v1/session')).json()).toMatchObject({ user: null })
+    await login('bob@example.com')
+  })
+
+  it('refuse d’agir sur soi-même, sur un autre admin ou sur un invité', async () => {
+    const admin = await adminClient()
+    const self = await ctx.db.user.findFirstOrThrow({ where: { username: 'madmin' } })
+    expect((await admin.request('POST', `/api/v1/admin/users/${self.id}/suspend`)).statusCode).toBe(
+      403,
+    )
+    const other = await createAccount(ctx.db, {
+      email: 'admin2@example.com',
+      username: 'admin2',
+      password: PASSWORD,
+      admin: true,
+    })
+    expect(
+      (await admin.request('POST', `/api/v1/admin/users/${other.id}/suspend`)).statusCode,
+    ).toBe(403)
+    await new Client(ctx.app).guest()
+    const guest = await ctx.db.user.findFirstOrThrow({ where: { passwordHash: null } })
+    expect(
+      (await admin.request('POST', `/api/v1/admin/users/${guest.id}/revoke-sessions`)).statusCode,
+    ).toBe(403)
+  })
+
+  it('un joueur ne peut appeler aucune action de gestion', async () => {
+    await adminClient()
+    const player = await playerClient()
+    const target = await ctx.db.user.findFirstOrThrow({ where: { username: 'madmin' } })
+    for (const action of ['suspend', 'reactivate', 'revoke-sessions']) {
+      const res = await player.request('POST', `/api/v1/admin/users/${target.id}/${action}`)
+      expect(res.statusCode).toBe(404)
+    }
+    const created = await player.request('POST', '/api/v1/admin/users', {
+      email: 'x@example.com',
+      username: 'xxx',
+    })
+    expect(created.statusCode).toBe(404)
+    expect(
+      (await ctx.db.user.findFirstOrThrow({ where: { username: 'madmin' } })).suspendedAt,
+    ).toBeNull()
+  })
+
+  it('crée un compte confirmé et envoie le lien de choix du mot de passe', async () => {
+    const admin = await adminClient()
+    ctx.mailer.sent.length = 0
+    const res = await admin.request('POST', '/api/v1/admin/users', {
+      email: 'nouveau@example.com',
+      username: 'nouveau',
+    })
+    expect(res.statusCode).toBe(201)
+    expect(res.json()).toMatchObject({
+      user: { username: 'nouveau', role: 'player', emailVerified: true, suspended: false },
+      passwordEmailSent: true,
+    })
+    expect(ctx.mailer.sent.at(-1)?.to).toBe('nouveau@example.com')
+    expect(ctx.mailer.sent.at(-1)?.text).toMatch(/reset-password\?token=/)
+
+    const withPassword = await admin.request('POST', '/api/v1/admin/users', {
+      email: 'testeur@example.com',
+      username: 'testeur',
+      password: PASSWORD,
+    })
+    expect(withPassword.json()).toMatchObject({ passwordEmailSent: false })
+    await login('testeur@example.com')
+
+    const duplicate = await admin.request('POST', '/api/v1/admin/users', {
+      email: 'nouveau@example.com',
+      username: 'autre',
+    })
+    expect(duplicate.statusCode).toBe(409)
+    const asAdmin = await admin.request('POST', '/api/v1/admin/users', {
+      email: 'z@example.com',
+      username: 'zzz',
+      role: 'admin',
+    })
+    expect(asAdmin.statusCode).toBe(400)
+  })
+})

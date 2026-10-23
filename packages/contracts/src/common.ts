@@ -28,6 +28,7 @@ export const ERROR_CODES = {
   rateLimited: 'rate_limited',
   internal: 'internal_error',
   mailUnavailable: 'mail_unavailable',
+  accountSuspended: 'account_suspended',
 } as const
 
 /** En-tête porteur du jeton anti-CSRF pour toute requête mutante. */

@@ -25,6 +25,7 @@ const userSelect = {
   email: true,
   passwordHash: true,
   emailVerifiedAt: true,
+  suspendedAt: true,
 } as const
 
 function toAuthUser(user: {
@@ -87,6 +88,8 @@ export class SessionService {
     const now = Date.now()
     if (!session) return null
     if (session.revokedAt !== null || session.expiresAt.getTime() <= now) return null
+    // Compte suspendu : ses sessions sont révoquées à la suspension, ce contrôle couvre la course.
+    if (session.user.suspendedAt !== null) return null
 
     if (now - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
       await this.db.session.update({

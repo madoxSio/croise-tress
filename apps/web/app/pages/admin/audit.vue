@@ -15,6 +15,10 @@ const ACTIONS: Record<string, string> = {
   'cli.account.create': 'Compte créé en ligne de commande',
   'cli.role.grant': 'Rôle admin accordé (ligne de commande)',
   'cli.role.revoke': 'Rôle admin retiré (ligne de commande)',
+  'user.create': 'Compte créé',
+  'user.suspend': 'Compte suspendu',
+  'user.reactivate': 'Compte réactivé',
+  'user.sessions.revoke': 'Sessions d’un joueur fermées',
 }
 
 const { check } = useAdmin()
