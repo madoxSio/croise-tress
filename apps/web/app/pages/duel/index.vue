@@ -82,7 +82,22 @@ const resultLabels = { win: 'Victoire', loss: 'Défaite', draw: 'Égalité' } as
       l’avez rempli. Le premier à tout trouver gagne.
     </p>
 
-    <MatchAccountNotice v-if="status === 'account_required'" />
+    <LockedPreview v-if="status === 'account_required'">
+      <template #preview>
+        <div class="bg-accent text-accent-fg rounded-3xl p-8">
+          <p class="text-xl font-extrabold">Partie rapide</p>
+          <p class="mt-2">Affrontez le premier joueur disponible.</p>
+          <p class="bg-accent-fg text-accent mt-6 inline-block rounded-full px-6 py-3 font-bold">
+            Trouver un adversaire
+          </p>
+        </div>
+        <div class="bg-surface border-line mt-4 rounded-3xl border p-8">
+          <p class="text-xl font-extrabold">Défier un ami</p>
+          <p class="text-muted mt-2">Code d’invitation à partager.</p>
+        </div>
+      </template>
+      <MatchAccountNotice />
+    </LockedPreview>
 
     <div
       v-else-if="status === 'disconnected'"

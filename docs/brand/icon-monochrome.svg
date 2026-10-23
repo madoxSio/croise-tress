@@ -1,10 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <g transform="translate(256 256) scale(0.62) translate(-256 -256)">
-  <g fill="#fff">
-    <rect x="354" y="58" width="96" height="96" rx="26" transform="rotate(12 402 106)"/>
-    <path fill-rule="evenodd" d="M128 270a58 66 0 1 0 116 0a58 66 0 1 0-116 0ZM170 282a30 30 0 1 1 60 0a30 30 0 1 1-60 0Z"/>
-    <path fill-rule="evenodd" d="M268 270a58 66 0 1 0 116 0a58 66 0 1 0-116 0ZM310 282a30 30 0 1 1 60 0a30 30 0 1 1-60 0Z"/>
-    <path d="M212 360 Q256 424 300 360 Z" stroke="#fff" stroke-width="14" stroke-linejoin="round"/>
+  <g transform="translate(256 262) scale(2.5) translate(-120 -87)" fill="#fff">
+    <path fill-rule="evenodd" d="M38 46a26 26 0 1 0 52 0a26 26 0 1 0 -52 0ZM54 49a13 13 0 1 0 26 0a13 13 0 1 0 -26 0Z"/>
+    <path fill-rule="evenodd" d="M150 46a26 26 0 1 0 52 0a26 26 0 1 0 -52 0ZM160 49a13 13 0 1 0 26 0a13 13 0 1 0 -26 0Z"/>
+    <path fill-rule="evenodd" d="M50 94a70 60 0 1 0 140 0a70 60 0 1 0 -140 0ZM84 98a10 12.5 0 1 0 20 0a10 12.5 0 1 0 -20 0ZM136 98a10 12.5 0 1 0 20 0a10 12.5 0 1 0 -20 0ZM110 113 Q120 108 130 113 Q130 120 120 124 Q110 120 110 113 Z"/>
   </g>
   </g>
 </svg>
