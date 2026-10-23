@@ -66,6 +66,10 @@ model User {
   passwordHash    String?   @map("password_hash")
   emailVerifiedAt DateTime? @map("email_verified_at") @db.Timestamptz(3)
   role            Role      @default(player)
+  /// Suspension décidée par un administrateur : connexion refusée et sessions inopérantes.
+  suspendedAt     DateTime? @map("suspended_at") @db.Timestamptz(3)
+  /// Motif interne (visible des seuls administrateurs), facultatif.
+  suspendedReason String?   @map("suspended_reason")
   /// Préférences d'interface synchronisées (thème, taille du texte…) : sans valeur officielle.
   preferences     Json      @default("{}")
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)

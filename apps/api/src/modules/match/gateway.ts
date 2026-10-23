@@ -110,6 +110,15 @@ export class MatchGateway {
     })
   }
 
+  /**
+   * Coupe les connexions temps réel d'un joueur (suspension, sessions fermées par un
+   * administrateur) : la session est vérifiée à la connexion seulement. Un match en cours suit
+   * la règle de déconnexion habituelle (délai de grâce puis abandon).
+   */
+  disconnectUser(userId: string): void {
+    this.io.in(this.room(userId)).disconnectSockets(true)
+  }
+
   /** Reprend les matchs actifs après un redémarrage (minuteurs et délais de grâce). */
   async recover(): Promise<void> {
     for (const match of await this.matches.recoverActive()) {

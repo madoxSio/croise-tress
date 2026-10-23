@@ -8,6 +8,7 @@ import type { Db } from './db.ts'
 import { registerErrorHandler } from './http/errors.ts'
 import { adminRoutes } from './modules/admin/routes.ts'
 import { AdminService } from './modules/admin/service.ts'
+import { AdminUserService } from './modules/admin/users.ts'
 import { authRoutes } from './modules/auth/routes.ts'
 import { AuthService } from './modules/auth/service.ts'
 import { SmtpMailer, type Mailer } from './modules/mail/mailer.ts'
@@ -82,6 +83,10 @@ export async function buildApp({
   const auth = new AuthService(db, config, sessions, mailer)
   const matches = new MatchService(db, puzzles, now)
   const admin = new AdminService(db, now)
+  // La passerelle temps réel est créée après les routes : appel différé (jamais avant le démarrage).
+  const adminUsers = new AdminUserService(db, sessions, now, (userId) => {
+    gateway.disconnectUser(userId)
+  })
 
   await app.register(
     (api, _opts, done) => {
@@ -93,7 +98,7 @@ export async function buildApp({
       playRoutes(api, play)
       progressRoutes(api, play, progress)
       matchRoutes(api, matches)
-      adminRoutes(api, admin)
+      adminRoutes(api, admin, adminUsers, auth)
       done()
     },
     { prefix: API_PREFIX },

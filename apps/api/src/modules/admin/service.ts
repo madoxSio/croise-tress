@@ -30,14 +30,20 @@ export type AuditAction =
   | 'cli.account.create'
   | 'cli.role.grant'
   | 'cli.role.revoke'
+  | 'user.create'
+  | 'user.suspend'
+  | 'user.reactivate'
+  | 'user.sessions.revoke'
 
-const userSummarySelect = {
+export const userSummarySelect = {
   id: true,
   username: true,
   email: true,
   role: true,
   passwordHash: true,
   emailVerifiedAt: true,
+  suspendedAt: true,
+  suspendedReason: true,
   createdAt: true,
   rating: { select: { rating: true } },
   _count: {
@@ -96,9 +102,14 @@ export class AdminService {
   async isAdmin(userId: string): Promise<boolean> {
     const user = await this.db.user.findUnique({
       where: { id: userId },
-      select: { role: true, passwordHash: true, emailVerifiedAt: true },
+      select: { role: true, passwordHash: true, emailVerifiedAt: true, suspendedAt: true },
     })
-    return user?.role === 'admin' && user.passwordHash !== null && user.emailVerifiedAt !== null
+    return (
+      user?.role === 'admin' &&
+      user.passwordHash !== null &&
+      user.emailVerifiedAt !== null &&
+      user.suspendedAt === null
+    )
   }
 
   async audit(
@@ -120,6 +131,7 @@ export class AdminService {
       verified,
       guests,
       admins,
+      suspended,
       newLast7Days,
       activeLast7Days,
       started,
@@ -132,6 +144,7 @@ export class AdminService {
       this.db.user.count({ where: { ...registered, emailVerifiedAt: { not: null } } }),
       this.db.user.count({ where: { passwordHash: null } }),
       this.db.user.count({ where: { role: 'admin' } }),
+      this.db.user.count({ where: { suspendedAt: { not: null } } }),
       this.db.user.count({ where: { ...registered, emailVerifiedAt: { gte: weekAgo } } }),
       this.db.user.count({ where: { sessions: { some: { lastSeenAt: { gte: weekAgo } } } } }),
       this.db.playSession.count(),
@@ -149,6 +162,7 @@ export class AdminService {
         verified,
         guests,
         admins,
+        suspended,
         newLast7Days,
         activeLast7Days,
       },
@@ -201,12 +215,14 @@ export class AdminService {
   async listUsers(query: {
     search?: string | undefined
     guests: 'true' | 'false'
+    suspended: 'true' | 'false'
     limit: number
     cursor?: string | undefined
   }): Promise<AdminUserList> {
     const search = query.search?.trim()
     const where: Prisma.UserWhereInput = {
       ...(query.guests === 'true' ? {} : { passwordHash: { not: null } }),
+      ...(query.suspended === 'true' ? { suspendedAt: { not: null } } : {}),
       ...(search
         ? {
             OR: [
@@ -344,6 +360,9 @@ export class AdminService {
 
     return {
       user: toUserSummary(row, lastSeen.get(id)),
+      suspension: row.suspendedAt
+        ? { at: row.suspendedAt.toISOString(), reason: row.suspendedReason }
+        : null,
       stats: {
         playsStarted: aggregate._count._all,
         playsCompleted: row._count.playSessions,
@@ -496,7 +515,7 @@ export class AdminService {
   }
 }
 
-function toUserSummary(row: UserSummaryRow, lastSeenAt: Date | undefined): AdminUserSummary {
+export function toUserSummary(row: UserSummaryRow, lastSeenAt: Date | undefined): AdminUserSummary {
   return {
     id: row.id,
     username: row.username,
@@ -504,6 +523,7 @@ function toUserSummary(row: UserSummaryRow, lastSeenAt: Date | undefined): Admin
     role: row.role,
     isGuest: row.passwordHash === null,
     emailVerified: row.emailVerifiedAt !== null,
+    suspended: row.suspendedAt !== null,
     createdAt: row.createdAt.toISOString(),
     lastSeenAt: lastSeenAt?.toISOString() ?? null,
     playsCompleted: row._count.playSessions,

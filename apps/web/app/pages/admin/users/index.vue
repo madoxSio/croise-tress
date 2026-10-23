@@ -9,6 +9,7 @@ useHead({ title: 'Joueurs — Administration Crossverse' })
 const { check } = useAdmin()
 const search = ref('')
 const guests = ref(false)
+const suspended = ref(false)
 const items = ref<AdminUserSummary[]>([])
 const nextCursor = ref<string | null>(null)
 const loading = ref(false)
@@ -22,6 +23,7 @@ async function fetchPage(reset: boolean): Promise<void> {
     const page = await adminApi.listUsers({
       search: search.value.trim(),
       guests: guests.value,
+      suspended: suspended.value,
       ...(reset || nextCursor.value === null ? {} : { cursor: nextCursor.value }),
     })
     items.value = reset ? page.items : [...items.value, ...page.items]
@@ -53,9 +55,18 @@ onMounted(() => fetchPage(true))
         <input v-model="guests" type="checkbox" class="size-5" />
         Inclure les invités
       </label>
+      <label class="flex min-h-11 items-center gap-2 text-sm">
+        <input v-model="suspended" type="checkbox" class="size-5" />
+        Suspendus seulement
+      </label>
       <button type="submit" class="bg-fg text-bg min-h-11 rounded-full px-5 text-sm font-semibold">
         Rechercher
       </button>
+      <NuxtLink
+        to="/admin/users/new"
+        class="border-line hover:bg-surface-2 inline-flex min-h-11 items-center rounded-full border px-5 text-sm font-semibold sm:ml-auto"
+        >Créer un compte</NuxtLink
+      >
     </form>
 
     <div v-if="error" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4 text-sm">
@@ -78,6 +89,11 @@ onMounted(() => fetchPage(true))
                 v-if="user.role === 'admin'"
                 class="bg-accent-soft ml-1 rounded-full px-2 py-0.5 text-xs font-semibold"
                 >admin</span
+              >
+              <span
+                v-if="user.suspended"
+                class="bg-danger-soft text-danger ml-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+                >suspendu</span
               >
             </span>
             <span class="text-muted block truncate text-sm">{{ user.email ?? user.id }}</span>

@@ -12,7 +12,7 @@ En cas de conflit : les instructions explicites de l'utilisateur > ce fichier > 
 
 Au 2026-10-23 (dépôt GitHub `madoxSio/croise-tress`, qui fait foi) — détail et preuves dans [`docs/PROGRESS.md`](docs/PROGRESS.md) :
 
-- **Fait et testé** (268 tests Vitest et 13 E2E Playwright verts, lint et types verts) : socle, moteur, contrats, API complète (solo, défi, comptes, progression, duels, Elo, administration), web complet dont l'espace `/admin` ([`docs/ADMIN.md`](docs/ADMIN.md)), script de comptes de test et d'administrateurs, pile de production (Caddy + API) jouée hors Docker, app mobile Expo.
+- **Fait et testé** (276 tests Vitest et 13 E2E Playwright verts, lint et types verts) : socle, moteur, contrats, API complète (solo, défi, comptes, progression, duels, Elo, administration), web complet dont l'espace `/admin` ([`docs/ADMIN.md`](docs/ADMIN.md)), script de comptes de test et d'administrateurs, pile de production (Caddy + API) jouée hors Docker, app mobile Expo.
 - **Points ouverts** : voir PROGRESS.md.
 - **Écrit, non vérifié** : `docker-compose.yml`, `compose.prod.yml` et les cibles Docker du `Makefile` (`make init`, `make start`, `make prod-up` : jamais exécutés faute de démon Docker dans l'environnement de travail) ; la CI GitHub Actions tourne et est verte, le déploiement provisoire (Render + Vercel) est suivi dans `docs/deploy/README.md`.
 - **Refonte visuelle (2026-10-23)** : landing page, mascotte Sougoudou, page « Comment jouer », icônes ; invité limité au solo (D11).

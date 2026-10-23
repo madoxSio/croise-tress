@@ -98,6 +98,11 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - CI/CD : ✅ CI (lint, types, tests, E2E, audit, gitleaks) et images GHCR exécutées et vertes sur GitHub (2026-10-22). 🟡 Déploiements Render + Vercel (provisoire), VPS (`deploy-vps`, `docs/deploy/vps-bootstrap.sh`) et TestFlight écrits, jamais exécutés. Voir `docs/deploy/README.md`.
 - App mobile Expo (`apps/mobile`) : ajoutée par un autre fil. Son authentification native par jeton (validée par madox) attend son intégration dans l'API.
 
+### 2026-10-23 — Admin : gestion des comptes ✅ (hors Docker)
+
+- Suspension / réactivation (migration `user_suspension` : `suspended_at`, `suspended_reason`), fermeture des sessions d'un joueur, création de compte depuis `/admin/users/new` (lien de choix du mot de passe). Suspension : sessions révoquées, sockets coupés, file de duel quittée, connexion refusée (`account_suspended`, après mot de passe correct), session résolue à `null` par défense en profondeur. Actions journalisées.
+- Preuves : 5 tests dans `admin.test.ts` (dont joueur → 404 sur chaque action, refus sur soi/autre admin/invité), 1 test `match.test.ts` (socket coupé, reconnexion refusée) ; parcours réel dans Chromium à 390 px (création, suspension, connexion refusée avec message, réactivation, journal) ; `make e2e-local` 13 passed.
+
 ### 2026-10-23 — Espace d'administration et comptes de test ✅ (hors Docker)
 
 - API `/admin/*` : indicateurs (comptes, actifs, parties, duels, grilles, 30 jours), liste et parcours des joueurs, grilles (brouillon, édition validée par le moteur, lettres figées après la première partie, publication), journal d'audit (dont chaque consultation d'un parcours). Garde de rôle relue en base, 404 aux non-administrateurs. Guide : [ADMIN.md](ADMIN.md).
@@ -159,7 +164,7 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 | ---------------- | ------------------------------------------------------------------------------------------------ |
 | `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                               |
 | `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                                |
-| `pnpm test`      | core 54/54, web 60/60, mobile 37/37, api 117/117 : **268 tests verts**                           |
+| `pnpm test`      | core 54/54, web 60/60, mobile 37/37, api 125/125 : **276 tests verts**                           |
 | `make e2e-local` | **13 passed, 2 skipped (45.4s)** : les 2 ignorés lisent le build statique, absent (pas de build) |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.
