@@ -43,13 +43,15 @@ les duels web passent en long polling. L'app iOS appelle Render directement.
    **Disconnect** (c'est la CI qui construit et envoie ; un build Vercel n'aurait pas les
    relais vers l'API). Noter l'URL `https://<projet>.vercel.app`, l'ID d'équipe et l'ID du projet
    (Settings → General), et créer un jeton (Account Settings → Tokens).
-4. 👤 **Render** : New → Web Service → **Existing Image** →
+4. 👤 **Render** : New → Web Service → onglet **Existing Image** (pas Git Provider : aucun champ « Language ») →
    `ghcr.io/madoxsio/crossverse-api:latest` (image publique, aucun identifiant), région
    Frankfurt, offre Starter (l'offre gratuite s'endort après 15 min), port 3001, health check
    `/api/v1/health`. Variables d'environnement :
 
    ```sh
    NODE_ENV=production
+   # PORT indique à Render le port d'écoute de l'API.
+   PORT=3001
    API_HOST=0.0.0.0
    API_PORT=3001
    DATABASE_URL=<chaîne Neon directe>
