@@ -79,10 +79,11 @@ async function account(
 function connect(
   cookie: string | null,
   origin: string | null = ORIGIN,
-  options: { polling?: boolean; headers?: Record<string, string> } = {},
+  options: { polling?: boolean; headers?: Record<string, string>; noTrailingSlash?: boolean } = {},
 ): Promise<ClientSocket> {
   const socket: ClientSocket = io(url, {
     path: '/ws',
+    addTrailingSlash: !options.noTrailingSlash,
     transports: options.polling ? ['polling'] : ['websocket'],
     reconnection: false,
     extraHeaders: {
@@ -186,6 +187,13 @@ describe('connexion temps réel (WS-01)', () => {
     await expect(
       connect(cookie, 'https://evil.example', { polling: true, headers: sameOrigin }),
     ).rejects.toThrow()
+  })
+
+  it('accepte le chemin sans barre finale (relais Vercel `/ws/:path*`)', async () => {
+    const { cookie } = await account()
+    await expect(
+      connect(cookie, ORIGIN, { polling: true, noTrailingSlash: true }),
+    ).resolves.toBeTruthy()
   })
 
   it('refuse un message non conforme au schéma (champs forgés)', async () => {
