@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import {
+  accountClient,
   Client,
   createTestContext,
   emptyGrid,
@@ -184,8 +185,8 @@ describe('contrôle d’accès entre joueurs (AUTHZ-01)', () => {
   })
 
   it('l’historique ne contient que les parties du joueur', async () => {
-    const alice = await new Client(ctx.app).guest()
-    const bob = await new Client(ctx.app).guest()
+    const alice = await accountClient(ctx)
+    const bob = await accountClient(ctx)
     const session = await start(alice)
     await alice.request('PUT', `/api/v1/play-sessions/${session.id}/grid`, {
       grid: solvedGrid('la-table'),
@@ -327,7 +328,7 @@ describe('indices', () => {
 
 describe('fin de partie (SOL-04, SOL-05)', () => {
   it('termine la partie quand la grille est juste et calcule durée et score côté serveur', async () => {
-    const client = await new Client(ctx.app).guest()
+    const client = await accountClient(ctx)
     const session = await start(client)
     ctx.clock = new Date('2026-10-17T10:02:00Z')
     const res = await client.request('PUT', `/api/v1/play-sessions/${session.id}/grid`, {

@@ -1,10 +1,12 @@
 import type { DailyChallenge, ResumeResponse } from '@crossverse/contracts'
 import { router, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { Image, StyleSheet, Text, View } from 'react-native'
+import sougoudou from '../../assets/sougoudou.png'
 import { api, errorMessage } from '../../src/api'
 import { Button, Card, ErrorNotice, Loading, Muted, Screen, Title } from '../../src/components/ui'
 import { difficultyLabel } from '../../src/game/labels'
+import { MASCOT_NAME, MASCOT_PHRASE } from '../../src/mascot'
 import { radius, usePalette } from '../../src/theme'
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -46,7 +48,21 @@ export default function Home() {
   const daily = data?.daily
   return (
     <Screen>
-      <Title>Bonjour, prêt à jouer ?</Title>
+      <View style={styles.hero}>
+        <Image
+          source={sougoudou}
+          style={styles.mascot}
+          accessibilityIgnoresInvertColors
+          accessible={false}
+        />
+        <View
+          style={[styles.bubble, { backgroundColor: palette.surface, borderColor: palette.line }]}
+        >
+          <Text style={[styles.phrase, { color: palette.fg }]}>« {MASCOT_PHRASE} »</Text>
+          <Muted>{MASCOT_NAME}, la mascotte</Muted>
+        </View>
+      </View>
+      <Title>Les mots croisés, version arène.</Title>
       {error !== null ? (
         <ErrorNotice message={error} onRetry={() => void load()} />
       ) : data === null ? (
@@ -107,6 +123,10 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  hero: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  mascot: { width: 96, height: 96 },
+  bubble: { flex: 1, borderWidth: 1, borderRadius: radius.card, padding: 12, gap: 4 },
+  phrase: { fontSize: 16, fontWeight: '700' },
   heading: { fontSize: 20, fontWeight: '700' },
   daily: { borderRadius: radius.card + 8, padding: 20, gap: 10 },
   kicker: { fontSize: 12, fontWeight: '700', letterSpacing: 1, opacity: 0.9 },

@@ -9,7 +9,8 @@ L'espace d'administration est servi par le web sous `/admin` (lien « Administra
 | -------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `/admin`             | comptes, nouveaux et actifs sur 7 jours, invités, parties, duels, grilles ; série des 30 derniers jours (UTC) |
 | `/admin/users`       | recherche par début de pseudo ou d'e-mail, invités en option, pagination                                      |
-| `/admin/users/:id`   | fiche et **parcours** d'un joueur : grilles commencées/terminées (score, durée, aides), duels, succès         |
+| `/admin/users/:id`   | fiche et **parcours** d'un joueur ; **suspendre / réactiver**, **fermer ses sessions**                        |
+| `/admin/users/new`   | créer un compte joueur confirmé ; sans mot de passe, la personne reçoit un lien pour choisir le sien          |
 | `/admin/puzzles`     | toutes les grilles (brouillons compris) avec leur nombre de parties ; publier / dépublier                     |
 | `/admin/puzzles/new` | éditeur : la grille se saisit ligne par ligne (`#` = case noire), un champ de définition apparaît par mot     |
 | `/admin/puzzles/:id` | modification ; une grille déjà jouée garde ses lettres (seuls titres et définitions changent)                 |
@@ -18,6 +19,18 @@ L'espace d'administration est servi par le web sous `/admin` (lien « Administra
 Une grille est créée **en brouillon** : elle n'apparaît au catalogue, au défi du jour et en duel
 qu'une fois publiée. Sa cohérence (mots, numérotation, connexité) est vérifiée par le moteur
 `crossword-core`, comme pour le seed.
+
+## Gestion des comptes
+
+- **Suspendre** : sessions fermées tout de suite, connexion temps réel (duel) coupée, retrait de
+  la file de duel, connexion refusée avec « Ce compte est suspendu. » (affiché seulement après un
+  mot de passe correct). Motif facultatif, visible des seuls administrateurs. Données conservées.
+- **Réactiver** : le joueur peut se reconnecter avec son mot de passe.
+- **Fermer ses sessions** : déconnecte tous ses appareils (appareil perdu, compte compromis).
+- **Créer un compte** : compte joueur confirmé. Sans mot de passe saisi, un e-mail « choisir mon
+  mot de passe » part (lien valable 30 minutes, renouvelable par « Mot de passe oublié »).
+- Interdit par le serveur : agir sur soi-même, sur un autre administrateur (rôle à retirer
+  d'abord en ligne de commande) ou sur un invité ; donner le rôle admin depuis le web.
 
 ## Sécurité et données personnelles
 

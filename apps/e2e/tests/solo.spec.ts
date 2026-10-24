@@ -5,7 +5,7 @@ import { displayedPuzzleTitle, seedPuzzleByTitle, slotsOf } from '../support/puz
 test('solo : défi du jour, vérification, indice, fin de partie et historique', async ({ page }) => {
   await page.goto('/')
   await expect(
-    page.getByRole('heading', { level: 1, name: 'Bonjour, prêt à jouer ?' }),
+    page.getByRole('heading', { level: 1, name: 'Les mots croisés, version arène.' }),
   ).toBeVisible()
   await page.getByRole('link', { name: 'Jouer le défi' }).click()
   await page.waitForURL(/\/play\/[0-9a-f-]{36}$/)
@@ -46,7 +46,8 @@ test('solo : défi du jour, vérification, indice, fin de partie et historique',
   })
   await expect(page.getByText('Aides utilisées : 1 lettre(s), 0 mot(s).')).toBeVisible()
 
+  // L'historique est réservé aux comptes : l'invité y trouve l'invitation à en créer un.
   await page.goto('/history')
   await expect(page.getByRole('heading', { level: 1, name: 'Mes parties terminées' })).toBeVisible()
-  await expect(page.getByRole('main').getByRole('link', { name: title })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Gardez la trace de vos parties' })).toBeVisible()
 })

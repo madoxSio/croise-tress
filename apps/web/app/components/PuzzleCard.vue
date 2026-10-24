@@ -6,7 +6,10 @@ import { difficultyLabel } from '~/utils/labels'
  * Carte de grille. Le lien du titre couvre toute la carte (pseudo-élément) ; le bouton
  * favori, facultatif, reste un contrôle distinct au-dessus (pas de bouton dans un lien).
  */
-defineProps<{ puzzle: PuzzleSummary; favorite?: boolean }>()
+// Défaut explicite : sans lui, Vue convertit un booléen absent en `false` (bouton affiché).
+withDefaults(defineProps<{ puzzle: PuzzleSummary; favorite?: boolean | undefined }>(), {
+  favorite: undefined,
+})
 const emit = defineEmits<{ 'toggle-favorite': [] }>()
 </script>
 

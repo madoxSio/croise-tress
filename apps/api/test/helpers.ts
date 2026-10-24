@@ -4,6 +4,7 @@ import { buildApp } from '../src/app.ts'
 import { loadConfig } from '../src/config.ts'
 import { createDb, type Db } from '../src/db.ts'
 import { MemoryMailer } from '../src/modules/mail/mailer.ts'
+import { generateToken, hashToken } from '../src/modules/session/tokens.ts'
 import { SEED_PUZZLES } from '../prisma/seed/puzzles.ts'
 
 export const ORIGIN = 'http://localhost:3000'
@@ -156,4 +157,37 @@ export function solvedGrid(slug: string): (string | null)[][] {
 
 export function emptyGrid(): (string | null)[][] {
   return Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => null))
+}
+
+let accountCounter = 0
+
+/**
+ * Client connecté à un compte créé directement en base (sans passer par l'inscription et
+ * sa limite de débit) : pour les routes réservées aux comptes.
+ */
+export async function accountClient(ctx: TestContext): Promise<Client> {
+  accountCounter += 1
+  const user = await ctx.db.user.create({
+    data: {
+      email: `compte${accountCounter}@example.com`,
+      username: `compte${accountCounter}`,
+      passwordHash: 'non-utilisé-dans-ce-test',
+      emailVerifiedAt: new Date(),
+    },
+    select: { id: true },
+  })
+  const token = generateToken()
+  await ctx.db.session.create({
+    data: {
+      userId: user.id,
+      tokenHash: hashToken(token),
+      csrfSecret: generateToken(),
+      expiresAt: new Date(Date.now() + 3_600_000),
+    },
+  })
+  const client = new Client(ctx.app)
+  client.cookie = `cv_session=${token}`
+  // GET /session renvoie le jeton CSRF, que le client conserve.
+  await client.request('GET', '/api/v1/session')
+  return client
 }

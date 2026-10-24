@@ -118,13 +118,17 @@ export class AuthService {
   async login(email: string, password: string): Promise<string> {
     const user = await this.db.user.findUnique({
       where: { email },
-      select: { id: true, passwordHash: true },
+      select: { id: true, passwordHash: true, suspendedAt: true },
     })
     if (!user?.passwordHash) {
       await verifyPassword(await getDummyHash(), password)
       throw invalidCredentials()
     }
     if (!(await verifyPassword(user.passwordHash, password))) throw invalidCredentials()
+    // Signalé seulement après un mot de passe correct : ne révèle rien à qui ne le connaît pas.
+    if (user.suspendedAt !== null) {
+      throw new AppError(403, ERROR_CODES.accountSuspended, 'Ce compte est suspendu.')
+    }
     if (needsRehash(user.passwordHash)) {
       await this.db.user.update({
         where: { id: user.id },

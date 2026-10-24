@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { emailSchema, passwordSchema, usernameSchema } from './auth.js'
 import { difficultySchema, directionSchema, uuidSchema } from './common.js'
 
 /**
@@ -18,6 +19,7 @@ export const adminOverviewSchema = z.strictObject({
     verified: z.int(),
     guests: z.int(),
     admins: z.int(),
+    suspended: z.int(),
     /** Comptes complets créés sur les 7 derniers jours. */
     newLast7Days: z.int(),
     /** Utilisateurs (invités compris) dont une session a servi sur les 7 derniers jours. */
@@ -46,6 +48,8 @@ export const adminUserListQuerySchema = z.strictObject({
   search: z.string().trim().max(64).optional(),
   /** Inclure les invités (sans compte) : exclus par défaut, ils sont très nombreux. */
   guests: z.enum(['true', 'false']).default('false'),
+  /** Seulement les comptes suspendus. */
+  suspended: z.enum(['true', 'false']).default('false'),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   cursor: uuidSchema.optional(),
 })
@@ -57,6 +61,7 @@ export const adminUserSummarySchema = z.strictObject({
   role: z.enum(['player', 'admin']),
   isGuest: z.boolean(),
   emailVerified: z.boolean(),
+  suspended: z.boolean(),
   createdAt: isoDateTime,
   lastSeenAt: isoDateTime.nullable(),
   playsCompleted: z.int(),
@@ -104,6 +109,7 @@ export type JourneyEvent = z.infer<typeof journeyEventSchema>
 
 export const adminUserDetailSchema = z.strictObject({
   user: adminUserSummarySchema,
+  suspension: z.strictObject({ at: isoDateTime, reason: z.string().nullable() }).nullable(),
   stats: z.strictObject({
     playsStarted: z.int(),
     playsCompleted: z.int(),
@@ -127,6 +133,31 @@ export const adminUserDetailSchema = z.strictObject({
   journey: z.array(journeyEventSchema),
 })
 export type AdminUserDetail = z.infer<typeof adminUserDetailSchema>
+
+// --- Gestion des comptes ----------------------------------------------------
+
+/** Suspension : sessions fermées, connexion refusée jusqu'à la réactivation. */
+export const adminSuspendBodySchema = z.strictObject({
+  reason: z.string().trim().min(1).max(200).optional(),
+})
+
+/**
+ * Création d'un compte joueur confirmé. Sans mot de passe, le titulaire reçoit un e-mail pour
+ * choisir le sien (l'administrateur ne le connaît jamais). Le rôle admin ne se donne pas ici.
+ */
+export const adminCreateUserBodySchema = z.strictObject({
+  email: emailSchema,
+  username: usernameSchema,
+  password: passwordSchema.optional(),
+})
+export type AdminCreateUserBody = z.infer<typeof adminCreateUserBodySchema>
+
+export const adminCreatedUserSchema = z.strictObject({
+  user: adminUserSummarySchema,
+  /** Vrai si un e-mail de choix du mot de passe a été envoyé. */
+  passwordEmailSent: z.boolean(),
+})
+export type AdminCreatedUser = z.infer<typeof adminCreatedUserSchema>
 
 // --- Grilles ---------------------------------------------------------------
 

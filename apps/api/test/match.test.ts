@@ -4,11 +4,13 @@ import { io, type Socket } from 'socket.io-client'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../src/app.ts'
 import { loadConfig } from '../src/config.ts'
+import { createAccount } from '../src/modules/admin/accounts.ts'
 import { MatchService } from '../src/modules/match/service.ts'
 import { PuzzleRepository } from '../src/modules/puzzles/repository.ts'
 import { generateToken, hashToken } from '../src/modules/session/tokens.ts'
 import { SEED_PUZZLES } from '../prisma/seed/puzzles.ts'
 import {
+  Client,
   ORIGIN,
   createTestContext,
   resetDatabase,
@@ -485,5 +487,30 @@ describe('échéance', () => {
     expect(await service.expire(matchId)).toBeNull()
     const match = await ctx.db.match.findUniqueOrThrow({ where: { id: matchId } })
     expect(match).toMatchObject({ status: 'finished', winnerId: aId, endReason: 'deadline' })
+  })
+})
+
+describe('suspension par un administrateur', () => {
+  it('coupe la connexion temps réel du joueur et refuse sa reconnexion', async () => {
+    const player = await account()
+    const socket = await connect(player.cookie)
+    const disconnected = new Promise<string>((resolve) => {
+      socket.once('disconnect', resolve)
+    })
+
+    const password = 'correct horse battery staple'
+    await createAccount(ctx.db, {
+      email: 'admin@example.com',
+      username: 'madmin',
+      password,
+      admin: true,
+    })
+    const admin = await new Client(ctx.app).guest()
+    await admin.request('POST', '/api/v1/auth/login', { email: 'admin@example.com', password })
+    const res = await admin.request('POST', `/api/v1/admin/users/${player.id}/suspend`, {})
+    expect(res.statusCode).toBe(204)
+
+    expect(await disconnected).toBe('io server disconnect')
+    await expect(connect(player.cookie)).rejects.toThrow()
   })
 })

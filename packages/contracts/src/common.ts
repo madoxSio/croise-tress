@@ -28,6 +28,7 @@ export const ERROR_CODES = {
   rateLimited: 'rate_limited',
   internal: 'internal_error',
   mailUnavailable: 'mail_unavailable',
+  accountSuspended: 'account_suspended',
   /** Indices gratuits épuisés : le client doit confirmer la dépense de Coumba points. */
   hintLimitReached: 'hint_limit_reached',
   insufficientPoints: 'insufficient_points',

@@ -13,15 +13,30 @@ export default defineNuxtConfig({
   ssr: false,
   devtools: { enabled: false },
   telemetry: false,
-  css: ['~/assets/css/main.css'],
+  // Polices auto-hébergées (CSP font-src 'self') : Inter pour le texte, Bricolage pour les titres.
+  css: [
+    '@fontsource-variable/inter/wght.css',
+    '@fontsource-variable/bricolage-grotesque/wght.css',
+    '~/assets/css/main.css',
+  ],
   app: {
     head: {
       htmlAttrs: { lang: 'fr' },
       title: 'Crossverse',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
-        { name: 'description', content: 'Mots croisés en ligne, sur mobile et ordinateur.' },
+        {
+          name: 'description',
+          content:
+            'Mots croisés en solo, défi du jour et duels en ligne, sur mobile, tablette et ordinateur.',
+        },
         { name: 'color-scheme', content: 'light dark' },
+        { name: 'theme-color', content: '#f7f6fb', media: '(prefers-color-scheme: light)' },
+        { name: 'theme-color', content: '#0d0b17', media: '(prefers-color-scheme: dark)' },
+      ],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
       ],
     },
   },

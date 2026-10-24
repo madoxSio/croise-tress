@@ -15,6 +15,7 @@ Au 2026-10-23 (dépôt GitHub `madoxSio/croise-tress`, qui fait foi) — détail
 - **Fait et testé** (287 tests Vitest et 13 E2E Playwright verts, lint et types verts) : socle, moteur, contrats, API complète (solo, défi, comptes, progression, duels, Elo, administration), web complet dont l'espace `/admin` ([`docs/ADMIN.md`](docs/ADMIN.md)), script de comptes de test et d'administrateurs, parcours à étapes, indices limités et Coumba points, pile de production (Caddy + API) jouée hors Docker, app mobile Expo.
 - **Points ouverts** : voir PROGRESS.md.
 - **Écrit, non vérifié** : `docker-compose.yml`, `compose.prod.yml` et les cibles Docker du `Makefile` (`make init`, `make start`, `make prod-up` : jamais exécutés faute de démon Docker dans l'environnement de travail) ; la CI GitHub Actions tourne et est verte, le déploiement provisoire (Render + Vercel) est suivi dans `docs/deploy/README.md`.
+- **Refonte visuelle (2026-10-23)** : landing page, mascotte Sougoudou, page « Comment jouer », icônes ; invité limité au solo (D11).
 - **Pas commencé** : MFA admin, modération, observabilité, PWA/Capacitor.
 
 Mettre à jour cette section à chaque étape livrée.

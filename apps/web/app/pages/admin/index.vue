@@ -26,7 +26,11 @@ const tiles = computed(() => {
     { label: 'Comptes', value: o.users.registered, detail: `${o.users.verified} confirmés` },
     { label: 'Nouveaux (7 j)', value: o.users.newLast7Days, detail: 'comptes confirmés' },
     { label: 'Actifs (7 j)', value: o.users.activeLast7Days, detail: 'invités compris' },
-    { label: 'Invités', value: o.users.guests, detail: 'sans compte' },
+    {
+      label: 'Invités',
+      value: o.users.guests,
+      detail: `sans compte · ${o.users.suspended} suspendus`,
+    },
     {
       label: 'Parties terminées',
       value: o.plays.completed,

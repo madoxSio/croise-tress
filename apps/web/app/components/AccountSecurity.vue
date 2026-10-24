@@ -111,7 +111,7 @@ async function changeEmail(): Promise<void> {
         <p role="status" class="text-success text-sm">{{ passwordNotice }}</p>
         <button
           type="submit"
-          class="bg-fg text-bg min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
+          class="bg-accent text-accent-fg shadow-cta min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
           :disabled="passwordAction.pending.value"
         >
           {{ passwordAction.pending.value ? 'Enregistrement…' : 'Changer le mot de passe' }}
@@ -156,7 +156,7 @@ async function changeEmail(): Promise<void> {
         <p role="status" class="text-success text-sm">{{ emailNotice }}</p>
         <button
           type="submit"
-          class="bg-fg text-bg min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
+          class="bg-accent text-accent-fg shadow-cta min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
           :disabled="emailAction.pending.value"
         >
           {{ emailAction.pending.value ? 'Envoi…' : 'Changer d’adresse' }}

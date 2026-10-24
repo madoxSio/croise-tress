@@ -3,6 +3,7 @@
  * côté client, rien n'est une autorisation : ces fonctions échouent (404) pour un joueur.
  */
 import {
+  adminCreatedUserSchema,
   adminMeSchema,
   adminOverviewSchema,
   adminPuzzleListSchema,
@@ -12,6 +13,8 @@ import {
   auditListSchema,
 } from '@crossverse/contracts'
 import type {
+  AdminCreateUserBody,
+  AdminCreatedUser,
   AdminOverview,
   AdminPuzzle,
   AdminPuzzleBody,
@@ -21,7 +24,10 @@ import type {
   AuditList,
   PuzzleStatus,
 } from '@crossverse/contracts'
+import { z } from 'zod'
 import { ApiRequestError, query, request, segment } from './api'
+
+const noContentSchema = z.undefined()
 
 export const adminApi = {
   /** Vrai si la session courante est administrateur ; faux (404) pour tout autre compte. */
@@ -42,6 +48,7 @@ export const adminApi = {
   listUsers(params: {
     search?: string
     guests?: boolean
+    suspended?: boolean
     cursor?: string
   }): Promise<AdminUserList> {
     return request(
@@ -49,6 +56,7 @@ export const adminApi = {
       `/admin/users${query({
         search: params.search,
         guests: params.guests ? 'true' : undefined,
+        suspended: params.suspended ? 'true' : undefined,
         cursor: params.cursor,
       })}`,
       adminUserListSchema,
@@ -57,6 +65,25 @@ export const adminApi = {
 
   getUser(id: string): Promise<AdminUserDetail> {
     return request('GET', `/admin/users/${segment(id)}`, adminUserDetailSchema)
+  },
+
+  /** Sans mot de passe, le titulaire reçoit un lien pour choisir le sien. */
+  createUser(body: AdminCreateUserBody): Promise<AdminCreatedUser> {
+    return request('POST', '/admin/users', adminCreatedUserSchema, { body })
+  },
+
+  async suspendUser(id: string, reason?: string): Promise<void> {
+    await request('POST', `/admin/users/${segment(id)}/suspend`, noContentSchema, {
+      body: reason ? { reason } : {},
+    })
+  },
+
+  async reactivateUser(id: string): Promise<void> {
+    await request('POST', `/admin/users/${segment(id)}/reactivate`, noContentSchema)
+  },
+
+  async revokeUserSessions(id: string): Promise<void> {
+    await request('POST', `/admin/users/${segment(id)}/revoke-sessions`, noContentSchema)
   },
 
   listPuzzles(params: { status?: PuzzleStatus; cursor?: string }): Promise<AdminPuzzleList> {

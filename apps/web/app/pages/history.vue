@@ -5,6 +5,8 @@ import { formatDateTime, formatDuration } from '~/utils/labels'
 
 useHead({ title: 'Mes parties — Crossverse' })
 
+// L'historique est réservé aux comptes : l'invité voit une explication, sans appel refusé.
+const isGuest = ref(false)
 const history = ref<HistoryResponse | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -13,7 +15,9 @@ async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    await api.ensureSession()
+    const session = await api.ensureSession()
+    isGuest.value = session.user?.isGuest !== false
+    if (isGuest.value) return
     history.value = await api.getHistory()
   } catch (cause) {
     error.value = errorMessage(cause)
@@ -30,6 +34,11 @@ onMounted(load)
     <h1 class="text-3xl font-extrabold tracking-tight">Mes parties terminées</h1>
 
     <p v-if="loading" role="status" class="text-muted">Chargement…</p>
+    <AccountRequired
+      v-else-if="isGuest"
+      title="Gardez la trace de vos parties"
+      reason="Sans compte, vous pouvez jouer toutes les grilles en solo. L'historique et le suivi de vos parties demandent un compte : celles jouées en invité sur cet appareil y seront rattachées."
+    />
     <div v-else-if="error" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4 text-sm">
       {{ error }}
       <button type="button" class="ml-2 font-semibold underline" @click="load">Réessayer</button>

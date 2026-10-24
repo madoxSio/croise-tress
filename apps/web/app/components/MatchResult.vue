@@ -73,7 +73,9 @@ defineExpose({ focus: () => root.value?.focus() })
       <NuxtLink
         to="/duel"
         class="inline-flex min-h-11 items-center rounded-full px-5 font-bold"
-        :class="outcome === 'win' ? 'bg-accent-fg text-accent' : 'bg-fg text-bg'"
+        :class="
+          outcome === 'win' ? 'bg-accent-fg text-accent' : 'bg-accent text-accent-fg shadow-cta'
+        "
         >Nouveau duel</NuxtLink
       >
       <NuxtLink
