@@ -142,10 +142,16 @@ async function submit(): Promise<void> {
         </div>
         <button
           type="submit"
-          class="bg-accent text-accent-fg shadow-cta min-h-11 rounded-full px-5 font-semibold disabled:opacity-60"
+          class="bg-accent text-accent-fg shadow-cta inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-5 font-semibold disabled:opacity-60"
           :disabled="pending"
+          :aria-busy="pending"
         >
-          {{ pending ? 'Envoi…' : 'Créer mon compte' }}
+          <span
+            v-if="pending"
+            aria-hidden="true"
+            class="size-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+          />
+          {{ pending ? 'Envoi de l’e-mail…' : 'Créer mon compte' }}
         </button>
       </form>
       <p class="text-sm">

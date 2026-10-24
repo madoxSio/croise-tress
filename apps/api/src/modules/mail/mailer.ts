@@ -14,6 +14,8 @@ export interface Mailer {
   send(message: MailMessage): Promise<void>
 }
 
+const SMTP_TIMEOUT_MS = 10_000
+
 export class SmtpMailer implements Mailer {
   private readonly transport: Transporter
 
@@ -23,8 +25,26 @@ export class SmtpMailer implements Mailer {
       host,
       port,
       secure,
+      // Sans délais courts, un port SMTP filtré (Render gratuit bloque 25, 465 et 587) fait
+      // attendre l'inscription deux minutes : le relais Vercel coupe avant, sans message clair.
+      connectionTimeout: SMTP_TIMEOUT_MS,
+      greetingTimeout: SMTP_TIMEOUT_MS,
+      socketTimeout: SMTP_TIMEOUT_MS,
       ...(user && password ? { auth: { user, pass: password } } : {}),
     })
+  }
+
+  /**
+   * Teste connexion et authentification SMTP sans rien envoyer. Appelé au démarrage pour que
+   * les journaux indiquent tout de suite un SMTP mal configuré, avant la première inscription.
+   */
+  async verify(): Promise<{ ok: true } | { ok: false; reason: string }> {
+    try {
+      await this.transport.verify()
+      return { ok: true }
+    } catch (cause) {
+      return { ok: false, reason: describeSmtpError(cause) }
+    }
   }
 
   /**
@@ -52,4 +72,11 @@ export class MemoryMailer implements Mailer {
     this.sent.push(message)
     return Promise.resolve()
   }
+}
+
+/** Code et message du serveur SMTP, sans les identifiants (nodemailer ne les inclut pas). */
+function describeSmtpError(cause: unknown): string {
+  if (!(cause instanceof Error)) return String(cause)
+  const code = 'code' in cause && typeof cause.code === 'string' ? `${cause.code} ` : ''
+  return `${code}${cause.message}`
 }

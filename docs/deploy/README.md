@@ -62,7 +62,8 @@ les duels web passent en long polling. L'app iOS appelle Render directement.
    TRUST_PROXY=2
    LOG_LEVEL=info
    SMTP_HOST=smtp-relay.brevo.com
-   SMTP_PORT=587
+   # Render bloque les ports SMTP 25, 465 et 587 sur l'offre gratuite : Brevo écoute aussi 2525.
+   SMTP_PORT=2525
    SMTP_SECURE=false
    SMTP_USER=<identifiant Brevo>
    SMTP_PASSWORD=<clé SMTP Brevo>
@@ -70,6 +71,12 @@ les duels web passent en long polling. L'app iOS appelle Render directement.
    ```
 
    Puis Settings → **Deploy Hook** : copier l'URL.
+
+   **Vérifier l'e-mail** : au démarrage, les logs Render affichent `SMTP joignable` ou
+   `SMTP injoignable : inscriptions bloquées` avec la cause (`ETIMEDOUT` : port bloqué, passer
+   `SMTP_PORT` à 2525 ; `EAUTH` : identifiant ou clé SMTP Brevo faux). Une inscription refusée
+   pour expéditeur non vérifié apparaît dans les logs comme `erreur de service` : `MAIL_FROM`
+   doit être une adresse validée dans Brevo (Senders, Domains & Dedicated IPs → Senders).
 
 5. 👤 **GitHub** (Settings → Secrets and variables → Actions) :
 
