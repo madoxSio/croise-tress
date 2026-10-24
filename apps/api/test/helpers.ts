@@ -58,7 +58,7 @@ export async function createTestContext(
 }
 
 export async function resetDatabase(db: Db): Promise<void> {
-  await db.$executeRaw`TRUNCATE "audit_log", "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "auth_tokens", "sessions", "users", "puzzles", "themes" CASCADE`
+  await db.$executeRaw`TRUNCATE "point_transactions", "wallets", "path_steps", "paths", "audit_log", "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "auth_tokens", "sessions", "users", "puzzles", "themes" CASCADE`
 }
 
 /**
@@ -103,6 +103,26 @@ export class Client {
     private readonly app: FastifyInstance,
     readonly ip = `10.0.${Math.floor(Client.nextIp / 250)}.${(Client.nextIp++ % 250) + 1}`,
   ) {}
+
+  /**
+   * Compte confirmé, créé directement en base (le parcours d'inscription est couvert par
+   * auth.test.ts) : le mot de passe n'est jamais vérifié ici.
+   */
+  async account(db: Db): Promise<this> {
+    await this.guest()
+    const session = await this.request('GET', '/api/v1/session')
+    const { user } = session.json<{ user: { id: string } }>()
+    await db.user.update({
+      where: { id: user.id },
+      data: {
+        email: `${user.id}@example.test`,
+        username: `j${user.id.replaceAll('-', '').slice(-12)}`,
+        passwordHash: 'non-utilisé-en-test',
+        emailVerifiedAt: new Date(),
+      },
+    })
+    return this
+  }
 
   async guest(): Promise<this> {
     const res = await this.request('POST', '/api/v1/session/guest')

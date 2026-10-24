@@ -362,3 +362,66 @@ describe('services/api — compte et progression', () => {
     expect(tokenOf(`PUT /api/v1/me/favorites/${PLAY.puzzleId}`)).toBe('invite-1')
   })
 })
+
+describe('services/api — parcours et Coumba points', () => {
+  beforeEach(() => {
+    handlers['GET /api/v1/session'] = () => ({ status: 200, body: { user: USER, csrfToken: 'j' } })
+  })
+
+  it('lit le portefeuille et le journal paginé', async () => {
+    const rules = { freeHintsPerGame: 3, hintCost: { letter: 5, word: 15 } }
+    handlers['GET /api/v1/me/wallet'] = () => ({
+      status: 200,
+      body: { eligible: true, balance: 20, earned: 20, spent: 0, rules },
+    })
+    handlers[
+      'GET /api/v1/me/wallet/transactions?limit=20&cursor=01a14a15-8d17-724f-8df4-46b08f36350c'
+    ] = () => ({ status: 200, body: { items: [], nextCursor: null } })
+    const { api } = await loadApi()
+    expect((await api.getWallet()).balance).toBe(20)
+    expect((await api.getWalletTransactions(PLAY.id)).items).toEqual([])
+  })
+
+  it('envoie le consentement à payer un indice et remonte le refus typé', async () => {
+    handlers[`POST /api/v1/play-sessions/${PLAY.id}/hints`] = () => ({
+      status: 409,
+      body: { error: { code: 'insufficient_points', message: 'Coumba points insuffisants.' } },
+    })
+    const { api, ApiRequestError } = await loadApi()
+    await api.ensureSession()
+    const error: unknown = await api
+      .hint(PLAY.id, { type: 'letter', cell: { row: 0, col: 0 }, usePoints: true })
+      .catch((cause: unknown) => cause)
+    expect(error).toBeInstanceOf(ApiRequestError)
+    expect(error).toMatchObject({ status: 409, code: 'insufficient_points' })
+    expect(calls.at(-1)?.body).toEqual({
+      type: 'letter',
+      cell: { row: 0, col: 0 },
+      usePoints: true,
+    })
+  })
+
+  it('lit un parcours en encodant son slug', async () => {
+    handlers['GET /api/v1/paths/culture-rois'] = () => ({
+      status: 200,
+      body: {
+        slug: 'culture-rois',
+        title: 'Rois',
+        description: 'd',
+        theme: 'rois-de-france',
+        stepCount: 1,
+        completedCount: 0,
+        steps: [
+          {
+            position: 1,
+            title: 'Étape 1',
+            state: 'available',
+            puzzle: { id: PLAY.puzzleId, title: 'T', difficulty: 'easy', estimatedMinutes: 3 },
+          },
+        ],
+      },
+    })
+    const { api } = await loadApi()
+    expect((await api.getPath('culture-rois')).steps[0]?.state).toBe('available')
+  })
+})

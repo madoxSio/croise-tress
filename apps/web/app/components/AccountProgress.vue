@@ -69,6 +69,8 @@ onMounted(load)
     </div>
 
     <template v-else>
+      <AccountPoints />
+
       <section aria-labelledby="stats-title">
         <h2 id="stats-title" class="mb-3 text-xl font-bold">Statistiques</h2>
         <dl class="grid grid-cols-2 gap-3 sm:grid-cols-3">
