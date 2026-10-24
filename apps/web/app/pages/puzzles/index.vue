@@ -159,6 +159,8 @@ onMounted(() => {
       {{ quickPlay.error.value }}
     </p>
 
+    <PlayModeSwitch />
+
     <!-- Filtres -->
     <div class="flex flex-col gap-4">
       <nav aria-label="Thèmes" class="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
@@ -317,7 +319,11 @@ onMounted(() => {
         Aucune grille ne correspond à ces filtres.
       </p>
 
-      <p v-if="loading" role="status" class="text-muted">Chargement…</p>
+      <SougoudouLoader
+        v-if="loading"
+        :inline="items.length > 0"
+        :label="items.length > 0 ? 'Chargement…' : 'Sougoudou prépare les grilles…'"
+      />
       <button
         v-else-if="nextCursor"
         type="button"

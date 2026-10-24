@@ -2,9 +2,11 @@
  * Briques d'interface communes : écran, carte, bouton, messages. Toutes respectent une cible
  * tactile d'au moins 44 points et exposent leur rôle aux lecteurs d'écran.
  */
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
-  ActivityIndicator,
+  AccessibilityInfo,
+  Animated,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,6 +16,7 @@ import {
   type ViewStyle,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import sougoudou from '../../assets/sougoudou.png'
 import { TOUCH_TARGET, radius, usePalette } from '../theme'
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
@@ -102,15 +105,69 @@ export function Button({
   )
 }
 
+/**
+ * Chargement aux couleurs de Crossverse : Sougoudou attend pendant que les cases « MOTS » se
+ * remplissent une à une. Animations réduites (réglage système) : les cases restent pleines.
+ */
 export function Loading({ label = 'Chargement…' }: { label?: string }) {
   const palette = usePalette()
+  const [progress] = useState(() => new Animated.Value(1))
+  useEffect(() => {
+    let loop: Animated.CompositeAnimation | null = null
+    let cancelled = false
+    void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
+      if (reduced || cancelled) return
+      progress.setValue(0)
+      loop = Animated.loop(
+        Animated.timing(progress, {
+          toValue: 1,
+          duration: 1600,
+          easing: (t) => t,
+          useNativeDriver: true,
+        }),
+      )
+      loop.start()
+    })
+    return () => {
+      cancelled = true
+      loop?.stop()
+    }
+  }, [progress])
   return (
     <View accessibilityRole="progressbar" accessibilityLabel={label} style={styles.loading}>
-      <ActivityIndicator color={palette.accent} />
-      <Text style={{ color: palette.muted }}>{label}</Text>
+      <Image
+        source={sougoudou}
+        style={styles.loadingBear}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
+      <View style={styles.tiles} accessibilityElementsHidden importantForAccessibility="no">
+        {LOADING_TILES.map((letter, index) => {
+          // Chaque case apparaît à son tour puis reste pleine jusqu'à la fin du cycle.
+          const start = index * 0.12
+          const opacity = progress.interpolate({
+            inputRange: [0, start, start + 0.12, 1],
+            outputRange: [0.15, 0.15, 1, 1],
+          })
+          return (
+            <Animated.View
+              key={letter}
+              style={[
+                styles.tile,
+                { borderColor: palette.accent, backgroundColor: palette.surface, opacity },
+              ]}
+            >
+              <Text style={[styles.tileLetter, { color: palette.accent }]}>{letter}</Text>
+            </Animated.View>
+          )
+        })}
+      </View>
+      <Text style={{ color: palette.muted, fontWeight: '600' }}>{label}</Text>
     </View>
   )
 }
+
+const LOADING_TILES = ['M', 'O', 'T', 'S'] as const
 
 /** Message d'erreur annoncé immédiatement par les lecteurs d'écran. */
 export function ErrorNotice({ message, onRetry }: { message: string; onRetry?: () => void }) {
@@ -160,7 +217,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonLabel: { fontSize: 16, fontWeight: '700' },
-  loading: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 8 },
+  loading: { gap: 10, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  loadingBear: { width: 72, height: 72 },
+  tiles: { flexDirection: 'row', gap: 6 },
+  tile: {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileLetter: { fontSize: 14, fontWeight: '800' },
   notice: { borderRadius: radius.card, padding: 14, gap: 4 },
   link: { minHeight: TOUCH_TARGET, justifyContent: 'center' },
   linkLabel: { fontWeight: '700', textDecorationLine: 'underline' },

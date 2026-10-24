@@ -62,7 +62,7 @@ onMounted(load)
 
 <template>
   <div class="flex flex-col gap-8">
-    <p v-if="loading" role="status" class="text-muted">Chargement de votre progression…</p>
+    <SougoudouLoader v-if="loading" inline label="Chargement de votre progression…" />
     <div v-else-if="error" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4 text-sm">
       {{ error }}
       <button type="button" class="ml-2 font-semibold underline" @click="load">Réessayer</button>
