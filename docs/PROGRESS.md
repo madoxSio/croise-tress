@@ -165,6 +165,12 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Contenu : 7 thèmes, 21 sous-thèmes, 32 nouvelles grilles en français (Culture, Histoire, Football, Manga, Art, Musique) sur trois niveaux, plus les 6 grilles de découverte. Chargées par `prisma/seed.ts`, en insertion seule, à chaque démarrage de l'image de production.
 - Preuves : `catalog.test.ts` (17 tests : validité de chaque grille, idempotence sans écrasement, reclassement, arbre et comptes, filtre, partie rapide, admin des thèmes) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 54, web 60, mobile 37, api 142 (**293 verts**, après fusion de main) ; `make e2e-local` équivalent : **13 passed, 2 skipped** avec le catalogue complet chargé.
 
+### 2026-10-24 — Correctif : duel bloqué sur le site en ligne
+
+- Symptôme (signalé par madox) : « Créer une invitation » et « Trouver un adversaire » restent grisés, la connexion temps réel ne s'établit jamais.
+- Cause probable : la réécriture Vercel `/ws/:path*` envoie `/ws?EIO=4…` (barre finale perdue quand le reste du chemin est vide) et Engine.IO n'acceptait que `/ws/` : 404, client en reconnexion permanente. Non observé directement (prod injoignable depuis le conteneur) ; reproduit en test (404 sans le correctif).
+- Correctif : `addTrailingSlash: false` côté serveur (`gateway.ts`), qui accepte les deux formes. Test de non-régression dans `match.test.ts` (25 verts).
+
 ## Points ouverts (repérés pendant la construction)
 
 - Classement et `/me/matches` : `limit` ≤ 100 sans curseur ; schémas de réponse à déplacer dans `contracts` ; variation Elo absente de `MatchState`.
