@@ -16,6 +16,10 @@ L'espace d'administration est servi par le web sous `/admin` (lien « Administra
 | `/admin/puzzles/:id` | modification ; une grille déjà jouée garde ses lettres (seuls titres et définitions changent)                 |
 | `/admin/audit`       | journal des actions d'administration                                                                          |
 
+Thèmes : la grille se range dans un thème ou un sous-thème choisi dans une liste. Les thèmes se
+créent et se modifient par l'API (`GET/POST/PUT /api/v1/admin/themes`, voir
+[CATALOGUE.md](CATALOGUE.md)) ; pas encore d'écran dédié.
+
 Une grille est créée **en brouillon** : elle n'apparaît au catalogue, au défi du jour et en duel
 qu'une fois publiée. Sa cohérence (mots, numérotation, connexité) est vérifiée par le moteur
 `crossword-core`, comme pour le seed.

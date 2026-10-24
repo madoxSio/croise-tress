@@ -10,6 +10,9 @@ const DTO: PublicPuzzleDto = {
   clues: [...PUZZLE.clues],
   slug: 'table',
   theme: 'Test',
+  themeSlug: 'test',
+  parentThemeSlug: null,
+  skin: 'default',
   difficulty: 'easy',
   estimatedMinutes: 5,
 }

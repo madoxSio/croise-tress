@@ -3,13 +3,14 @@ import type { PuzzleSource } from '@crossverse/crossword-core'
 
 export interface SeedPuzzle extends Omit<PuzzleSource, 'id'> {
   readonly slug: string
+  /** Slug d'un thème de `SEED_THEMES` (en pratique un sous-thème). */
   readonly theme: string
   readonly difficulty: Difficulty
   readonly estimatedMinutes: number
 }
 
 /**
- * Catalogue de démonstration : grilles 5×5 symétriques (mot horizontal n = mot vertical n).
+ * Grilles de découverte (utilisées aussi par les tests d'intégration) : grilles 5×5 symétriques (mot horizontal n = mot vertical n).
  * Contenu vérifié par le moteur (test `seed.test.ts`), non validé éditorialement.
  */
 export const SEED_PUZZLES: readonly SeedPuzzle[] = [
@@ -79,7 +80,7 @@ export const SEED_PUZZLES: readonly SeedPuzzle[] = [
   {
     slug: 'a-la-plage',
     title: 'À la plage',
-    theme: 'vacances',
+    theme: 'voyages',
     difficulty: 'easy',
     estimatedMinutes: 4,
     grid: ['PLAGE', 'L#R#P', 'ARBRE', 'G#R#E', 'EPEES'],
@@ -95,7 +96,7 @@ export const SEED_PUZZLES: readonly SeedPuzzle[] = [
   {
     slug: 'chien-fidele',
     title: 'Chien fidèle',
-    theme: 'animaux',
+    theme: 'nature',
     difficulty: 'easy',
     estimatedMinutes: 4,
     grid: ['CHIEN', 'H#D#I', 'IDOLE', 'E#L#C', 'NIECE'],
@@ -116,7 +117,7 @@ export const SEED_PUZZLES: readonly SeedPuzzle[] = [
   {
     slug: 'en-route',
     title: 'En route',
-    theme: 'voyage',
+    theme: 'voyages',
     difficulty: 'intermediate',
     estimatedMinutes: 5,
     grid: ['ROUTE', 'O#S#V', 'USINE', 'T#N#I', 'EVEIL'],

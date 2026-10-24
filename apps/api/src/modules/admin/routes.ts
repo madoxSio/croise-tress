@@ -4,6 +4,7 @@ import {
   adminPuzzleBodySchema,
   adminPuzzleListQuerySchema,
   adminPuzzleStatusBodySchema,
+  adminThemeBodySchema,
   adminUserListQuerySchema,
   auditListQuerySchema,
   uuidSchema,
@@ -16,6 +17,7 @@ import type { AuthContext } from '../session/service.ts'
 import type { AuthService } from '../auth/service.ts'
 import type { AdminService } from './service.ts'
 import type { AdminUserService } from './users.ts'
+import type { AdminThemeService } from './themes.ts'
 
 const idParamsSchema = z.strictObject({ id: uuidSchema })
 
@@ -29,6 +31,7 @@ export function adminRoutes(
   admin: AdminService,
   users: AdminUserService,
   auth: AuthService,
+  themes: AdminThemeService,
 ): void {
   async function requireAdmin(request: FastifyRequest): Promise<AuthContext> {
     const context = request.auth
@@ -146,6 +149,26 @@ export function adminRoutes(
       puzzle.slug,
     )
     return puzzle
+  })
+
+  app.get('/admin/themes', { config }, async (request) => {
+    await requireAdmin(request)
+    return themes.list()
+  })
+
+  app.post('/admin/themes', { config }, async (request, reply) => {
+    const auth = await requireAdmin(request)
+    const theme = await themes.create(parseInput(adminThemeBodySchema, request.body))
+    await admin.audit(auth.user.id, 'theme.create', theme.slug)
+    return reply.code(201).send(theme)
+  })
+
+  app.put('/admin/themes/:id', { config }, async (request) => {
+    const auth = await requireAdmin(request)
+    const { id } = parseInput(idParamsSchema, request.params)
+    const theme = await themes.update(id, parseInput(adminThemeBodySchema, request.body))
+    await admin.audit(auth.user.id, 'theme.update', theme.slug)
+    return theme
   })
 
   app.get('/admin/audit', { config }, async (request) => {

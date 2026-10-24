@@ -35,7 +35,7 @@ export function progressRoutes(
     const found = await play.resume(auth.user.id)
     if (!found) return { session: null, puzzle: null }
     const { puzzle, ...session } = found
-    return { session: toDto(session), puzzle }
+    return { session: toDto(session), puzzle: { ...puzzle, theme: puzzle.theme.name } }
   })
 
   app.get('/me/stats', async (request) => progress.stats(requireAccount(request).user.id))

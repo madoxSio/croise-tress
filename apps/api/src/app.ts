@@ -9,8 +9,11 @@ import { registerErrorHandler } from './http/errors.ts'
 import { adminRoutes } from './modules/admin/routes.ts'
 import { AdminService } from './modules/admin/service.ts'
 import { AdminUserService } from './modules/admin/users.ts'
+import { AdminThemeService } from './modules/admin/themes.ts'
 import { authRoutes } from './modules/auth/routes.ts'
 import { AuthService } from './modules/auth/service.ts'
+import { CatalogRepository } from './modules/catalog/repository.ts'
+import { catalogRoutes } from './modules/catalog/routes.ts'
 import { SmtpMailer, type Mailer } from './modules/mail/mailer.ts'
 import { playRoutes } from './modules/play/routes.ts'
 import { PlayService } from './modules/play/service.ts'
@@ -78,6 +81,7 @@ export async function buildApp({
 
   const sessions = new SessionService(db, config)
   const puzzles = new PuzzleRepository(db)
+  const catalog = new CatalogRepository(db)
   const progress = new ProgressService(db)
   const play = new PlayService(db, puzzles, now, (session) => progress.onCompleted(session))
   const auth = new AuthService(db, config, sessions, mailer)
@@ -95,10 +99,11 @@ export async function buildApp({
       sessionRoutes(api, config, sessions)
       authRoutes(api, config, sessions, auth)
       puzzleRoutes(api, puzzles, now)
+      catalogRoutes(api, catalog)
       playRoutes(api, play)
       progressRoutes(api, play, progress)
       matchRoutes(api, matches)
-      adminRoutes(api, admin, adminUsers, auth)
+      adminRoutes(api, admin, adminUsers, auth, new AdminThemeService(db))
       done()
     },
     { prefix: API_PREFIX },

@@ -1,9 +1,14 @@
-import { parsePuzzle } from '@crossverse/crossword-core'
 import { loadConfig } from '../src/config.ts'
 import { createDb } from '../src/db.ts'
+import { CATALOG_PUZZLES } from './seed/catalog-puzzles.ts'
 import { SEED_PUZZLES } from './seed/puzzles.ts'
+import { syncCatalog } from './seed/sync.ts'
+import { SEED_THEMES } from './seed/themes.ts'
 
-/** Seed idempotent : insère ou met à jour les puzzles de démonstration par `slug`. */
+/**
+ * Charge le catalogue éditorial (thèmes et grilles). Idempotent et sans écrasement : exécuté
+ * par `make seed` en développement et à chaque démarrage de l'image de production.
+ */
 const rootEnv = new URL('../../../.env', import.meta.url)
 try {
   process.loadEnvFile(rootEnv)
@@ -13,35 +18,12 @@ try {
 
 const config = loadConfig()
 const db = createDb(config.databaseUrl)
-
-for (const seed of SEED_PUZZLES) {
-  const checked = parsePuzzle({
-    id: seed.slug,
-    title: seed.title,
-    grid: seed.grid,
-    clues: seed.clues,
-  })
-  if (!checked.ok)
-    throw new Error(
-      `Puzzle « ${seed.slug} » invalide : ${checked.errors.map((e) => e.message).join(' ')}`,
-    )
-  const data = {
-    title: seed.title,
-    theme: seed.theme,
-    difficulty: seed.difficulty,
-    status: 'published' as const,
-    width: checked.value.width,
-    height: checked.value.height,
-    grid: [...seed.grid],
-    clues: seed.clues.map((clue) => ({ ...clue })),
-    estimatedMinutes: seed.estimatedMinutes,
-  }
-  await db.puzzle.upsert({
-    where: { slug: seed.slug },
-    create: { slug: seed.slug, ...data },
-    update: data,
-  })
+try {
+  const report = await syncCatalog(db, SEED_THEMES, [...SEED_PUZZLES, ...CATALOG_PUZZLES])
+  process.stdout.write(
+    `Catalogue : ${report.themesCreated} thème(s) et ${report.puzzlesCreated} grille(s) ajoutés, ` +
+      `${report.puzzlesReclassified} grille(s) reclassée(s).\n`,
+  )
+} finally {
+  await db.$disconnect()
 }
-
-process.stdout.write(`${SEED_PUZZLES.length} puzzles de démonstration chargés.\n`)
-await db.$disconnect()

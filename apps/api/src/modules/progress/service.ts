@@ -8,6 +8,7 @@ import {
 import type { Db } from '../../db.ts'
 import type { PlaySession } from '../../generated/prisma/client.ts'
 import { notFound } from '../../http/errors.ts'
+import { puzzleSummarySelect, toPuzzleSummary } from '../puzzles/repository.ts'
 
 interface AchievementDefinition {
   readonly code: string
@@ -35,17 +36,6 @@ export const ACHIEVEMENTS: readonly AchievementDefinition[] = [
     description: 'Terminer le défi du jour le jour même.',
   },
 ]
-
-const summarySelect = {
-  id: true,
-  slug: true,
-  title: true,
-  theme: true,
-  difficulty: true,
-  width: true,
-  height: true,
-  estimatedMinutes: true,
-} as const
 
 export class ProgressService {
   constructor(private readonly db: Db) {}
@@ -156,9 +146,9 @@ export class ProgressService {
       where: { userId, puzzle: { status: 'published' } },
       orderBy: { createdAt: 'desc' },
       take: 100,
-      select: { puzzle: { select: summarySelect } },
+      select: { puzzle: { select: puzzleSummarySelect } },
     })
-    return rows.map((row) => row.puzzle)
+    return rows.map((row) => toPuzzleSummary(row.puzzle))
   }
 
   async addFavorite(userId: string, puzzleId: string): Promise<void> {

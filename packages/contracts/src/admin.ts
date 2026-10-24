@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { emailSchema, passwordSchema, usernameSchema } from './auth.js'
+import { hexColorSchema, themeSlugSchema } from './catalog.js'
 import { difficultySchema, directionSchema, uuidSchema } from './common.js'
 
 /**
@@ -183,7 +184,8 @@ export const adminPuzzleBodySchema = z.strictObject({
     .max(60)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'minuscules, chiffres et tirets'),
   title: z.string().trim().min(1).max(80),
-  theme: z.string().trim().min(1).max(40),
+  /** Slug d'un thème ou sous-thème existant (`GET /admin/themes`). */
+  themeSlug: themeSlugSchema,
   difficulty: difficultySchema,
   estimatedMinutes: z.int().min(1).max(180),
   /** Une chaîne par ligne : `#` pour une case noire, une lettre A–Z sinon. */
@@ -198,7 +200,9 @@ export const adminPuzzleSummarySchema = z.strictObject({
   id: uuidSchema,
   slug: z.string(),
   title: z.string(),
+  /** Nom affichable du (sous-)thème. */
   theme: z.string(),
+  themeSlug: z.string(),
   difficulty: difficultySchema,
   status: puzzleStatusSchema,
   width: z.int(),
@@ -231,6 +235,45 @@ export const adminPuzzleSchema = adminPuzzleSummarySchema.extend({
   locked: z.boolean(),
 })
 export type AdminPuzzle = z.infer<typeof adminPuzzleSchema>
+
+// --- Thèmes ------------------------------------------------------------------
+
+/**
+ * Corps de création / modification d'un thème. `parentSlug` désigne un thème de premier
+ * niveau (deux niveaux au plus) ; les champs d'habillage à `null` sont hérités du parent.
+ */
+export const adminThemeBodySchema = z.strictObject({
+  slug: themeSlugSchema,
+  name: z.string().trim().min(1).max(60),
+  description: z.string().trim().max(300).default(''),
+  parentSlug: themeSlugSchema.nullable().default(null),
+  skin: themeSlugSchema.nullable().default(null),
+  icon: z.string().trim().min(1).max(16).nullable().default(null),
+  accent: hexColorSchema.nullable().default(null),
+  accentAlt: hexColorSchema.nullable().default(null),
+  sortOrder: z.int().min(0).max(9999).default(0),
+})
+export type AdminThemeBody = z.input<typeof adminThemeBodySchema>
+
+export const adminThemeSchema = z.strictObject({
+  id: uuidSchema,
+  slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  parentSlug: z.string().nullable(),
+  skin: z.string().nullable(),
+  icon: z.string().nullable(),
+  accent: z.string().nullable(),
+  accentAlt: z.string().nullable(),
+  sortOrder: z.int(),
+  /** Grilles rattachées directement (brouillons compris). */
+  puzzleCount: z.int(),
+})
+export type AdminTheme = z.infer<typeof adminThemeSchema>
+
+/** `GET /admin/themes` : tous les thèmes (collection bornée), parents avant enfants. */
+export const adminThemeListSchema = z.strictObject({ items: z.array(adminThemeSchema) })
+export type AdminThemeList = z.infer<typeof adminThemeListSchema>
 
 // --- Journal d'audit ---------------------------------------------------------
 

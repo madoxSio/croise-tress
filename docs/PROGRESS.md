@@ -131,6 +131,13 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - **Partiel** : `services/catalog.ts` décrit localement le contrat `GET /catalog` et `GET /quick-play` du chantier « Catalogue » et se replie (404) sur la liste des grilles (un thème par nom, habillage par défaut). TODO(catalogue) : basculer sur `@crossverse/contracts` et retirer le repli. Thèmes non encore affichés sur mobile.
 - Vérifié : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 54, web 60, mobile 37, api 119), E2E locaux 15/15, captures mobile et bureau en sombre.
 
+### 2026-10-23 — Catalogue de thèmes et premières grilles thématiques ✅ (hors Docker)
+
+- Modèle : table `themes` (thème > sous-thème, deux niveaux au plus, style `skin`/`icon`/`accent`/`accentAlt` hérité du parent), `puzzles.theme_id` remplace le libellé libre. Migration `20261023213144_themes_catalog` avec reprise des données (anciens libellés rangés sous « Divers »), vérifiée sur une base contenant des grilles.
+- API : `GET /catalog` (arbre, grilles publiées par niveau), `GET /quick-play?theme=` (grille simple au hasard, jouable en invité), `GET /puzzles?theme=<slug>` (thème + sous-thèmes ; slug inconnu = liste vide), résumés enrichis (`themeSlug`, `parentThemeSlug`, `skin`), `GET/POST/PUT /admin/themes`, grilles admin rattachées par `themeSlug`. Détails : [CATALOGUE.md](CATALOGUE.md).
+- Contenu : 7 thèmes, 21 sous-thèmes, 32 nouvelles grilles en français (Culture, Histoire, Football, Manga, Art, Musique) sur trois niveaux, plus les 6 grilles de découverte. Chargées par `prisma/seed.ts`, en insertion seule, à chaque démarrage de l'image de production.
+- Preuves : `catalog.test.ts` (17 tests : validité de chaque grille, idempotence sans écrasement, reclassement, arbre et comptes, filtre, partie rapide, admin des thèmes) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 54, web 60, mobile 37, api 142 (**293 verts**, après fusion de main) ; `make e2e-local` équivalent : **13 passed, 2 skipped** avec le catalogue complet chargé.
+
 ## Points ouverts (repérés pendant la construction)
 
 - Classement et `/me/matches` : `limit` ≤ 100 sans curseur ; schémas de réponse à déplacer dans `contracts` ; variation Elo absente de `MatchState`.
@@ -138,6 +145,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Sessions sans libellé d'appareil ; favoris plafonnés à 100.
 - E2E non branchés dans la CI ; limites d'inscription (5/h par IP, en mémoire) : redémarrer l'API entre deux exécutions E2E.
 - Limites de débit en mémoire : remises à zéro au redémarrage, et une seule instance.
+- Catalogue : pas d'écran d'administration des thèmes (API seule) ; les grilles du seed déjà présentes en base ne sont jamais mises à jour par le chargement (corrections via l'éditeur) ; grilles « en croix » jusqu'à 15 colonnes, à vérifier sur petit écran avec la nouvelle interface.
 - Admin : pas de MFA (T17), pas de modération des pseudos ni d'export/suppression RGPD par l'administrateur, durée de conservation de `audit_log` à fixer ; série « inscriptions » datée par la confirmation d'e-mail (décalée par un changement d'adresse).
 
 ## Couverture du plan de tests de sécurité
