@@ -208,7 +208,7 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 | ---------------- | ----------------------------------------------------------------------------------------------- |
 | `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                              |
 | `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                               |
-| `pnpm test`      | core 62/62, web 72/72, mobile 44/44, api 167/167 : **345 tests verts** (après fusion de main)                          |
+| `pnpm test`      | core 62/62, web 72/72, mobile 44/44, api 167/167 : **345 tests verts** (après fusion de main)   |
 | `make e2e-local` | **15 passed, 2 skipped (1.8m)** : les 2 ignorés lisent le build statique, absent (pas de build) |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.
