@@ -14,6 +14,7 @@ import {
   acceptedResponseSchema,
   achievementListSchema,
   apiErrorSchema,
+  catalogSchema,
   checkResponseSchema,
   dailyChallengeSchema,
   favoriteListSchema,
@@ -22,6 +23,7 @@ import {
   playSessionSchema,
   publicPuzzleSchema,
   puzzleListSchema,
+  quickPlaySchema,
   resumeResponseSchema,
   sessionListSchema,
   sessionResponseSchema,
@@ -29,6 +31,7 @@ import {
   uuidSchema,
 } from '@crossverse/contracts'
 import type {
+  CatalogTheme,
   CheckBody,
   DailyChallenge,
   Difficulty,
@@ -38,6 +41,7 @@ import type {
   PlaySessionDto,
   PublicPuzzleDto,
   PuzzleList,
+  PuzzleSummary,
   ResumeResponse,
   SessionResponse,
   Stats,
@@ -301,6 +305,21 @@ export class ApiClient {
       })}`,
       puzzleListSchema,
     )
+  }
+
+  /** Thèmes et sous-thèmes ayant au moins une grille, avec leur habillage. */
+  async getCatalog(): Promise<CatalogTheme[]> {
+    return (await this.request('GET', '/catalog', catalogSchema)).themes
+  }
+
+  /** Grille simple tirée au hasard (éventuellement dans un thème), ou `null` s'il n'y en a pas. */
+  async quickPlay(theme?: string): Promise<PuzzleSummary | null> {
+    try {
+      return (await this.request('GET', `/quick-play${query({ theme })}`, quickPlaySchema)).puzzle
+    } catch (error) {
+      if (error instanceof ApiRequestError && error.isNotFound) return null
+      throw error
+    }
   }
 
   getPuzzle(id: string): Promise<PublicPuzzleDto> {
