@@ -9,6 +9,10 @@ const rawId = route.params['puzzleId']
 const puzzleId = (Array.isArray(rawId) ? rawId[0] : rawId) ?? ''
 
 const play = usePlaySession(puzzleId)
+// Habillage du thème de la grille (motif et couleurs du catalogue).
+const catalog = useCatalog()
+onMounted(() => void catalog.load())
+const look = computed(() => catalog.lookOf(play.details.value?.theme ?? ''))
 const { details, session, game, loading, loadError, notFound, saveState, notice, actionError } =
   play
 const { explanation, busy, completed, wallet, freeHintsLeft, paidHintOffer, pointsGained } = play
@@ -178,26 +182,33 @@ const gridLabel = computed(() =>
     </div>
 
     <template v-else-if="game && details && session">
-      <header class="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <header
+        class="cv-skin cv-skin-text flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl px-3 py-2 sm:px-4"
+        :data-skin="look.skin"
+        :style="{ '--skin-a': look.accent, '--skin-b': look.accentAlt }"
+      >
         <NuxtLink
           to="/puzzles"
-          class="text-muted hover:text-fg -ml-2 inline-flex min-h-11 items-center rounded-full px-2 text-sm"
+          class="inline-flex min-h-11 items-center rounded-full px-2 text-sm text-white/90 hover:text-white"
         >
           <span aria-hidden="true">←&nbsp;</span>Grilles
         </NuxtLink>
         <h1 class="min-w-0 flex-1 truncate text-lg font-extrabold sm:text-xl">
-          {{ details.title }}
-          <span class="text-muted ml-1 text-sm font-medium">{{
+          <span aria-hidden="true" class="mr-1">{{ look.icon }}</span
+          >{{ details.title }}
+          <span class="ml-1 text-sm font-medium text-white/85">{{
             difficultyLabel(details.difficulty)
           }}</span>
         </h1>
-        <p class="text-muted flex items-center gap-3 text-sm tabular-nums">
+        <p class="flex items-center gap-3 text-sm text-white/90 tabular-nums">
           <span :aria-label="`Temps écoulé ${formatDuration(elapsed)}`">{{
             formatClock(elapsed)
           }}</span>
           <span
             aria-live="polite"
-            :class="saveState === 'error' ? 'text-danger font-semibold' : ''"
+            :class="
+              saveState === 'error' ? 'rounded bg-white px-1 font-semibold text-[#b42318]' : ''
+            "
             >{{ saveLabel }}</span
           >
         </p>
@@ -208,7 +219,7 @@ const gridLabel = computed(() =>
           <!-- Définition active : toujours visible au-dessus de la grille. -->
           <div
             ref="clueBarRef"
-            class="bg-surface border-line sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-2xl border p-1 shadow-sm"
+            class="bg-surface border-line sticky top-[calc(4.75rem+env(safe-area-inset-top))] z-10 flex items-center gap-1 rounded-2xl border p-1 shadow-sm"
           >
             <button
               type="button"

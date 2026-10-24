@@ -1,105 +1,85 @@
 <!-- Sougoudou, version statique (source : apps/web/app/components/SougoudouMascot.vue). -->
-<svg xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 220 230"
-  >
-    <defs>
-      <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#8366ff" />
-        <stop offset="1" stop-color="#4521de" />
-      </linearGradient>
-      <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#ffffff" stop-opacity="0.45" />
-        <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
-      </linearGradient>
-    </defs>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240">
+  <defs>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d89a69" />
+      <stop offset="1" stop-color="#c07f50" />
+    </linearGradient>
+    <linearGradient id="scarf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8366ff" />
+      <stop offset="1" stop-color="#4521de" />
+    </linearGradient>
+  </defs>
 
-    <ellipse class="sgd-shadow" cx="108" cy="216" rx="56" ry="8" fill="#16132a" opacity="0.14" />
+  <ellipse cx="120" cy="229" rx="62" ry="7" fill="#16132a" opacity="0.14" />
 
-    <g class="sgd-body">
-      <!-- Pieds -->
-      <rect x="70" y="186" width="26" height="20" rx="10" fill="#ff5c39" />
-      <rect x="120" y="186" width="26" height="20" rx="10" fill="#ff5c39" />
+  <!-- Corps -->
+  <ellipse cx="120" cy="178" rx="58" ry="48" fill="url(#fur)" stroke="#7a4a2b" stroke-width="3" />
+  <ellipse cx="120" cy="188" rx="35" ry="29" fill="#f3d4ae" />
+  <!-- Pieds -->
+  <g stroke="#7a4a2b" stroke-width="3">
+    <ellipse cx="84" cy="215" rx="23" ry="15" fill="#c98a5a" />
+    <ellipse cx="156" cy="215" rx="23" ry="15" fill="#c98a5a" />
+  </g>
+  <ellipse cx="84" cy="217" rx="12" ry="8" fill="#f3d4ae" />
+  <ellipse cx="156" cy="217" rx="12" ry="8" fill="#f3d4ae" />
 
-      <!-- Bras gauche (salut) -->
-      <g class="sgd-wave">
-        <path
-          d="M42 128 C26 122 18 108 20 94"
-          fill="none"
-          stroke="#5a37ef"
-          stroke-width="12"
-          stroke-linecap="round"
-        />
-        <circle cx="20" cy="90" r="9" fill="#ffffff" stroke="#5a37ef" stroke-width="4" />
-      </g>
+  <!-- Bras gauche -->
+  <g class="arm-left">
+    <ellipse cx="68" cy="184" rx="14" ry="25" transform="rotate(25 68 184)" fill="#c98a5a" stroke="#7a4a2b" stroke-width="3" />
+  </g>
 
-      <!-- Corps : la case -->
-      <rect x="36" y="44" width="144" height="146" rx="38" fill="url(#body)" />
-      <rect x="44" y="50" width="128" height="58" rx="30" fill="url(#shine)" />
-      <text
-        x="58"
-        y="82"
-        font-family="'Bricolage Grotesque Variable', system-ui, sans-serif"
-        font-size="22"
-        font-weight="800"
-        fill="#ffffff"
-        opacity="0.85"
-      >
-        1
-      </text>
+  <!-- Bras droit -->
+  <ellipse cx="172" cy="184" rx="14" ry="25" transform="rotate(-25 172 184)" fill="#c98a5a" stroke="#7a4a2b" stroke-width="3" />
 
-      <!-- Pastille citron « S » -->
-      <g transform="rotate(12 166 48)">
-        <rect x="146" y="28" width="40" height="40" rx="11" fill="#c8f53c" />
-        <text
-          x="166"
-          y="57"
-          text-anchor="middle"
-          font-family="'Bricolage Grotesque Variable', system-ui, sans-serif"
-          font-size="26"
-          font-weight="800"
-          fill="#16132a"
-        >
-          S
-        </text>
-      </g>
+  <!-- Crayon tenu dans la patte -->
+  <g transform="translate(184 200) rotate(24)">
+    <path d="M-7 10 L0 25 L7 10 Z" fill="#f4dcb4" stroke="#16132a" stroke-width="2.5" stroke-linejoin="round" />
+    <path d="M-2.6 19 L0 25 L2.6 19 Z" fill="#16132a" />
+    <rect x="-7" y="-46" width="14" height="56" fill="#ffd84d" stroke="#16132a" stroke-width="2.5" />
+    <rect x="-1.8" y="-46" width="3.6" height="56" fill="#f2b632" />
+    <rect x="-7" y="-53" width="14" height="7" fill="#d9d4ea" stroke="#16132a" stroke-width="2.5" />
+    <rect x="-7" y="-63" width="14" height="11" rx="5" fill="#ff8fa3" stroke="#16132a" stroke-width="2.5" />
+    <ellipse cx="-1" cy="-4" rx="11" ry="10" fill="#c98a5a" stroke="#7a4a2b" stroke-width="3" />
+  </g>
 
-      <!-- Visage -->
-      <g class="sgd-eyes">
-        <ellipse cx="86" cy="118" rx="15" ry="17" fill="#ffffff" />
-        <ellipse cx="132" cy="118" rx="15" ry="17" fill="#ffffff" />
-        <circle cx="90" cy="121" r="8" fill="#16132a" />
-        <circle cx="136" cy="121" r="8" fill="#16132a" />
-        <circle cx="93" cy="117" r="3" fill="#ffffff" />
-        <circle cx="139" cy="117" r="3" fill="#ffffff" />
-      </g>
-      <ellipse cx="70" cy="146" rx="9" ry="6" fill="#ff8fa3" opacity="0.75" />
-      <ellipse cx="148" cy="146" rx="9" ry="6" fill="#ff8fa3" opacity="0.75" />
-      <path
-        d="M96 144 Q109 162 122 144 Z"
-        fill="#16132a"
-        stroke="#16132a"
-        stroke-width="4"
-        stroke-linejoin="round"
-      />
-      <ellipse cx="109" cy="153" rx="6" ry="3.5" fill="#ff5c39" />
+  <!-- Oreilles -->
+  <g stroke="#7a4a2b" stroke-width="3">
+    <circle cx="64" cy="46" r="26" fill="#c98a5a" />
+    <circle cx="176" cy="46" r="26" fill="#c98a5a" />
+  </g>
+  <circle cx="67" cy="49" r="14" fill="#f3d4ae" />
+  <circle cx="173" cy="49" r="14" fill="#f3d4ae" />
 
-      <!-- Bras droit et crayon -->
-      <g class="sgd-pencil">
-        <path
-          d="M178 140 C192 136 198 126 198 114"
-          fill="none"
-          stroke="#5a37ef"
-          stroke-width="12"
-          stroke-linecap="round"
-        />
-        <g transform="rotate(-28 200 92)">
-          <rect x="192" y="58" width="16" height="50" rx="3" fill="#ffd84d" />
-          <rect x="192" y="58" width="16" height="10" rx="3" fill="#ff8fa3" />
-          <rect x="192" y="66" width="16" height="4" fill="#d9d4ea" />
-          <path d="M192 108 L200 124 L208 108 Z" fill="#f4dcb4" />
-          <path d="M197.5 119 L200 124 L202.5 119 Z" fill="#16132a" />
-        </g>
-        <circle cx="198" cy="112" r="9" fill="#ffffff" stroke="#5a37ef" stroke-width="4" />
-      </g>
-    </g>
-  </svg>
+  <!-- Tête -->
+  <ellipse cx="120" cy="94" rx="70" ry="60" fill="url(#fur)" stroke="#7a4a2b" stroke-width="3" />
+  <ellipse cx="94" cy="58" rx="30" ry="13" fill="#fff" opacity="0.14" transform="rotate(-12 94 58)" />
+
+  <!-- Yeux -->
+  <ellipse cx="94" cy="98" rx="9.5" ry="12" fill="#16132a" />
+  <ellipse cx="146" cy="98" rx="9.5" ry="12" fill="#16132a" />
+  <circle cx="97.5" cy="93" r="4" fill="#fff" />
+  <circle cx="149.5" cy="93" r="4" fill="#fff" />
+  <circle cx="91.5" cy="103" r="1.8" fill="#fff" />
+  <circle cx="143.5" cy="103" r="1.8" fill="#fff" />
+
+  <!-- Joues -->
+  <ellipse cx="74" cy="120" rx="12" ry="7.5" fill="#ff8fa3" opacity="0.8" />
+  <ellipse cx="166" cy="120" rx="12" ry="7.5" fill="#ff8fa3" opacity="0.8" />
+
+  <!-- Museau -->
+  <ellipse cx="120" cy="123" rx="25" ry="19" fill="#f3d4ae" />
+  <path d="M110 113 Q120 108 130 113 Q130 120 120 124 Q110 120 110 113 Z" fill="#16132a" stroke="#16132a" stroke-width="2" stroke-linejoin="round" />
+  <ellipse cx="116" cy="112.5" rx="3" ry="1.6" fill="#fff" opacity="0.7" />
+  <path d="M120 124 V128 M111 128 Q115.5 134 120 128 Q124.5 134 129 128" fill="none" stroke="#16132a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+
+  <!-- Écharpe -->
+  <path d="M70 140 Q120 158 170 140 L172 157 Q120 177 68 157 Z" fill="url(#scarf)" stroke="url(#scarf)" stroke-width="5" stroke-linejoin="round" />
+  <g transform="rotate(8 104 160)">
+    <rect x="94" y="158" width="21" height="44" rx="4" fill="#5634f0" />
+    <rect x="95.5" y="181" width="9" height="9" rx="1.5" fill="#fff" />
+    <rect x="104.5" y="190" width="9" height="9" rx="1.5" fill="#fff" />
+    <path d="M98 203 v6 M104.5 203 v6 M111 203 v6" stroke="#c8f53c" stroke-width="3" stroke-linecap="round" />
+  </g>
+  <rect x="98" y="149" width="22" height="17" rx="7" fill="#4521de" />
+</svg>

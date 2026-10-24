@@ -134,6 +134,17 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Invité limité au solo (D11) : API `requireAccount`, encart `AccountRequired` sur `/history`, favoris masqués pour l'invité, onglet Compte mobile sans appel refusé. Correctif : `PuzzleCard` affichait le bouton favori sans favoris chargés (booléen absent converti en `false`).
 - Vérifié : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 52, web 60, mobile 37, api 109), E2E locaux 15/15 (dont build statique), captures mobile / tablette / bureau en clair et sombre.
 
+### 2026-10-23 — Refonte v2 : landing néon, thèmes, invitation au compte ✅ (web) / 🟡 (catalogue)
+
+- Sougoudou devient un petit ourson doudou (écharpe, crayon) qui arrive à l'écran et se présente (salutation tapée, texte complet lu par les lecteurs d'écran). Icônes régénérées.
+- Landing sombre animée (grille, faisceau néon), gros bouton « Partie rapide » (`useQuickPlay`), carrousel de thèmes sur mobile.
+- Interrupteur soleil / lune dans l'en-tête (`ThemeSwitch.vue`, `role="switch"`).
+- `/puzzles` : cartes de thèmes (`ThemeCard.vue`), sous-thèmes, niveaux Simple / Intermédiaire / Compliqué (filtres dans l'URL), habillage de la grille par thème (`.cv-skin`, motifs football, manga, histoire, culture, art, musique, nature) jusque dans l'en-tête de partie.
+- Invitation au compte : fenêtre floutée (`AccountGateDialog.vue`, `useAccountGate`) et aperçus verrouillés (`LockedPreview.vue`) sur l'historique et le duel.
+- Mobile : accueil sombre avec la mascotte, bulle de salutation et bouton néon « Partie rapide ».
+- **Partiel** : `services/catalog.ts` décrit localement le contrat `GET /catalog` et `GET /quick-play` du chantier « Catalogue » et se replie (404) sur la liste des grilles (un thème par nom, habillage par défaut). TODO(catalogue) : basculer sur `@crossverse/contracts` et retirer le repli. Thèmes non encore affichés sur mobile.
+- Vérifié : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 54, web 60, mobile 37, api 119), E2E locaux 15/15, captures mobile et bureau en sombre.
+
 ## Points ouverts (repérés pendant la construction)
 
 - Classement et `/me/matches` : `limit` ≤ 100 sans curseur ; schémas de réponse à déplacer dans `contracts` ; variation Elo absente de `MatchState`.

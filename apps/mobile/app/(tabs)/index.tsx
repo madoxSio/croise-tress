@@ -4,9 +4,9 @@ import { useCallback, useState } from 'react'
 import { Image, StyleSheet, Text, View } from 'react-native'
 import sougoudou from '../../assets/sougoudou.png'
 import { api, errorMessage } from '../../src/api'
-import { Button, Card, ErrorNotice, Loading, Muted, Screen, Title } from '../../src/components/ui'
+import { Button, Card, ErrorNotice, Loading, Muted, Screen } from '../../src/components/ui'
 import { difficultyLabel } from '../../src/game/labels'
-import { MASCOT_NAME, MASCOT_PHRASE } from '../../src/mascot'
+import { MASCOT_GREETING, MASCOT_NAME } from '../../src/mascot'
 import { radius, usePalette } from '../../src/theme'
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -44,25 +44,61 @@ export default function Home() {
     }, [load]),
   )
 
+  // Partie rapide : une grille facile au hasard (repli tant que /quick-play n'existe pas).
+  const [quickBusy, setQuickBusy] = useState(false)
+  const [quickError, setQuickError] = useState<string | null>(null)
+  const quickPlay = useCallback(async () => {
+    setQuickBusy(true)
+    setQuickError(null)
+    try {
+      await api.ensureSession()
+      const easy = await api.listPuzzles({ difficulty: 'easy', limit: 20 })
+      const items =
+        easy.items.length > 0 ? easy.items : (await api.listPuzzles({ limit: 20 })).items
+      const pick = items[Math.floor(Math.random() * items.length)]
+      if (pick) router.push(`/play/${pick.id}`)
+      else setQuickError('Aucune grille disponible pour le moment.')
+    } catch (cause) {
+      setQuickError(errorMessage(cause))
+    } finally {
+      setQuickBusy(false)
+    }
+  }, [])
+
   const resume = data?.resume
   const daily = data?.daily
   return (
     <Screen>
-      <View style={styles.hero}>
-        <Image
-          source={sougoudou}
-          style={styles.mascot}
-          accessibilityIgnoresInvertColors
-          accessible={false}
-        />
-        <View
-          style={[styles.bubble, { backgroundColor: palette.surface, borderColor: palette.line }]}
-        >
-          <Text style={[styles.phrase, { color: palette.fg }]}>« {MASCOT_PHRASE} »</Text>
-          <Muted>{MASCOT_NAME}, la mascotte</Muted>
+      {/* Scène sombre (comme le web) : Sougoudou se présente, partie rapide en un geste. */}
+      <View style={styles.stage}>
+        <View style={styles.hero}>
+          <Image
+            source={sougoudou}
+            style={styles.mascot}
+            accessibilityIgnoresInvertColors
+            accessible={false}
+          />
+          <View style={styles.bubble}>
+            <Text style={styles.phrase}>{MASCOT_GREETING}</Text>
+          </View>
         </View>
+        <Text accessibilityRole="header" style={styles.stageTitle}>
+          Les mots croisés,{'\n'}
+          <Text style={styles.stageAccent}>version arène.</Text>
+        </Text>
+        <Text style={styles.stageText}>
+          Des grilles par thèmes, un défi chaque jour et des duels en temps réel. Sans inscription
+          pour commencer.
+        </Text>
+        <Button
+          label={quickBusy ? 'Préparation…' : 'Partie rapide'}
+          variant="neon"
+          disabled={quickBusy}
+          onPress={() => void quickPlay()}
+        />
+        {quickError !== null ? <Text style={styles.stageError}>{quickError}</Text> : null}
+        <Text style={styles.stageCaption}>{MASCOT_NAME}, votre guide</Text>
       </View>
-      <Title>Les mots croisés, version arène.</Title>
       {error !== null ? (
         <ErrorNotice message={error} onRetry={() => void load()} />
       ) : data === null ? (
@@ -123,10 +159,16 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  stage: { backgroundColor: '#0d0b17', borderRadius: radius.card + 12, padding: 20, gap: 14 },
   hero: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  mascot: { width: 96, height: 96 },
-  bubble: { flex: 1, borderWidth: 1, borderRadius: radius.card, padding: 12, gap: 4 },
-  phrase: { fontSize: 16, fontWeight: '700' },
+  mascot: { width: 104, height: 104 },
+  bubble: { flex: 1, backgroundColor: '#ffffff', borderRadius: radius.card, padding: 12 },
+  phrase: { fontSize: 15, fontWeight: '700', color: '#16132a' },
+  stageTitle: { fontSize: 34, fontWeight: '800', color: '#ffffff', lineHeight: 38 },
+  stageAccent: { color: '#c8f53c' },
+  stageText: { fontSize: 16, lineHeight: 23, color: 'rgba(255,255,255,0.78)' },
+  stageError: { color: '#ffb4aa' },
+  stageCaption: { color: 'rgba(255,255,255,0.7)', fontSize: 13 },
   heading: { fontSize: 20, fontWeight: '700' },
   daily: { borderRadius: radius.card + 8, padding: 20, gap: 10 },
   kicker: { fontSize: 12, fontWeight: '700', letterSpacing: 1, opacity: 0.9 },

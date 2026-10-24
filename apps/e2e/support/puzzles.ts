@@ -15,7 +15,7 @@ export interface Slot {
 
 /** Titre de la grille affiché dans le h1 de la page (sans la difficulté, dans un <span>). */
 export async function displayedPuzzleTitle(page: Page): Promise<string> {
-  await expect(page.locator('main h1 span')).toBeVisible()
+  await expect(page.locator('main h1')).toBeVisible()
   return page.locator('main h1').evaluate((h1) => {
     const copy = h1.cloneNode(true) as HTMLElement
     copy.querySelectorAll('span').forEach((span) => {
