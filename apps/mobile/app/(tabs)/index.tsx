@@ -44,7 +44,7 @@ export default function Home() {
     }, [load]),
   )
 
-  // Partie rapide : une grille facile au hasard (repli tant que /quick-play n'existe pas).
+  // Partie rapide : le serveur tire une grille simple au hasard.
   const [quickBusy, setQuickBusy] = useState(false)
   const [quickError, setQuickError] = useState<string | null>(null)
   const quickPlay = useCallback(async () => {
@@ -52,10 +52,7 @@ export default function Home() {
     setQuickError(null)
     try {
       await api.ensureSession()
-      const easy = await api.listPuzzles({ difficulty: 'easy', limit: 20 })
-      const items =
-        easy.items.length > 0 ? easy.items : (await api.listPuzzles({ limit: 20 })).items
-      const pick = items[Math.floor(Math.random() * items.length)]
+      const pick = await api.quickPlay()
       if (pick) router.push(`/play/${pick.id}`)
       else setQuickError('Aucune grille disponible pour le moment.')
     } catch (cause) {

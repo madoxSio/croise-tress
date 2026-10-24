@@ -203,4 +203,14 @@ describe('client API — erreurs', () => {
     const client = new ApiClient({ baseUrl: '', transport: cookieTransport, fetch: server.fetch })
     expect(await client.getDaily()).toBeNull()
   })
+
+  it('partie rapide : transmet le thème et renvoie null quand aucune grille n’est disponible', async () => {
+    const server = fakeServer({
+      'GET /quick-play': () =>
+        json(404, { error: { code: 'not_found', message: 'Aucune grille disponible.' } }),
+    })
+    const client = new ApiClient({ baseUrl: '', transport: cookieTransport, fetch: server.fetch })
+    expect(await client.quickPlay('manga')).toBeNull()
+    expect(server.calls.map((c) => c.url)).toEqual(['/api/v1/quick-play?theme=manga'])
+  })
 })
