@@ -136,7 +136,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Invité limité au solo (D11) : API `requireAccount`, encart `AccountRequired` sur `/history`, favoris masqués pour l'invité, onglet Compte mobile sans appel refusé. Correctif : `PuzzleCard` affichait le bouton favori sans favoris chargés (booléen absent converti en `false`).
 - Vérifié : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 52, web 60, mobile 37, api 109), E2E locaux 15/15 (dont build statique), captures mobile / tablette / bureau en clair et sombre.
 
-### 2026-10-23 — Refonte v2 : landing néon, thèmes, invitation au compte ✅ (web) / 🟡 (catalogue)
+### 2026-10-23 — Refonte v2 : landing néon, thèmes, invitation au compte ✅
 
 - Sougoudou devient un petit ourson doudou (écharpe, crayon) qui arrive à l'écran et se présente (salutation tapée, texte complet lu par les lecteurs d'écran). Icônes régénérées.
 - Landing sombre animée (grille, faisceau néon), gros bouton « Partie rapide » (`useQuickPlay`), carrousel de thèmes sur mobile.
@@ -144,7 +144,8 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - `/puzzles` : cartes de thèmes (`ThemeCard.vue`), sous-thèmes, niveaux Simple / Intermédiaire / Compliqué (filtres dans l'URL), habillage de la grille par thème (`.cv-skin`, motifs football, manga, histoire, culture, art, musique, nature) jusque dans l'en-tête de partie.
 - Invitation au compte : fenêtre floutée (`AccountGateDialog.vue`, `useAccountGate`) et aperçus verrouillés (`LockedPreview.vue`) sur l'historique et le duel.
 - Mobile : accueil sombre avec la mascotte, bulle de salutation et bouton néon « Partie rapide ».
-- **Partiel** : `services/catalog.ts` décrit localement le contrat `GET /catalog` et `GET /quick-play` du chantier « Catalogue » et se replie (404) sur la liste des grilles (un thème par nom, habillage par défaut). TODO(catalogue) : basculer sur `@crossverse/contracts` et retirer le repli. Thèmes non encore affichés sur mobile.
+- 2026-10-24 : web branché sur les contrats du catalogue (PR #11) : repli local retiré, habillage par `themeSlug`, skin `champions` (Ligue des champions). En-têtes de `/puzzles` et de partie corrigés à 320 px (titre de grille sur sa propre ligne) ; grille de 14 cases sans défilement horizontal à 320 px. Lien « Parcours » (PR #10) dans la navigation (6 onglets ; nom de l'app masqué entre `sm` et `md` pour tenir à 640 px) et carte sur l'accueil. Thèmes pas encore affichés sur mobile.
+- Vérifié le 2026-10-24 : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 54, web 63, mobile 37, api 159), E2E locaux 15/15, captures 320 / 640 / 390 / 820 / 1440 px.
 - Vérifié : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 54, web 60, mobile 37, api 119), E2E locaux 15/15, captures mobile et bureau en sombre.
 
 ### 2026-10-23 — Catalogue de thèmes et premières grilles thématiques ✅ (hors Docker)

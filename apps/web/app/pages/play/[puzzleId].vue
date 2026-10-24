@@ -12,7 +12,7 @@ const play = usePlaySession(puzzleId)
 // Habillage du thème de la grille (motif et couleurs du catalogue).
 const catalog = useCatalog()
 onMounted(() => void catalog.load())
-const look = computed(() => catalog.lookOf(play.details.value?.theme ?? ''))
+const look = computed(() => catalog.lookOf(play.details.value?.themeSlug ?? ''))
 const { details, session, game, loading, loadError, notFound, saveState, notice, actionError } =
   play
 const { explanation, busy, completed, wallet, freeHintsLeft, paidHintOffer, pointsGained } = play
@@ -193,14 +193,16 @@ const gridLabel = computed(() =>
         >
           <span aria-hidden="true">←&nbsp;</span>Grilles
         </NuxtLink>
-        <h1 class="min-w-0 flex-1 truncate text-lg font-extrabold sm:text-xl">
+        <h1
+          class="order-last min-w-0 basis-full truncate text-lg font-extrabold sm:order-none sm:basis-0 sm:flex-1 sm:text-xl"
+        >
           <span aria-hidden="true" class="mr-1">{{ look.icon }}</span
           >{{ details.title }}
           <span class="ml-1 text-sm font-medium text-white/85">{{
             difficultyLabel(details.difficulty)
           }}</span>
         </h1>
-        <p class="flex items-center gap-3 text-sm text-white/90 tabular-nums">
+        <p class="ml-auto flex items-center gap-3 text-sm text-white/90 tabular-nums">
           <span :aria-label="`Temps écoulé ${formatDuration(elapsed)}`">{{
             formatClock(elapsed)
           }}</span>

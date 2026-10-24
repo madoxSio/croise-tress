@@ -378,6 +378,47 @@ const featuredThemes = computed(() => (catalog.themes.value ?? []).slice(0, 6))
       </ul>
     </section>
 
+    <!-- Parcours -->
+    <section
+      v-reveal
+      aria-labelledby="paths-title"
+      class="border-line bg-surface shadow-card grid items-center gap-6 rounded-[2rem] border p-6 sm:p-10 md:grid-cols-[1fr_auto]"
+    >
+      <div>
+        <p class="text-accent text-sm font-bold tracking-wider uppercase">Parcours</p>
+        <h2 id="paths-title" class="mt-2 text-3xl font-extrabold sm:text-4xl">
+          Une aventure, grille après grille.
+        </h2>
+        <p class="text-muted mt-3 text-lg">
+          Enchaînez les grilles d’un thème : chaque étape réussie ouvre la suivante et rapporte des
+          Coumba points.
+        </p>
+        <NuxtLink
+          to="/parcours"
+          class="bg-fg text-bg mt-6 inline-flex min-h-12 items-center rounded-2xl px-6 font-bold transition-transform hover:-translate-y-0.5"
+        >
+          Voir les parcours
+        </NuxtLink>
+      </div>
+      <!-- Chemin d'étapes décoratif : le texte dit déjà tout. -->
+      <ol aria-hidden="true" class="flex items-center gap-2 md:flex-col">
+        <li
+          v-for="step in 4"
+          :key="step"
+          class="font-display grid size-12 place-items-center rounded-2xl text-lg font-extrabold"
+          :class="
+            step < 3
+              ? 'bg-accent text-accent-fg'
+              : step === 3
+                ? 'bg-highlight text-[#16132a]'
+                : 'bg-surface-2 text-muted border-line border border-dashed'
+          "
+        >
+          {{ step < 3 ? '✓' : step }}
+        </li>
+      </ol>
+    </section>
+
     <!-- Comment jouer -->
     <section aria-labelledby="howto-title" class="grid items-center gap-10 lg:grid-cols-2">
       <div class="flex flex-col gap-6">
