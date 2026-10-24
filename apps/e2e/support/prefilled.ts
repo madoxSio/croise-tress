@@ -1,4 +1,9 @@
-import { expect, test, type Page } from '@playwright/test'
+/**
+ * Partie en grille pré-remplie, jouée à la suite du parcours solo dans le même contexte : elle
+ * réutilise la session invitée déjà ouverte. Les sessions invitées sont limitées à 30 par heure
+ * et par IP, et tous les E2E passent par la même IP : un test de plus en créerait une de plus.
+ */
+import { expect, type Page } from '@playwright/test'
 
 interface Hit {
   answer: string
@@ -6,39 +11,44 @@ interface Hit {
   end: { row: number; col: number }
 }
 
-/** Emplacement d'un mot, demandé à l'API comme le ferait « Où est-il ? » (sans toucher l'écran). */
-async function locate(page: Page, puzzleId: string, index: number): Promise<Hit> {
+/**
+ * Emplacements des deux premiers mots, demandés à l'API comme le ferait « Où est-il ? » (sans
+ * toucher l'écran). Un seul aller-retour groupé : la suite entière frôle la limite globale de
+ * 300 requêtes par minute et par IP, chaque requête évitée compte.
+ */
+async function locateFirstTwo(page: Page, puzzleId: string): Promise<[Hit, Hit]> {
+  const labels = await page
+    .getByRole('button', { name: /^Où est le mot/ })
+    .evaluateAll((buttons) => buttons.slice(0, 2).map((b) => b.getAttribute('aria-label') ?? ''))
+  const clues = labels.map((label) => {
+    const [, number, way] = /(\d+) (horizontal|vertical)/.exec(label) ?? []
+    return { number: Number(number), direction: way === 'horizontal' ? 'across' : 'down' }
+  })
   return page.evaluate(
-    async ({ puzzleId, index }) => {
+    async ({ puzzleId, clues }) => {
       const session = (await (await fetch('/api/v1/session')).json()) as { csrfToken: string }
       const saved = JSON.parse(
         localStorage.getItem(`crossverse:pre-remplie:${puzzleId}`) ?? '{}',
-      ) as {
-        seed: number
+      ) as { seed: number }
+      const reveal = async (clue: { direction: string; number: number } | undefined) => {
+        const res = await fetch(`/api/v1/puzzles/${puzzleId}/word-search/reveal`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-csrf-token': session.csrfToken },
+          body: JSON.stringify({ seed: saved.seed, ...clue }),
+        })
+        return (await res.json()) as Hit
       }
-      const search = (await (
-        await fetch(`/api/v1/puzzles/${puzzleId}/word-search?seed=${String(saved.seed)}`)
-      ).json()) as { clues: { direction: string; number: number }[] }
-      const clue = search.clues[index]
-      const res = await fetch(`/api/v1/puzzles/${puzzleId}/word-search/reveal`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': session.csrfToken },
-        body: JSON.stringify({
-          seed: saved.seed,
-          direction: clue?.direction,
-          number: clue?.number,
-        }),
-      })
-      return (await res.json()) as Hit
+      return [await reveal(clues[0]), await reveal(clues[1])] as [Hit, Hit]
     },
-    { puzzleId, index },
+    { puzzleId, clues },
   )
 }
 
 const cell = (page: Page, p: { row: number; col: number }) =>
   page.locator(`[data-row="${String(p.row)}"][data-col="${String(p.col)}"]`)
 
-test('grille pré-remplie : choix du mode, glisser, clavier et fin de partie', async ({ page }) => {
+/** Choix du mode dans la liste, mot surligné au glisser puis au clavier, « Où est-il ? », fin. */
+export async function playPrefilled(page: Page): Promise<void> {
   await page.goto('/puzzles')
   await page.getByText('Grille pré-remplie', { exact: true }).click()
   await page.locator('a[href^="/pre-remplie/"]').first().click()
@@ -47,7 +57,7 @@ test('grille pré-remplie : choix du mode, glisser, clavier et fin de partie', a
   await expect(page.getByRole('grid')).toBeVisible()
 
   // Premier mot : glisser de la première à la dernière lettre.
-  const first = await locate(page, puzzleId, 0)
+  const [first, second] = await locateFirstTwo(page, puzzleId)
   const from = await cell(page, first.start).boundingBox()
   const to = await cell(page, first.end).boundingBox()
   if (!from || !to) throw new Error('cases introuvables')
@@ -60,7 +70,6 @@ test('grille pré-remplie : choix du mode, glisser, clavier et fin de partie', a
   ).toBeVisible()
 
   // Deuxième mot : au clavier (flèches, Entrée sur la première puis sur la dernière lettre).
-  const second = await locate(page, puzzleId, 1)
   const grid = page.getByRole('grid')
   await grid.focus()
   const go = async (
@@ -93,4 +102,4 @@ test('grille pré-remplie : choix du mode, glisser, clavier et fin de partie', a
   }
   await expect(page.getByRole('heading', { name: 'Tous les mots trouvés !' })).toBeVisible()
   await expect(page.getByText('Mots appris dans cette grille')).toBeVisible()
-})
+}
