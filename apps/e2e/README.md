@@ -6,13 +6,14 @@ contre une API et un web **déjà démarrés**. Exclus de `pnpm test` (ils exige
 Dépendance : `@playwright/test` 1.56.1 (Apache-2.0, Microsoft), épinglée exactement : son Chromium
 (révision 1194) est celui préinstallé dans l'environnement de travail.
 
-| Spec               | Contenu                                                                                                                                                                                      |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `solo.spec.ts`     | accueil → défi du jour → saisie, « Vérifier le mot », indice lettre, grille terminée, historique                                                                                             |
-| `account.spec.ts`  | inscription → lien de confirmation (e-mail) → compte → déconnexion → connexion → mot de passe oublié / réinitialisation → suppression                                                        |
-| `duel.spec.ts`     | deux comptes (bureau + mobile) : invitation par code, mot faux refusé puis mot juste validé, score adverse en direct et après rechargement, abandon, partie rapide, classement (bureau seul) |
-| `security.spec.ts` | SOL-02 (aucune réponse dans le JavaScript servi ni dans `apps/web/.output/public` s'il existe), invité refusé en duel, pas de défilement horizontal à 320 px                                 |
-| `a11y.spec.ts`     | un seul `h1`, un seul `main`, `lang="fr"` sur les pages principales                                                                                                                          |
+| Spec                | Contenu                                                                                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `solo.spec.ts`      | accueil → défi du jour → saisie, « Vérifier le mot », indice lettre, grille terminée, historique                                                                                             |
+| `account.spec.ts`   | inscription → lien de confirmation (e-mail) → compte → déconnexion → connexion → mot de passe oublié / réinitialisation → suppression                                                        |
+| `duel.spec.ts`      | deux comptes (bureau + mobile) : invitation par code, mot faux refusé puis mot juste validé, score adverse en direct et après rechargement, abandon, partie rapide, classement (bureau seul) |
+| `security.spec.ts`  | SOL-02 (aucune réponse dans le JavaScript servi ni dans `apps/web/.output/public` s'il existe), invité refusé en duel, pas de défilement horizontal à 320 px                                 |
+| `prefilled.spec.ts` | grille pré-remplie : choix du mode dans la liste, mot surligné au glisser puis au clavier, « Où est-il ? », fin de partie                                                                    |
+| `a11y.spec.ts`      | un seul `h1`, un seul `main`, `lang="fr"` sur les pages principales                                                                                                                          |
 
 Les solutions viennent du seed de l'API (`apps/api/prisma/seed/puzzles.ts`) : le client ne les
 connaît pas. Les comptes créés (`e2e-*@example.org`, pseudo `e2e_*`) sont supprimés par l'interface.

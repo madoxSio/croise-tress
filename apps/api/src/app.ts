@@ -32,6 +32,8 @@ import { registerAuth } from './plugins/auth.ts'
 import { MatchGateway } from './modules/match/gateway.ts'
 import { matchRoutes } from './modules/match/routes.ts'
 import { MatchService } from './modules/match/service.ts'
+import { wordSearchRoutes } from './modules/wordsearch/routes.ts'
+import { WordSearchService } from './modules/wordsearch/service.ts'
 
 export interface AppDeps {
   readonly config: Config
@@ -119,6 +121,12 @@ export async function buildApp({
       pointsRoutes(api, points)
       pathRoutes(api, paths)
       matchRoutes(api, matches)
+      wordSearchRoutes(
+        api,
+        new WordSearchService(puzzles, (userId, puzzleId) =>
+          paths.assertCanStart(userId, puzzleId),
+        ),
+      )
       adminRoutes(api, admin, adminUsers, auth, new AdminThemeService(db))
       done()
     },

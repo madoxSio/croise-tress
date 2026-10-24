@@ -209,6 +209,7 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 | D11 | 2026-10-23 | Invité : solo seulement ; suivi (historique, stats, succès, favoris) = compte | demandée  |
 | D12 | 2026-10-23 | Catalogue : table `themes` à deux niveaux, contenu chargé sans écrasement     | appliquée |
 | D13 | 2026-10-23 | Parcours à étapes et Coumba points : solde + journal idempotent en base       | appliquée |
+| D14 | 2026-10-24 | Grille pré-remplie : disposition déterministe (puzzle, graine), sans état     | appliquée |
 
 ### Notes sur D13 (parcours et Coumba points)
 
@@ -242,6 +243,10 @@ Module `apps/api/src/modules/admin` (routes → service, Prisma dans le service 
 ### Note sur D12
 
 Les thèmes sont des données (table `themes`, gérée par `/admin/themes`), pas un enum : en ajouter un ne demande ni migration ni déploiement. Deux niveaux suffisent (Football > Ligue des champions) et gardent les requêtes simples (un `OR` sur le slug ou celui du parent, pas de requête récursive). L'habillage est une clé ouverte (`skin`) que le client interprète, avec repli. Le contenu éditorial versionné (`apps/api/prisma/seed/`) est chargé à chaque démarrage de l'API en **insertion seule** : une grille déjà en base n'est jamais réécrite, car l'administration a pu la corriger et une grille jouée ne doit plus changer. Détails : `docs/CATALOGUE.md`.
+
+### Note sur D14 (grille pré-remplie)
+
+Second mode de jeu, demandé par madox : les réponses d'une grille sont cachées dans un carré entièrement rempli (façon mots mêlés) et le joueur les surligne, définitions à l'appui. La génération vit dans `crossword-core` (`buildWordSearch`, PRNG mulberry32 graine × identifiant de grille) : le couple (grille, graine) redonne toujours la même disposition, si bien que l'API (`apps/api/src/modules/wordsearch`) valide chaque sélection en recalculant la grille, **sans table ni migration**. La graine est tirée par le serveur et renvoyée par le client. Les lettres sont publiques par nature ; seuls les emplacements restent au serveur, révélés un par un (mot trouvé ou « Où est-il ? »). C'est un mode d'entraînement : ni score officiel, ni Coumba points, ni progression, ni parcours ; il respecte toutefois le verrouillage des étapes de parcours. Risque résiduel accepté : une session peut retrouver toutes les réponses d'une grille par « Où est-il ? », ce qui n'ouvre rien de neuf puisque la solution complète est déjà révélable en solo (sans points). Sens des mots selon la difficulté : droite/bas (simple), plus diagonales (intermédiaire), tous les sens (compliqué).
 
 ### Hébergement (2026-10-23)
 

@@ -2,6 +2,7 @@
 import type { PuzzleSummary } from '@crossverse/contracts'
 import type { ThemeLook } from '~/composables/useCatalog'
 import { levelOf } from '~/services/catalog'
+import { puzzlePath } from '~/utils/playModes'
 
 /**
  * Carte de grille. Le lien du titre couvre toute la carte (pseudo-élément) ; le bouton
@@ -9,7 +10,7 @@ import { levelOf } from '~/services/catalog'
  */
 // Défaut explicite : sans lui, Vue convertit un booléen absent en `false` (bouton affiché).
 // `look` : habillage du thème (bandeau à motif) ; absent, la carte reste sobre.
-withDefaults(
+const props = withDefaults(
   defineProps<{
     puzzle: PuzzleSummary
     favorite?: boolean | undefined
@@ -18,6 +19,10 @@ withDefaults(
   { favorite: undefined, look: undefined },
 )
 const emit = defineEmits<{ 'toggle-favorite': [] }>()
+
+// Le lien suit le mode de jeu choisi (préférence de l'appareil).
+const { preferences } = usePreferences()
+const to = computed(() => puzzlePath(props.puzzle.id, preferences.value.playMode))
 </script>
 
 <template>
@@ -45,11 +50,9 @@ const emit = defineEmits<{ 'toggle-favorite': [] }>()
       class="text-base leading-tight font-bold group-hover:underline"
       :class="favorite === undefined ? '' : 'pr-10'"
     >
-      <NuxtLink
-        :to="`/play/${puzzle.id}`"
-        class="after:absolute after:inset-0 focus-visible:outline-none"
-        >{{ puzzle.title }}</NuxtLink
-      >
+      <NuxtLink :to="to" class="after:absolute after:inset-0 focus-visible:outline-none">{{
+        puzzle.title
+      }}</NuxtLink>
     </h3>
     <p class="text-muted mt-auto text-sm">
       {{ puzzle.width }} × {{ puzzle.height }} · environ {{ puzzle.estimatedMinutes }} min

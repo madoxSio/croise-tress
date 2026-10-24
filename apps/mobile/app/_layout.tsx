@@ -17,6 +17,7 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="play/[puzzleId]" options={{ title: 'Partie' }} />
+        <Stack.Screen name="pre-remplie/[puzzleId]" options={{ title: 'Grille pré-remplie' }} />
         <Stack.Screen name="duel/[matchId]" options={{ title: 'Duel' }} />
         <Stack.Screen name="login" options={{ title: 'Connexion' }} />
         <Stack.Screen name="register" options={{ title: 'Créer un compte' }} />
