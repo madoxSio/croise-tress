@@ -369,7 +369,7 @@ describe('services/api — parcours et Coumba points', () => {
   })
 
   it('lit le portefeuille et le journal paginé', async () => {
-    const rules = { freeHintsPerGame: 3, hintCost: { letter: 5, word: 15 } }
+    const rules = { freeHintsPerGame: 3, hintCost: { letter: 5, word: 15 }, duelHintCost: 10 }
     handlers['GET /api/v1/me/wallet'] = () => ({
       status: 200,
       body: { eligible: true, balance: 20, earned: 20, spent: 0, rules },

@@ -11,6 +11,7 @@ import {
   RECONNECT_GRACE_MS,
   inviteCodeSchema,
   type Ack,
+  type MatchHintResult,
   type MatchState,
 } from '@crossverse/contracts'
 import type { Direction } from '@crossverse/crossword-core'
@@ -216,6 +217,14 @@ export function useMatch(options: UseMatchOptions = {}) {
     return ack.ok ? ack.data.correct : null
   }
 
+  /** Achète la lettre d'une case en Coumba points ; `null` si le serveur refuse (solde…). */
+  async function buyHint(cell: { row: number; col: number }): Promise<MatchHintResult | null> {
+    const matchId = state.value?.id
+    if (!matchId) return null
+    const ack = await run(() => connection.emit('match:hint', { matchId, cell }))
+    return ack.ok ? ack.data : null
+  }
+
   async function forfeit(): Promise<boolean> {
     const matchId = state.value?.id
     if (!matchId) return false
@@ -257,6 +266,7 @@ export function useMatch(options: UseMatchOptions = {}) {
     createInvite,
     acceptInvite,
     submitWord,
+    buyHint,
     forfeit,
     resync,
     dispose,

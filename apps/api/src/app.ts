@@ -99,7 +99,7 @@ export async function buildApp({
     beforeStart: (userId, puzzleId) => paths.assertCanStart(userId, puzzleId),
   })
   const auth = new AuthService(db, config, sessions, mailer)
-  const matches = new MatchService(db, puzzles, now)
+  const matches = new MatchService(db, puzzles, now, points)
   const admin = new AdminService(db, now)
   // La passerelle temps réel est créée après les routes : appel différé (jamais avant le démarrage).
   const adminUsers = new AdminUserService(db, sessions, now, (userId) => {

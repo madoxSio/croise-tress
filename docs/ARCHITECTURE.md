@@ -224,8 +224,13 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 - **Indices** : 3 gratuits par partie (lettre ou mot), puis payants avec consentement explicite
   (`usePoints: true`, sinon 409 `hint_limit_reached`). Le débit et la révélation sont écrits dans
   la même transaction que la partie (révision optimiste) : un refus ou un conflit n'enlève rien.
+- **Duel** : aucun indice gratuit ; `match:hint` révèle la lettre d'une case au seul acheteur
+  (10 points), idempotent par `clientEventId` (événement de match + clé `match-hint:<match>:<id>`).
+  Gains des duels rapides seulement (15 victoire, 5 nul, 2 défaite), versés dans la transaction
+  qui clôt le match (clé `match:<id>`), à condition d'avoir trouvé au moins un mot et dans la
+  limite de 10 duels récompensés par jour UTC : ni duel privé, ni abandon immédiat en boucle.
 - **Barème** dans `apps/api/src/modules/points/rules.ts`, renvoyé aux clients par `GET /me/wallet`.
-  Proposé le 2026-10-23, en attente de validation.
+  Validé par le porteur du projet le 2026-10-24.
 - Risque résiduel : les gains sont versés juste après la transaction qui termine la partie (pas
   dans la même) ; un arrêt de l'API entre les deux perd la récompense, sans jamais la doubler.
 

@@ -11,6 +11,7 @@ import { uuidSchema, type MatchState } from '@crossverse/contracts'
 import { useCrosswordGame } from '~/composables/useCrosswordGame'
 import type { ReactiveCrosswordGame } from '~/composables/useCrosswordGame'
 import { matchWordKey } from '~/composables/useMatch'
+import { api } from '~/services/api'
 import { matchApi, type Rating } from '~/services/match'
 import { directionLabel, difficultyLabel } from '~/utils/labels'
 import { toEnginePuzzle } from '~/utils/puzzle'
@@ -33,6 +34,10 @@ const notice = ref('')
 /** Annonces pour lecteurs d'écran : progression de l'adversaire, temps, connexion. */
 const announcement = ref('')
 const confirmForfeit = ref(false)
+const confirmHint = ref(false)
+/** Prix d'une lettre en duel et solde, lus dans le portefeuille (affichage seulement). */
+const hintCost = ref<number | null>(null)
+const balance = ref<number | null>(null)
 const gridRef = ref<{ focus: () => void } | null>(null)
 const resultRef = ref<{ focus: () => void } | null>(null)
 /** Dernière proposition envoyée par mot : on ne soumet pas deux fois les mêmes lettres. */
@@ -227,6 +232,32 @@ const ratingDelta = computed(() =>
   rating.value && ratingBefore.value !== null ? rating.value.rating - ratingBefore.value : null,
 )
 
+onMounted(async () => {
+  try {
+    const wallet = await api.getWallet()
+    if (!wallet.eligible) return
+    hintCost.value = wallet.rules.duelHintCost
+    balance.value = wallet.balance
+  } catch {
+    // Sans portefeuille, le bouton d'indice reste masqué : le duel continue normalement.
+  }
+})
+
+/** Lettre de la case active, achetée en Coumba points puis soumise comme une saisie. */
+async function onBuyHint(): Promise<void> {
+  confirmHint.value = false
+  const target = game.value
+  const cell = target?.active
+  if (!target || !cell) return
+  const result = await match.buyHint({ row: cell.row, col: cell.col })
+  if (!result) return
+  balance.value = result.balance
+  target.applyRevealed([result])
+  notice.value = `Lettre révélée. Solde : ${String(result.balance)} Coumba points.`
+  void submitCompletedWords()
+  gridRef.value?.focus()
+}
+
 async function onForfeit(): Promise<void> {
   confirmForfeit.value = false
   await match.forfeit()
@@ -365,6 +396,18 @@ async function onForfeit(): Promise<void> {
             <span v-if="error" class="text-danger">{{ error }}</span>
             <span v-else-if="notice">{{ notice }}</span>
           </p>
+
+          <div v-if="isActive && hintCost !== null" class="flex items-center justify-center gap-3">
+            <button
+              type="button"
+              class="border-line hover:bg-surface-2 inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold"
+              :disabled="busy || !game.active"
+              @click="confirmHint = true"
+            >
+              Révéler la lettre · {{ hintCost }} pts
+            </button>
+            <span class="text-muted text-xs tabular-nums">{{ balance }} Coumba points</span>
+          </div>
         </div>
 
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -373,6 +416,17 @@ async function onForfeit(): Promise<void> {
         </div>
       </div>
     </template>
+
+    <ConfirmDialog
+      :open="confirmHint"
+      :title="`Utiliser ${hintCost ?? 0} Coumba points ?`"
+      :confirm-label="`Payer ${hintCost ?? 0} points`"
+      @confirm="onBuyHint"
+      @cancel="confirmHint = false"
+    >
+      La lettre de la case sélectionnée vous sera révélée, à vous seul. Solde actuel :
+      {{ balance ?? 0 }} points.
+    </ConfirmDialog>
 
     <ConfirmDialog
       :open="confirmForfeit"
