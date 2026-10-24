@@ -19,6 +19,8 @@ export interface PointEntry {
   readonly reason: PointReason
   /** Unique par joueur : une même récompense ou un même achat n'est jamais compté deux fois. */
   readonly key: string
+  /** Horodatage de l'écriture (horloge du service appelant) ; maintenant par défaut. */
+  readonly at?: Date
 }
 
 /**
@@ -54,6 +56,7 @@ export class PointsService {
           balanceAfter,
           reason: entry.reason,
           idempotencyKey: entry.key,
+          ...(entry.at ? { createdAt: entry.at } : {}),
         },
       ],
       skipDuplicates: true,
@@ -69,6 +72,12 @@ export class PointsService {
       },
     })
     return true
+  }
+
+  /** Solde courant (0 sans portefeuille). */
+  async balance(tx: Tx, userId: string): Promise<number> {
+    const wallet = await tx.wallet.findUnique({ where: { userId }, select: { balance: true } })
+    return wallet?.balance ?? 0
   }
 
   /** Gain isolé, dans sa propre transaction. */

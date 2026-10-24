@@ -8,6 +8,8 @@ import { uuidSchema } from './common.js'
 export const pointRulesSchema = z.strictObject({
   freeHintsPerGame: z.int().min(0),
   hintCost: z.strictObject({ letter: z.int().positive(), word: z.int().positive() }),
+  /** Lettre révélée en duel : aucun indice gratuit, chaque lettre se paie. */
+  duelHintCost: z.int().positive(),
 })
 export type PointRules = z.infer<typeof pointRulesSchema>
 

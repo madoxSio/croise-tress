@@ -5,6 +5,7 @@ import {
   SOCKET_PATH,
   inviteAcceptSchema,
   inviteCreateSchema,
+  matchHintSchema,
   matchRefSchema,
   queueJoinSchema,
   submitWordSchema,
@@ -174,6 +175,9 @@ export class MatchGateway {
         state: await this.matches.state(userId, payload.matchId, (id) => this.isConnected(id)),
       }
     })
+    this.on(socket, 'match:hint', matchHintSchema, async (payload) =>
+      this.matches.hint({ userId, ...payload }),
+    )
     this.on(socket, 'match:forfeit', matchRefSchema, async (payload) => {
       const finished = await this.matches.forfeit(userId, payload.matchId)
       if (finished) this.ended(finished)

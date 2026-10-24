@@ -11,6 +11,7 @@
 import {
   ERROR_CODES,
   SOCKET_PATH,
+  matchHintResultSchema,
   matchStateSchema,
   uuidSchema,
   type Ack,
@@ -177,6 +178,13 @@ const ACK_SCHEMAS: { [E in EventName]: z.ZodType<Ack<AckData<E>>> } = {
       ok: z.literal(true),
       data: z.strictObject({ correct: z.boolean(), state: matchStateSchema }),
     }),
+    z.strictObject({
+      ok: z.literal(false),
+      error: z.object({ code: z.string(), message: z.string() }),
+    }),
+  ]),
+  'match:hint': z.union([
+    z.strictObject({ ok: z.literal(true), data: matchHintResultSchema }),
     z.strictObject({
       ok: z.literal(false),
       error: z.object({ code: z.string(), message: z.string() }),
