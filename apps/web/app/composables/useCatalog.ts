@@ -36,11 +36,11 @@ export function useCatalog() {
     }
   }
 
-  /** Thème ou sous-thème par slug ou par nom affiché (champ `theme` des grilles). */
+  /** Thème ou sous-thème par slug (champ `themeSlug` des grilles). */
   function find(key: string): CatalogSubTheme | null {
     for (const theme of themes.value ?? []) {
-      if (theme.slug === key || theme.name === key) return theme
-      const child = theme.children.find((c) => c.slug === key || c.name === key)
+      if (theme.slug === key) return theme
+      const child = theme.children.find((c) => c.slug === key)
       if (child) return child
     }
     return null

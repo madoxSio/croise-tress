@@ -6,7 +6,7 @@ const accountLink = computed(() =>
   isGuest.value ? { to: '/login', label: 'Se connecter' } : { to: '/account', label: 'Mon compte' },
 )
 
-// En haut à partir de `sm`, en barre d'onglets fixe en bas sur mobile (5 entrées ne tiennent
+// En haut à partir de `sm`, en barre d'onglets fixe en bas sur mobile (6 entrées ne tiennent
 // pas dans l'en-tête sous 390 px de large). Icônes décoratives : le libellé reste visible.
 const links = [
   {
@@ -18,6 +18,11 @@ const links = [
     to: '/puzzles',
     label: 'Grilles',
     icon: 'M4 4h16v16H4zM4 9.33h16M4 14.66h16M9.33 4v16M14.66 4v16',
+  },
+  {
+    to: '/parcours',
+    label: 'Parcours',
+    icon: 'M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM6 15V9a4 4 0 0 1 4-4h6M18 9v6a4 4 0 0 1-4 4H8',
   },
   { to: '/duel', label: 'Duel', icon: 'M13 2 4 14h7l-1 8 9-12h-7z' },
   { to: '/history', label: 'Parties', icon: 'M12 7v5l3 2M21 12a9 9 0 1 1-9-9 9 9 0 0 1 9 9z' },
@@ -59,8 +64,17 @@ const isCurrent = (to: string): boolean =>
           class="mr-auto flex min-h-11 items-center gap-2 rounded-xl pr-2 pl-1"
           aria-label="Crossverse, accueil"
         >
-          <img src="/favicon.svg" alt="" width="32" height="32" class="size-8 rounded-lg" />
-          <span class="font-display text-lg font-extrabold tracking-tight">Crossverse</span>
+          <img
+            src="/favicon.svg"
+            alt=""
+            width="32"
+            height="32"
+            class="size-8 shrink-0 rounded-lg"
+          />
+          <!-- Entre sm et md, le nom laisse la place aux 6 liens (le lien garde son aria-label). -->
+          <span class="font-display text-lg font-extrabold tracking-tight sm:max-md:sr-only"
+            >Crossverse</span
+          >
         </NuxtLink>
         <nav aria-label="Navigation principale" class="hidden sm:block">
           <ul class="flex items-center gap-0.5 text-sm font-medium">
@@ -174,7 +188,7 @@ const isCurrent = (to: string): boolean =>
       :style="{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom))' }"
     >
       <ul
-        class="cv-glass border-line shadow-card grid h-16 grid-cols-5 rounded-2xl border p-1 text-[0.6875rem] font-medium"
+        class="cv-glass border-line shadow-card grid h-16 grid-cols-6 rounded-2xl border p-1 text-[0.6875rem] font-medium"
       >
         <li v-for="link in links" :key="link.to" class="flex">
           <NuxtLink

@@ -131,7 +131,8 @@ onMounted(() => {
 <template>
   <div class="flex flex-col gap-8">
     <header class="flex flex-wrap items-end gap-4">
-      <div class="min-w-0 flex-1">
+      <!-- Largeur minimale : sur petit écran, le bouton passe sous le texte au lieu de l'écraser. -->
+      <div class="min-w-64 flex-1">
         <p class="text-accent text-sm font-bold tracking-wider uppercase">Catalogue</p>
         <h1 class="mt-1 text-3xl font-extrabold sm:text-5xl">Grilles</h1>
         <p class="text-muted mt-2 max-w-xl">
@@ -306,7 +307,7 @@ onMounted(() => {
         <li v-for="puzzle in items" :key="puzzle.id">
           <PuzzleCard
             :puzzle="puzzle"
-            :look="catalog.lookOf(puzzle.theme)"
+            :look="catalog.lookOf(puzzle.themeSlug)"
             :favorite="favoriteIds.has(puzzle.id)"
             @toggle-favorite="toggleFavorite(puzzle)"
           />
