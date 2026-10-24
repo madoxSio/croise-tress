@@ -51,11 +51,14 @@ describe('catalogue', () => {
   it('filtre par difficulté et thème', async () => {
     const res = await new Client(ctx.app).request(
       'GET',
-      '/api/v1/puzzles?difficulty=easy&theme=animaux',
+      '/api/v1/puzzles?difficulty=easy&theme=nature',
     )
-    expect(res.json<{ items: { slug: string }[] }>().items.map((p) => p.slug)).toEqual([
-      'chien-fidele',
-    ])
+    expect(
+      res
+        .json<{ items: { slug: string }[] }>()
+        .items.map((p) => p.slug)
+        .sort(),
+    ).toEqual(['chien-fidele', 'motif-floral'])
   })
 
   it('refuse des paramètres invalides (VAL-04, AUTHZ-04)', async () => {
@@ -114,7 +117,7 @@ describe('défi du jour', () => {
       data: {
         slug: 'aaa',
         title: 'A',
-        theme: 't',
+        theme: { connect: { slug: 'maison' } },
         difficulty: 'easy',
         status: 'published',
         width: 5,

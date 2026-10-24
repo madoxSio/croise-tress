@@ -7,6 +7,7 @@ import {
   solvedGrid,
   type TestContext,
 } from './helpers.ts'
+import { syncPaths } from '../prisma/seed/paths.ts'
 
 interface SessionBody {
   id: string
@@ -90,7 +91,7 @@ async function createPath(slugs: string[], status: 'published' | 'draft' = 'publ
       slug: 'culture-rois',
       title: 'Rois et empires',
       description: 'Parcours de test',
-      theme: 'rois-de-france',
+      theme: { connect: { slug: 'rois-de-france' } },
       status,
       steps: {
         create: slugs.map((slug, index) => ({
@@ -332,6 +333,31 @@ describe('parcours', () => {
       (await guest.request('POST', '/api/v1/play-sessions', { puzzleId: id('le-salon') }))
         .statusCode,
     ).toBe(201)
+  })
+
+  it('le seed crée un parcours une seule fois et ignore un parcours incomplet', async () => {
+    const seed = {
+      slug: 'seed-maison',
+      title: 'Maison',
+      description: 'd',
+      theme: 'rois-de-france',
+      sortOrder: 0,
+      steps: [
+        { title: 'Un', puzzle: 'la-table' },
+        { title: 'Deux', puzzle: 'le-salon' },
+      ],
+    }
+    const incomplete = {
+      ...seed,
+      slug: 'seed-incomplet',
+      steps: [{ title: 'X', puzzle: 'absente' }],
+    }
+    expect(await syncPaths(ctx.db, [seed, incomplete])).toEqual(['seed-maison'])
+    expect(await syncPaths(ctx.db, [seed])).toEqual([])
+    const detail = (
+      await new Client(ctx.app).request('GET', '/api/v1/paths/seed-maison')
+    ).json<PathBody>()
+    expect(detail.steps.map((s) => s.puzzle.id)).toEqual([id('la-table'), id('le-salon')])
   })
 
   it('refuse un slug mal formé', async () => {

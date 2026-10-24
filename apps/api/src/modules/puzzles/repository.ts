@@ -2,17 +2,45 @@ import { parsePuzzle, type Puzzle } from '@crossverse/crossword-core'
 import type { Difficulty, PuzzleSummary } from '@crossverse/contracts'
 import { z } from 'zod'
 import type { Db } from '../../db.ts'
+import type { Prisma } from '../../generated/prisma/client.ts'
 
-const summarySelect = {
+/** Colonnes d'un résumé de grille, partagées par les modules qui en renvoient. */
+export const puzzleSummarySelect = {
   id: true,
   slug: true,
   title: true,
-  theme: true,
   difficulty: true,
   width: true,
   height: true,
   estimatedMinutes: true,
-} as const
+  theme: {
+    select: { slug: true, name: true, skin: true, parent: { select: { slug: true, skin: true } } },
+  },
+} as const satisfies Prisma.PuzzleSelect
+
+type PuzzleSummaryRow = Prisma.PuzzleGetPayload<{ select: typeof puzzleSummarySelect }>
+
+export const DEFAULT_SKIN = 'default'
+
+export function toPuzzleSummary(row: PuzzleSummaryRow): PuzzleSummary {
+  const { theme, ...rest } = row
+  return {
+    ...rest,
+    theme: theme.name,
+    themeSlug: theme.slug,
+    parentThemeSlug: theme.parent?.slug ?? null,
+    skin: theme.skin ?? theme.parent?.skin ?? DEFAULT_SKIN,
+  }
+}
+
+/**
+ * Filtre « grilles publiées d'un thème » : le thème lui-même ou l'un de ses sous-thèmes.
+ * Un slug inconnu ne correspond à rien (liste vide), sans erreur.
+ */
+export function publishedInTheme(slug: string | undefined): Prisma.PuzzleWhereInput {
+  if (!slug) return { status: 'published' }
+  return { status: 'published', theme: { OR: [{ slug }, { parent: { slug } }] } }
+}
 
 /** Contenu JSON stocké en base, revalidé à la lecture (défense en profondeur). */
 const storedContentSchema = z.object({
@@ -43,28 +71,31 @@ export class PuzzleRepository {
   }): Promise<{ items: PuzzleSummary[]; nextCursor: string | null }> {
     const rows = await this.db.puzzle.findMany({
       where: {
-        status: 'published',
+        ...publishedInTheme(filter.theme),
         ...(filter.difficulty ? { difficulty: filter.difficulty } : {}),
-        ...(filter.theme ? { theme: filter.theme } : {}),
       },
-      select: summarySelect,
+      select: puzzleSummarySelect,
       orderBy: { id: 'asc' },
       take: filter.limit + 1,
       ...(filter.cursor ? { cursor: { id: filter.cursor }, skip: 1 } : {}),
     })
     const hasMore = rows.length > filter.limit
     const items = hasMore ? rows.slice(0, filter.limit) : rows
-    return { items, nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null }
+    return {
+      items: items.map(toPuzzleSummary),
+      nextCursor: hasMore ? (items.at(-1)?.id ?? null) : null,
+    }
   }
 
   /** Charge un puzzle publié avec sa solution (usage serveur uniquement). */
   async findPublished(id: string): Promise<LoadedPuzzle | null> {
     const row = await this.db.puzzle.findFirst({
       where: { id, status: 'published' },
-      select: { ...summarySelect, grid: true, clues: true },
+      select: { ...puzzleSummarySelect, grid: true, clues: true },
     })
     if (!row) return null
-    const { grid, clues, ...summary } = row
+    const { grid, clues, ...summaryRow } = row
+    const summary = toPuzzleSummary(summaryRow)
     const content = storedContentSchema.parse({ grid, clues })
     const parsed = parsePuzzle({
       id: row.id,
@@ -85,9 +116,9 @@ export class PuzzleRepository {
   async findOrAssignDaily(date: Date): Promise<PuzzleSummary | null> {
     const existing = await this.db.dailyChallenge.findUnique({
       where: { date },
-      select: { puzzle: { select: summarySelect } },
+      select: { puzzle: { select: puzzleSummarySelect } },
     })
-    if (existing) return existing.puzzle
+    if (existing) return toPuzzleSummary(existing.puzzle)
 
     const candidates = await this.db.puzzle.findMany({
       where: { status: 'published' },
@@ -105,8 +136,8 @@ export class PuzzleRepository {
 
     const assigned = await this.db.dailyChallenge.findUnique({
       where: { date },
-      select: { puzzle: { select: summarySelect } },
+      select: { puzzle: { select: puzzleSummarySelect } },
     })
-    return assigned?.puzzle ?? null
+    return assigned ? toPuzzleSummary(assigned.puzzle) : null
   }
 }

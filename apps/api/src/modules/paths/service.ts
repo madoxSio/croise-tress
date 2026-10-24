@@ -18,7 +18,7 @@ const pathSelect = {
   slug: true,
   title: true,
   description: true,
-  theme: true,
+  theme: { select: { slug: true } },
   steps: {
     // Une étape dont la grille a été dépubliée disparaît du parcours au lieu de le bloquer.
     where: { puzzle: { status: 'published' } },
@@ -76,8 +76,9 @@ export class PathService {
       userId,
       paths.flatMap((path) => path.steps.map((step) => step.puzzle.id)),
     )
-    return paths.map(({ steps, ...path }) => ({
+    return paths.map(({ steps, theme, ...path }) => ({
       ...path,
+      theme: theme.slug,
       stepCount: steps.length,
       completedCount: steps.filter((step) => completed.has(step.puzzle.id)).length,
     }))
@@ -89,7 +90,7 @@ export class PathService {
       select: pathSelect,
     })
     if (!path) throw notFound('Parcours introuvable.')
-    const { steps, ...summary } = path
+    const { steps, theme, ...summary } = path
     const completed = await this.completedAmong(
       userId,
       steps.map((step) => step.puzzle.id),
@@ -101,6 +102,7 @@ export class PathService {
     )
     return {
       ...summary,
+      theme: theme.slug,
       stepCount: steps.length,
       completedCount: states.filter((state) => state === 'completed').length,
       steps: steps.map((step, index) => ({ ...step, state: states[index] ?? 'locked' })),

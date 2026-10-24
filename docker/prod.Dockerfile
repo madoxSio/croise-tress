@@ -32,8 +32,9 @@ RUN chown -R node:node /app/apps/api
 USER node
 WORKDIR /app/apps/api
 EXPOSE 3001
-# Migrations versionnées appliquées au démarrage, puis lancement de l'API.
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && exec node --import tsx src/server.ts"]
+# Au démarrage : migrations versionnées, chargement du catalogue éditorial (insertion seule,
+# jamais d'écrasement : voir prisma/seed/sync.ts), puis lancement de l'API.
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node --import tsx prisma/seed.ts && exec node --import tsx src/server.ts"]
 
 # --- Web : Caddy sert le build et relaie /api et /ws vers l'API ---
 FROM caddy:2.10.2-alpine AS web

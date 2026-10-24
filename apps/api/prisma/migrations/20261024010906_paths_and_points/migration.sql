@@ -7,7 +7,7 @@ CREATE TABLE "paths" (
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
-    "theme" TEXT NOT NULL,
+    "theme_id" UUID NOT NULL,
     "sort_order" SMALLINT NOT NULL DEFAULT 0,
     "status" "PuzzleStatus" NOT NULL DEFAULT 'draft',
     "created_at" TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -57,6 +57,9 @@ CREATE UNIQUE INDEX "paths_slug_key" ON "paths"("slug");
 CREATE INDEX "paths_status_sort_order_idx" ON "paths"("status", "sort_order");
 
 -- CreateIndex
+CREATE INDEX "paths_theme_id_idx" ON "paths"("theme_id");
+
+-- CreateIndex
 CREATE INDEX "path_steps_puzzle_id_idx" ON "path_steps"("puzzle_id");
 
 -- CreateIndex
@@ -67,6 +70,9 @@ CREATE INDEX "point_transactions_user_id_id_idx" ON "point_transactions"("user_i
 
 -- CreateIndex
 CREATE UNIQUE INDEX "point_transactions_user_id_idempotency_key_key" ON "point_transactions"("user_id", "idempotency_key");
+
+-- AddForeignKey
+ALTER TABLE "paths" ADD CONSTRAINT "paths_theme_id_fkey" FOREIGN KEY ("theme_id") REFERENCES "themes"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "path_steps" ADD CONSTRAINT "path_steps_path_id_fkey" FOREIGN KEY ("path_id") REFERENCES "paths"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -103,13 +103,15 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - API : parcours thématiques à étapes débloquées une à une (`GET /paths`, `GET /paths/:slug`,
   verrou serveur au démarrage d'une partie), 3 indices gratuits par partie puis indices payants,
   portefeuille et journal (`GET /me/wallet`, `GET /me/wallet/transactions`), gains à la première
-  réussite d'une grille, bonus sans indice, étape et parcours terminés, défi du jour. Voir D12.
+  réussite d'une grille, bonus sans indice, étape et parcours terminés, défi du jour. Voir D13.
 - Web : pages `/parcours` et `/parcours/:slug`, coût des indices et dialogue d'achat dans la
   partie, gain affiché en fin de grille, solde et journal dans la page compte.
-- Preuves : `test/points.test.ts` (16 tests : invité, consentement, solde insuffisant sans effet,
+- Seed : premier parcours « Rois, empires et guerres » (thème Histoire, 5 grilles du catalogue),
+  créé une seule fois et jamais modifié ensuite (`prisma/seed/paths.ts`).
+- Preuves : `test/points.test.ts` (17 tests : invité, consentement, solde insuffisant sans effet,
   achats concurrents, idempotence des gains, verrous de parcours) ; 3 tests web ; parcours
   vérifié à la main dans Chromium (Pixel 7) contre l'API locale.
-- Reste : barème à valider ; contenu des parcours (grilles du fil catalogue) ; lien de navigation
+- Reste : barème à valider ; autres parcours ; lien de navigation
   (fil design) ; indices payants et gains en duel ; app mobile (affiche l'erreur de l'API).
 
 ### 2026-10-23 — Admin : gestion des comptes ✅ (hors Docker)
@@ -145,6 +147,13 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - **Partiel** : `services/catalog.ts` décrit localement le contrat `GET /catalog` et `GET /quick-play` du chantier « Catalogue » et se replie (404) sur la liste des grilles (un thème par nom, habillage par défaut). TODO(catalogue) : basculer sur `@crossverse/contracts` et retirer le repli. Thèmes non encore affichés sur mobile.
 - Vérifié : `pnpm lint`, `pnpm typecheck`, `pnpm test` (core 54, web 60, mobile 37, api 119), E2E locaux 15/15, captures mobile et bureau en sombre.
 
+### 2026-10-23 — Catalogue de thèmes et premières grilles thématiques ✅ (hors Docker)
+
+- Modèle : table `themes` (thème > sous-thème, deux niveaux au plus, style `skin`/`icon`/`accent`/`accentAlt` hérité du parent), `puzzles.theme_id` remplace le libellé libre. Migration `20261023213144_themes_catalog` avec reprise des données (anciens libellés rangés sous « Divers »), vérifiée sur une base contenant des grilles.
+- API : `GET /catalog` (arbre, grilles publiées par niveau), `GET /quick-play?theme=` (grille simple au hasard, jouable en invité), `GET /puzzles?theme=<slug>` (thème + sous-thèmes ; slug inconnu = liste vide), résumés enrichis (`themeSlug`, `parentThemeSlug`, `skin`), `GET/POST/PUT /admin/themes`, grilles admin rattachées par `themeSlug`. Détails : [CATALOGUE.md](CATALOGUE.md).
+- Contenu : 7 thèmes, 21 sous-thèmes, 32 nouvelles grilles en français (Culture, Histoire, Football, Manga, Art, Musique) sur trois niveaux, plus les 6 grilles de découverte. Chargées par `prisma/seed.ts`, en insertion seule, à chaque démarrage de l'image de production.
+- Preuves : `catalog.test.ts` (17 tests : validité de chaque grille, idempotence sans écrasement, reclassement, arbre et comptes, filtre, partie rapide, admin des thèmes) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 54, web 60, mobile 37, api 142 (**293 verts**, après fusion de main) ; `make e2e-local` équivalent : **13 passed, 2 skipped** avec le catalogue complet chargé.
+
 ## Points ouverts (repérés pendant la construction)
 
 - Classement et `/me/matches` : `limit` ≤ 100 sans curseur ; schémas de réponse à déplacer dans `contracts` ; variation Elo absente de `MatchState`.
@@ -152,6 +161,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Sessions sans libellé d'appareil ; favoris plafonnés à 100.
 - E2E non branchés dans la CI ; limites d'inscription (5/h par IP, en mémoire) : redémarrer l'API entre deux exécutions E2E.
 - Limites de débit en mémoire : remises à zéro au redémarrage, et une seule instance.
+- Catalogue : pas d'écran d'administration des thèmes (API seule) ; les grilles du seed déjà présentes en base ne sont jamais mises à jour par le chargement (corrections via l'éditeur) ; grilles « en croix » jusqu'à 15 colonnes, à vérifier sur petit écran avec la nouvelle interface.
 - Admin : pas de MFA (T17), pas de modération des pseudos ni d'export/suppression RGPD par l'administrateur, durée de conservation de `audit_log` à fixer ; série « inscriptions » datée par la confirmation d'e-mail (décalée par un changement d'adresse).
 
 ## Couverture du plan de tests de sécurité
@@ -189,7 +199,7 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 | ---------------- | ------------------------------------------------------------------------------------------------ |
 | `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                               |
 | `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                                |
-| `pnpm test`      | core 54/54, web 63/63, mobile 37/37, api 141/141 : **295 tests verts**                           |
+| `pnpm test`      | core 54/54, web 63/63, mobile 37/37, api 159/159 : **313 tests verts**                           |
 | `make e2e-local` | **13 passed, 2 skipped (45.4s)** : les 2 ignorés lisent le build statique, absent (pas de build) |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.

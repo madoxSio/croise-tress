@@ -146,7 +146,7 @@ model Puzzle {
   id               String       @id @default(uuid(7)) @db.Uuid
   slug             String       @unique
   title            String
-  theme            String
+  themeId          String       @map("theme_id") @db.Uuid
   difficulty       Difficulty
   status           PuzzleStatus @default(draft)
   width            Int          @db.SmallInt
@@ -157,14 +157,45 @@ model Puzzle {
   createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  theme           Theme            @relation(fields: [themeId], references: [id], onDelete: Restrict)
   dailyChallenges DailyChallenge[]
   playSessions    PlaySession[]
   favorites       Favorite[]
   matches         Match[]
   pathSteps       PathStep[]
 
-  @@index([status, difficulty, theme])
+  @@index([themeId, status, difficulty])
+  @@index([status, difficulty])
   @@map("puzzles")
+}
+
+/// Thème du catalogue, sur deux niveaux au plus : thème (sans parent) > sous-thème.
+/// La profondeur est garantie par le service d'administration et le chargement du catalogue.
+/// Champs d'habillage (`skin`, `icon`, `accent`, `accentAlt`) : NULL = hérité du parent.
+model Theme {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  slug        String   @unique
+  name        String
+  description String   @default("")
+  parentId    String?  @map("parent_id") @db.Uuid
+  /// Clé d'habillage de l'interface (`football`, `manga`…), interprétée par le client.
+  skin        String?
+  /// Emoji affiché sur la carte du thème.
+  icon        String?
+  /// Couleurs `#RRGGBB` de la carte (dégradé `accent` → `accentAlt`).
+  accent      String?
+  accentAlt   String?  @map("accent_alt")
+  sortOrder   Int      @default(0) @map("sort_order") @db.SmallInt
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  parent   Theme?   @relation("ThemeTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children Theme[]  @relation("ThemeTree")
+  puzzles  Puzzle[]
+  paths    Path[]
+
+  @@index([parentId, sortOrder])
+  @@map("themes")
 }
 
 /// Un seul puzzle par date (UTC) : garanti par la clé primaire.
@@ -337,22 +368,24 @@ model AuditLog {
 
 /// Parcours : suite ordonnée de grilles d'un thème. Chaque étape se débloque quand la
 /// précédente est terminée sans révéler la solution (règle appliquée par le serveur).
-/// `theme` est le slug du thème ou sous-thème du catalogue (ex. `rois-de-france`).
+/// Chaque parcours appartient à un thème ou sous-thème du catalogue (ex. `rois-de-france`).
 model Path {
   id          String       @id @default(uuid(7)) @db.Uuid
   slug        String       @unique
   title       String
   description String
-  theme       String
+  themeId     String       @map("theme_id") @db.Uuid
   /// Ordre d'affichage dans la liste des parcours.
   sortOrder   Int          @default(0) @map("sort_order") @db.SmallInt
   status      PuzzleStatus @default(draft)
   createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  theme Theme      @relation(fields: [themeId], references: [id], onDelete: Restrict)
   steps PathStep[]
 
   @@index([status, sortOrder])
+  @@index([themeId])
   @@map("paths")
 }
 

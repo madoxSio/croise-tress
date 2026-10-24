@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import type { AdminClue, AdminPuzzle, AdminPuzzleBody, Difficulty } from '@crossverse/contracts'
+import type {
+  AdminClue,
+  AdminPuzzle,
+  AdminPuzzleBody,
+  AdminTheme,
+  Difficulty,
+} from '@crossverse/contracts'
 import { gridSlots, type Direction } from '@crossverse/crossword-core'
 import { adminApi } from '~/services/admin'
 import { errorMessage } from '~/services/api'
@@ -15,7 +21,17 @@ const puzzle = ref<AdminPuzzle | null>(null)
 const title = ref('')
 const slug = ref('')
 const slugTouched = ref(false)
-const theme = ref('')
+const themeSlug = ref('')
+const themes = ref<AdminTheme[]>([])
+/** Thèmes de premier niveau et leurs sous-thèmes, pour un sélecteur groupé. */
+const themeGroups = computed(() =>
+  themes.value
+    .filter((item) => item.parentSlug === null)
+    .map((root) => ({
+      root,
+      children: themes.value.filter((item) => item.parentSlug === root.slug),
+    })),
+)
 const difficulty = ref<Difficulty>('easy')
 const estimatedMinutes = ref(5)
 const gridText = ref('')
@@ -32,7 +48,7 @@ function fill(source: AdminPuzzle): void {
   title.value = source.title
   slug.value = source.slug
   slugTouched.value = true
-  theme.value = source.theme
+  themeSlug.value = source.themeSlug
   difficulty.value = source.difficulty
   estimatedMinutes.value = source.estimatedMinutes
   gridText.value = source.grid.join('\n')
@@ -47,6 +63,7 @@ function fill(source: AdminPuzzle): void {
 onMounted(async () => {
   try {
     if (!(await check())) return
+    themes.value = (await adminApi.listThemes()).items
     if (!isNew.value) fill(await adminApi.getPuzzle(String(route.params['id'])))
   } catch (cause) {
     loadError.value = errorMessage(cause)
@@ -110,7 +127,7 @@ function body(): AdminPuzzleBody {
   return {
     slug: slug.value.trim(),
     title: title.value.trim(),
-    theme: theme.value.trim(),
+    themeSlug: themeSlug.value,
     difficulty: difficulty.value,
     estimatedMinutes: estimatedMinutes.value,
     grid: gridLines.value,
@@ -198,7 +215,15 @@ const inputClass = 'bg-surface border-line min-h-11 w-full rounded-xl border px-
         </div>
         <div class="flex flex-col gap-1">
           <label for="p-theme" class="text-sm font-semibold">Thème</label>
-          <input id="p-theme" v-model="theme" maxlength="40" required :class="inputClass" />
+          <select id="p-theme" v-model="themeSlug" required :class="inputClass">
+            <option value="" disabled>Choisir un thème</option>
+            <optgroup v-for="group in themeGroups" :key="group.root.slug" :label="group.root.name">
+              <option :value="group.root.slug">{{ group.root.name }} (général)</option>
+              <option v-for="child in group.children" :key="child.slug" :value="child.slug">
+                {{ child.name }}
+              </option>
+            </optgroup>
+          </select>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="flex flex-col gap-1">

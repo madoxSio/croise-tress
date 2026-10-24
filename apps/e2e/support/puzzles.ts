@@ -4,6 +4,7 @@
  * et pour vérifier qu'aucune réponse n'apparaît dans le JavaScript servi (SOL-02).
  */
 import { expect, type Page } from '@playwright/test'
+import { CATALOG_PUZZLES } from '../../api/prisma/seed/catalog-puzzles.ts'
 import { SEED_PUZZLES, type SeedPuzzle } from '../../api/prisma/seed/puzzles.ts'
 
 export interface Slot {
@@ -26,7 +27,8 @@ export async function displayedPuzzleTitle(page: Page): Promise<string> {
 }
 
 export function seedPuzzleByTitle(title: string): SeedPuzzle {
-  const puzzle = SEED_PUZZLES.find((p) => p.title === title.trim())
+  // Le seed charge aussi le catalogue thématique : défi du jour et duels peuvent en tirer une.
+  const puzzle = [...SEED_PUZZLES, ...CATALOG_PUZZLES].find((p) => p.title === title.trim())
   if (!puzzle) throw new Error(`Grille de démonstration inconnue : « ${title} »`)
   return puzzle
 }
