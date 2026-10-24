@@ -170,6 +170,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Symptôme (signalé par madox) : « Créer une invitation » et « Trouver un adversaire » restent grisés, la connexion temps réel ne s'établit jamais.
 - Cause probable : la réécriture Vercel `/ws/:path*` envoie `/ws?EIO=4…` (barre finale perdue quand le reste du chemin est vide) et Engine.IO n'acceptait que `/ws/` : 404, client en reconnexion permanente. Non observé directement (prod injoignable depuis le conteneur) ; reproduit en test (404 sans le correctif).
 - Correctif : `addTrailingSlash: false` côté serveur (`gateway.ts`), qui accepte les deux formes. Test de non-régression dans `match.test.ts` (25 verts).
+- Insuffisant seul (madox, 17:55) : mesuré depuis l'extérieur, Vercel relaie `GET /ws?EIO=4&transport=polling` (poignée de main Engine.IO reçue) mais répond en erreur 4xx à `/ws/?EIO=4…`, la forme qu'envoie le client par défaut. Le client web demande donc `/ws` sans barre finale (`addTrailingSlash: false`, `services/match.ts`) ; le Caddyfile relaie `/ws` et `/ws/*`.
 
 ## Points ouverts (repérés pendant la construction)
 

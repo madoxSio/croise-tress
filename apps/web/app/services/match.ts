@@ -132,6 +132,9 @@ export type SocketFactory = () => SocketLike
 const defaultFactory: SocketFactory = () =>
   io({
     path: SOCKET_PATH,
+    // `/ws?…` plutôt que `/ws/?…` : la réécriture Vercel du déploiement provisoire relaie le
+    // premier mais répond en erreur au second (constaté en prod le 2026-10-24).
+    addTrailingSlash: false,
     withCredentials: true,
     // Transports par défaut (long polling puis passage en WebSocket) : le proxy de dev Nuxt ne
     // relaie pas l'upgrade WebSocket, le polling garantit la connexion ; en production le
