@@ -17,7 +17,14 @@ interface WordSearchBody {
   size: number
   rows: string[]
   directions: { diagonals: boolean; reversed: boolean }
-  clues: { direction: string; number: number; text: string; length: number }[]
+  clues: {
+    direction: string
+    number: number
+    text: string
+    length: number
+    row: number
+    col: number
+  }[]
 }
 interface Hit {
   direction: string
@@ -85,7 +92,7 @@ describe('grille pré-remplie', () => {
     await ctx.db.puzzle.update({ where: { slug: 'la-table' }, data: { format: 'classic' } })
     const client = await new Client(ctx.app).guest()
     const body = (await client.request('GET', url('la-table'))).json<
-      WordSearchBody & { format: string; clues: { row: number; col: number }[] }
+      WordSearchBody & { format: string }
     >()
     expect(body.format).toBe('classic')
     const source = SEED_PUZZLES.find((p) => p.slug === 'la-table')
