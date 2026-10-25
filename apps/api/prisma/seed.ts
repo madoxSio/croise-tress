@@ -1,6 +1,7 @@
 import { loadConfig } from '../src/config.ts'
 import { createDb } from '../src/db.ts'
 import { CATALOG_PUZZLES } from './seed/catalog-puzzles.ts'
+import { CLASSIC_PUZZLES } from './seed/classic-puzzles.ts'
 import { SEED_PATHS, syncPaths } from './seed/paths.ts'
 import { SEED_PUZZLES } from './seed/puzzles.ts'
 import { syncCatalog } from './seed/sync.ts'
@@ -20,7 +21,11 @@ try {
 const config = loadConfig()
 const db = createDb(config.databaseUrl)
 try {
-  const report = await syncCatalog(db, SEED_THEMES, [...SEED_PUZZLES, ...CATALOG_PUZZLES])
+  const report = await syncCatalog(db, SEED_THEMES, [
+    ...SEED_PUZZLES,
+    ...CATALOG_PUZZLES,
+    ...CLASSIC_PUZZLES,
+  ])
   process.stdout.write(
     `Catalogue : ${report.themesCreated} thème(s) et ${report.puzzlesCreated} grille(s) ajoutés, ` +
       `${report.puzzlesReclassified} grille(s) reclassée(s).\n`,

@@ -85,6 +85,7 @@ export default function DuelMatch() {
   const { me, opponent } = matchSides(current)
   const remaining = matchRemainingMs(current, snapshot.offsetMs, now)
   const clue = activeClue(puzzle, game)
+  const classic = current.puzzle?.format === 'classic'
   const graceMs =
     snapshot.opponentLostAt === null
       ? null
@@ -133,6 +134,7 @@ export default function DuelMatch() {
         <CrosswordGrid
           puzzle={puzzle}
           game={game}
+          classic={classic}
           onSelect={(row, col) => {
             duel.dispatch({ type: 'select', position: { row, col } })
           }}
@@ -161,6 +163,7 @@ export default function DuelMatch() {
           <>
             <ClueBar
               clue={clue}
+              classic={classic}
               onPrevious={() => {
                 duel.dispatch({ type: 'moveToClue', delta: -1 })
               }}

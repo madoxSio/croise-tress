@@ -53,6 +53,13 @@ s'y rattachent par `themeSlug`. Créations et modifications sont journalisées (
   croisements, cases noires autour), jusqu'à 15 cases de côté. `test/catalog.test.ts` vérifie
   chaque grille (moteur, thème existant, slug unique, définitions non vides).
 
+- Les **mots croisés classiques** (`format: 'classic'`, sous-thème « Mots croisés ») sont des
+  grilles denses (au plus un quart de cases noires) dans `seed/classic-puzzles.ts`. Leurs
+  définitions s'écrivent par ligne (I, II…) et par colonne (1, 2…), dans l'ordre de lecture ;
+  `classicPuzzle` les renumérote pour le moteur et échoue au chargement si une ligne n'a pas
+  autant de définitions que de mots. Filtre `?format=classic|freeform` sur `GET /puzzles` et
+  `GET /quick-play` ; choix « Type de grille » dans l'éditeur d'administration.
+
 ## Ajouter une grille au seed
 
 1. Choisir un slug unique et un sous-thème de `themes.ts`.

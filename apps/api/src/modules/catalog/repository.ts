@@ -4,6 +4,7 @@ import type {
   CatalogTheme,
   Difficulty,
   DifficultyCounts,
+  PuzzleFormat,
   PuzzleSummary,
 } from '@crossverse/contracts'
 import type { Db } from '../../db.ts'
@@ -103,13 +104,15 @@ export class CatalogRepository {
 
   /**
    * Grille de partie rapide : tirée au hasard parmi les grilles simples publiées (du thème
-   * demandé s'il y en a un), sinon parmi toutes celles du thème. `null` si rien ne convient.
+   * demandé s'il y en a un, et du format demandé), sinon parmi toutes celles du thème.
+   * `null` si rien ne convient.
    */
   async quickPlay(
     themeSlug: string | undefined,
+    format?: PuzzleFormat,
     random = Math.random,
   ): Promise<PuzzleSummary | null> {
-    const scope = publishedInTheme(themeSlug)
+    const scope = { ...publishedInTheme(themeSlug), ...(format ? { format } : {}) }
     const easy = { ...scope, difficulty: { in: QUICK_PLAY_LEVELS } }
     return (await this.pick(easy, random)) ?? (await this.pick(scope, random))
   }

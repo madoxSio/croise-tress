@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { puzzleFormatSchema } from './common.js'
 import { puzzleSummarySchema } from './puzzles.js'
 
 /**
@@ -53,8 +54,11 @@ export type CatalogTheme = z.infer<typeof catalogThemeSchema>
 export const catalogSchema = z.strictObject({ themes: z.array(catalogThemeSchema) })
 export type Catalog = z.infer<typeof catalogSchema>
 
-/** `GET /quick-play` : une grille simple tirée au hasard, éventuellement dans un thème. */
-export const quickPlayQuerySchema = z.strictObject({ theme: themeSlugSchema.optional() })
+/** `GET /quick-play` : une grille simple tirée au hasard, éventuellement dans un thème et un format. */
+export const quickPlayQuerySchema = z.strictObject({
+  theme: themeSlugSchema.optional(),
+  format: puzzleFormatSchema.optional(),
+})
 export type QuickPlayQuery = z.infer<typeof quickPlayQuerySchema>
 
 export const quickPlaySchema = z.strictObject({ puzzle: puzzleSummarySchema })

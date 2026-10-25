@@ -7,8 +7,8 @@ export function catalogRoutes(app: FastifyInstance, catalog: CatalogRepository):
   app.get('/catalog', async (): Promise<Catalog> => catalog.catalog())
 
   app.get('/quick-play', async (request): Promise<QuickPlay> => {
-    const { theme } = parseInput(quickPlayQuerySchema, request.query)
-    const puzzle = await catalog.quickPlay(theme)
+    const { theme, format } = parseInput(quickPlayQuerySchema, request.query)
+    const puzzle = await catalog.quickPlay(theme, format)
     if (!puzzle) throw notFound('Aucune grille disponible pour une partie rapide.')
     return { puzzle }
   })

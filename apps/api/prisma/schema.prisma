@@ -16,6 +16,11 @@ enum Role {
   admin
 }
 
+enum PuzzleFormat {
+  freeform
+  classic
+}
+
 enum Difficulty {
   discovery
   easy
@@ -148,6 +153,8 @@ model Puzzle {
   title            String
   themeId          String       @map("theme_id") @db.Uuid
   difficulty       Difficulty
+  /// Présentation : grille « en croix » ou mots croisés classiques (voir crossword-core/classic.ts).
+  format           PuzzleFormat @default(freeform)
   status           PuzzleStatus @default(draft)
   width            Int          @db.SmallInt
   height           Int          @db.SmallInt

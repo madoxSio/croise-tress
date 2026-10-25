@@ -2,7 +2,8 @@
 import type { PublicClue } from '@crossverse/crossword-core'
 import type { MenuItem } from '~/utils/menu'
 import type { CheckScope, HintKind } from '~/composables/usePlaySession'
-import { difficultyLabel, formatClock, formatDuration } from '~/utils/labels'
+import { formatLabel } from '~/services/catalog'
+import { clueSpoken, clueTag, difficultyLabel, formatClock, formatDuration } from '~/utils/labels'
 
 const route = useRoute()
 const rawId = route.params['puzzleId']
@@ -60,6 +61,8 @@ const saveLabel = computed(() => {
 })
 
 const activeClue = computed(() => game.value?.activeClue)
+/** Mots croisés classiques : repères de lignes (I, II…) et colonnes (1, 2…) au lieu des numéros. */
+const classic = computed(() => details.value?.format === 'classic')
 
 const checkItems = computed<MenuItem[]>(() => [
   { id: 'cell', label: 'Vérifier la case', disabled: !game.value?.active },
@@ -201,6 +204,9 @@ const gridLabel = computed(() =>
           <span class="ml-1 text-sm font-medium text-white/85">{{
             difficultyLabel(details.difficulty)
           }}</span>
+          <span v-if="classic" class="ml-1 text-sm font-medium text-white/85"
+            >· {{ formatLabel(details.format) }}</span
+          >
         </h1>
         <p class="ml-auto flex items-center gap-3 text-sm text-white/90 tabular-nums">
           <span :aria-label="`Temps écoulé ${formatDuration(elapsed)}`">{{
@@ -236,14 +242,14 @@ const gridLabel = computed(() =>
               class="hover:bg-surface-2 min-h-11 min-w-0 flex-1 rounded-xl px-2 py-1 text-left"
               :aria-label="
                 activeClue
-                  ? `Changer de sens. Définition active : ${activeClue.number} ${activeClue.direction === 'across' ? 'horizontal' : 'vertical'}, ${activeClue.text}`
+                  ? `Changer de sens. Définition active : ${clueSpoken(activeClue, classic)}, ${activeClue.text}`
                   : 'Aucune définition sélectionnée'
               "
               @click="toggleDirection"
             >
               <span v-if="activeClue" class="flex items-baseline gap-2">
                 <span class="text-accent shrink-0 text-sm font-extrabold">
-                  {{ activeClue.number }}{{ activeClue.direction === 'across' ? 'H' : 'V' }}
+                  {{ clueTag(activeClue, classic) }}
                 </span>
                 <span class="text-sm leading-snug sm:text-base">{{ activeClue.text }}</span>
               </span>
@@ -259,7 +265,13 @@ const gridLabel = computed(() =>
             </button>
           </div>
 
-          <CrosswordGrid ref="gridRef" :game="game" :label="gridLabel" @escape="leaveGrid" />
+          <CrosswordGrid
+            ref="gridRef"
+            :game="game"
+            :label="gridLabel"
+            :classic="classic"
+            @escape="leaveGrid"
+          />
 
           <p role="status" aria-live="polite" class="min-h-5 text-center text-sm">
             <span v-if="actionError" class="text-danger">{{ actionError }}</span>
@@ -348,8 +360,8 @@ const gridLabel = computed(() =>
         </div>
 
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          <ClueList :game="game" direction="across" @select="onSelectClue" />
-          <ClueList :game="game" direction="down" @select="onSelectClue" />
+          <ClueList :game="game" direction="across" :classic="classic" @select="onSelectClue" />
+          <ClueList :game="game" direction="down" :classic="classic" @select="onSelectClue" />
         </div>
       </div>
 

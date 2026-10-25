@@ -172,6 +172,14 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Correctif : `addTrailingSlash: false` côté serveur (`gateway.ts`), qui accepte les deux formes. Test de non-régression dans `match.test.ts` (25 verts).
 - Insuffisant seul (madox, 17:55) : mesuré depuis l'extérieur, Vercel relaie `GET /ws?EIO=4&transport=polling` (poignée de main Engine.IO reçue) mais répond en erreur 4xx à `/ws/?EIO=4…`, la forme qu'envoie le client par défaut. Le client web demande donc `/ws` sans barre finale (`addTrailingSlash: false`, `services/match.ts`) ; le Caddyfile relaie `/ws` et `/ws/*`.
 
+### 2026-10-25 — Mots croisés classiques ✅ (hors Docker)
+
+- Demande de madox : des grilles de mots croisés « en plus des flèches qui existent déjà ». Les grilles existantes sont des grilles « en croix » (mots libres, numéro dans la première case) ; le nouveau type est la grille de journal : dense, cases noires, définitions par ligne (I, II…) et par colonne (1, 2…).
+- Données : colonne `puzzles.format` (migration `puzzle_format`, défaut `freeform`), exposée dans les contrats ; filtre `?format=` sur `GET /puzzles` et `GET /quick-play` ; type modifiable dans l'éditeur d'administration (décision D15).
+- Contenu : sous-thème « Mots croisés » (Culture générale), 8 grilles de 6×6 à 9×9 (3 simples, 3 intermédiaires, 2 compliquées), remplies à partir d'un lexique courant puis relues, définitions écrites à la main.
+- Web : repères de lignes et colonnes autour de la grille, définitions groupées par ligne/colonne, barre « Ligne IV / Col. 4 », filtre « Type de grille » et badge sur les cartes, duel compris. Mobile : repères, barre de définition, filtre et badge (non vu sur un appareil : vérifié par types et tests).
+- Preuves : `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 59, web 65, mobile 43, api 169 (**336 verts**) ; captures Chromium 390 px et 1280 px de la grille 9×9 sans défilement horizontal.
+
 ## Points ouverts (repérés pendant la construction)
 
 - Classement et `/me/matches` : `limit` ≤ 100 sans curseur ; schémas de réponse à déplacer dans `contracts` ; variation Elo absente de `MatchState`.

@@ -8,7 +8,7 @@ const { isGuest } = useSession()
 const basics = [
   {
     title: 'La grille',
-    text: 'Chaque mot part d’une case numérotée, vers la droite (horizontal) ou vers le bas (vertical). Les cases noires séparent les mots.',
+    text: 'Les mots se lisent vers la droite (horizontal) ou vers le bas (vertical) ; les cases noires les séparent. Grilles en croix : chaque mot part d’une case numérotée. Mots croisés : les définitions sont rangées par ligne (I, II…) et par colonne (1, 2…).',
   },
   {
     title: 'Les définitions',

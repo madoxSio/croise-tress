@@ -38,6 +38,7 @@ import type {
   HintResponse,
   HistoryResponse,
   Difficulty,
+  PuzzleFormat,
   PathDetail,
   PathList,
   PointTransactionPage,
@@ -255,6 +256,7 @@ export type PlayerGridInput = (string | null)[][]
 export interface ListPuzzlesParams {
   readonly difficulty?: Difficulty
   readonly theme?: string
+  readonly format?: PuzzleFormat
   readonly limit?: number
   readonly cursor?: string
 }
@@ -268,6 +270,7 @@ export const api = {
       `/puzzles${query({
         difficulty: params.difficulty,
         theme: params.theme,
+        format: params.format,
         limit: params.limit,
         cursor: params.cursor,
       })}`,

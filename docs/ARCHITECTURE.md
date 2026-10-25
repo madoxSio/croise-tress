@@ -209,6 +209,19 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 | D11 | 2026-10-23 | Invité : solo seulement ; suivi (historique, stats, succès, favoris) = compte | demandée  |
 | D12 | 2026-10-23 | Catalogue : table `themes` à deux niveaux, contenu chargé sans écrasement     | appliquée |
 | D13 | 2026-10-23 | Parcours à étapes et Coumba points : solde + journal idempotent en base       | appliquée |
+| D15 | 2026-10-25 | Mots croisés classiques : colonne `format`, même moteur, présentation seule   | appliquée |
+
+### Notes sur D15 (mots croisés classiques)
+
+- `puzzles.format` (`freeform` = grille « en croix », défaut ; `classic` = mots croisés de
+  journal). Le moteur, la vérification, les indices, le score et le duel sont **identiques** :
+  seule la présentation change (repères I, II… / 1, 2…, pas de numéro dans les cases,
+  définitions regroupées par ligne et par colonne, `crossword-core/src/classic.ts`).
+- Le contrat public expose `format` dans chaque résumé de grille, et `GET /puzzles` et
+  `GET /quick-play` acceptent `?format=`. Champ requis dans les réponses : une ancienne version
+  de l'app mobile (schémas stricts) n'est pas concernée tant qu'aucune n'est distribuée.
+- Contenu : `seed/classic-puzzles.ts`, écrit ligne par ligne comme dans un journal
+  (`classicPuzzle` traduit vers la numérotation du moteur et refuse un décalage).
 
 ### Notes sur D13 (parcours et Coumba points)
 

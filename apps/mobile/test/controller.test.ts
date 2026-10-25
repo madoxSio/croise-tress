@@ -14,6 +14,7 @@ const DTO: PublicPuzzleDto = {
   parentThemeSlug: null,
   skin: 'default',
   difficulty: 'easy',
+  format: 'freeform',
   estimatedMinutes: 5,
 }
 

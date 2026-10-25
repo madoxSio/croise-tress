@@ -4,15 +4,22 @@
  * case active : il reçoit le clavier physique comme le clavier virtuel mobile.
  * Le tracé par glissement utilise les pointer events ; `touch-action: none` n'est posé que
  * sur la grille afin que la page reste défilable partout ailleurs.
+ * Mots croisés classiques (`classic`) : pas de numéro dans les cases, repères de lignes
+ * (I, II…) à gauche et de colonnes (1, 2…) au-dessus de la grille.
  */
-import type { Position, PublicClue } from '@crossverse/crossword-core'
+import { classicLineLabel, type Position, type PublicClue } from '@crossverse/crossword-core'
 import { cellKey } from '~/composables/useCrosswordGame'
+import { clueSpoken } from '~/utils/labels'
 import type { ReactiveCrosswordGame } from '~/composables/useCrosswordGame'
 
-const props = defineProps<{
-  game: ReactiveCrosswordGame
-  label: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    game: ReactiveCrosswordGame
+    label: string
+    classic?: boolean
+  }>(),
+  { classic: false },
+)
 
 const emit = defineEmits<{
   /** Échap : l'utilisateur quitte la grille (évite le piège clavier causé par Tab). */
@@ -53,11 +60,11 @@ function cellLabel(row: number, col: number): string {
   const where = `ligne ${row + 1}, colonne ${col + 1}`
   if (!cell || cell.block) return `Case noire, ${where}`
   const parts: string[] = []
-  if (cell.number !== undefined) parts.push(`Case ${cell.number}`)
+  if (cell.number !== undefined && !props.classic) parts.push(`Case ${cell.number}`)
   parts.push(where)
   const clues = cluesByCell.value.get(cellKey(position))
-  if (clues?.across) parts.push(`horizontal ${clues.across.number} : ${clues.across.text}`)
-  if (clues?.down) parts.push(`vertical ${clues.down.number} : ${clues.down.text}`)
+  if (clues?.across) parts.push(`${clueSpoken(clues.across, props.classic)} : ${clues.across.text}`)
+  if (clues?.down) parts.push(`${clueSpoken(clues.down, props.classic)} : ${clues.down.text}`)
   const letter = props.game.letterAt(position)
   parts.push(letter === null ? 'vide' : `lettre ${letter}`)
   const mark = props.game.marks.get(cellKey(position))
@@ -235,86 +242,111 @@ defineExpose({ focus: focusInput })
 
 <template>
   <div
-    class="relative mx-auto w-full rounded-lg"
-    :class="focused ? 'ring-accent ring-offset-bg ring-2 ring-offset-2' : ''"
+    class="mx-auto grid w-full"
+    :class="classic ? 'grid-cols-[auto_minmax(0,1fr)] gap-x-1.5 gap-y-1' : 'grid-cols-1'"
     :style="{
-      maxWidth: `min(100%, ${Math.max(width * 2.75, 22)}rem, 72dvh)`,
-      containerType: 'inline-size',
+      maxWidth: `min(100%, ${Math.max(width * 2.75, 22) + (classic ? 2 : 0)}rem, ${classic ? 76 : 72}dvh)`,
     }"
   >
+    <!-- Repères des colonnes (1, 2…) et des lignes (I, II…) : décoratifs, chaque case les annonce. -->
+    <template v-if="classic">
+      <span aria-hidden="true" />
+      <div
+        aria-hidden="true"
+        class="text-muted grid text-center text-xs font-bold tabular-nums"
+        :style="{ gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))` }"
+      >
+        <span v-for="col in width" :key="col">{{ classicLineLabel('down', col - 1) }}</span>
+      </div>
+      <div
+        aria-hidden="true"
+        class="text-muted grid py-[2px] text-right text-xs font-bold"
+        :style="{ gridTemplateRows: `repeat(${height}, minmax(0, 1fr))` }"
+      >
+        <span v-for="row in height" :key="row" class="flex items-center justify-end">{{
+          classicLineLabel('across', row - 1)
+        }}</span>
+      </div>
+    </template>
     <div
-      ref="gridEl"
-      role="grid"
-      :aria-label="label"
-      :aria-rowcount="height"
-      :aria-colcount="width"
-      class="border-block bg-block flex touch-none flex-col overflow-hidden rounded-lg border-2 select-none"
-      :style="{ gap: 'var(--cv-grid-border)' }"
-      @pointerdown="onPointerDown"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerCancel"
-      @mousedown.prevent
-      @click="focusInput"
+      class="relative w-full rounded-lg"
+      :class="focused ? 'ring-accent ring-offset-bg ring-2 ring-offset-2' : ''"
+      :style="{ containerType: 'inline-size' }"
     >
       <div
-        v-for="(line, row) in game.puzzle.cells"
-        :key="row"
-        role="row"
-        :aria-rowindex="row + 1"
-        class="grid"
-        :style="{
-          gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))`,
-          gap: 'var(--cv-grid-border)',
-        }"
+        ref="gridEl"
+        role="grid"
+        :aria-label="label"
+        :aria-rowcount="height"
+        :aria-colcount="width"
+        class="border-block bg-block flex touch-none flex-col overflow-hidden rounded-lg border-2 select-none"
+        :style="{ gap: 'var(--cv-grid-border)' }"
+        @pointerdown="onPointerDown"
+        @pointermove="onPointerMove"
+        @pointerup="onPointerUp"
+        @pointercancel="onPointerCancel"
+        @mousedown.prevent
+        @click="focusInput"
       >
         <div
-          v-for="(cell, col) in line"
-          :id="cellId({ row, col })"
-          :key="col"
-          role="gridcell"
-          :aria-colindex="col + 1"
-          :aria-label="cellLabel(row, col)"
-          :aria-selected="game.active?.row === row && game.active?.col === col"
-          :data-row="row"
-          :data-col="col"
-          class="relative flex aspect-square items-center justify-center font-semibold uppercase transition-colors duration-100"
-          :class="cellClasses(row, col)"
-          :style="{ fontSize: `calc(100cqi / ${width} * 0.56)` }"
+          v-for="(line, row) in game.puzzle.cells"
+          :key="row"
+          role="row"
+          :aria-rowindex="row + 1"
+          class="grid"
+          :style="{
+            gridTemplateColumns: `repeat(${width}, minmax(0, 1fr))`,
+            gap: 'var(--cv-grid-border)',
+          }"
         >
-          <span
-            v-if="!cell.block && cell.number !== undefined"
-            aria-hidden="true"
-            class="pointer-events-none absolute top-[4%] left-[6%] leading-none font-medium opacity-80"
-            :style="{ fontSize: `calc(100cqi / ${width} * 0.26)` }"
-            >{{ cell.number }}</span
+          <div
+            v-for="(cell, col) in line"
+            :id="cellId({ row, col })"
+            :key="col"
+            role="gridcell"
+            :aria-colindex="col + 1"
+            :aria-label="cellLabel(row, col)"
+            :aria-selected="game.active?.row === row && game.active?.col === col"
+            :data-row="row"
+            :data-col="col"
+            class="relative flex aspect-square items-center justify-center font-semibold uppercase transition-colors duration-100"
+            :class="cellClasses(row, col)"
+            :style="{ fontSize: `calc(100cqi / ${width} * 0.56)` }"
           >
-          <span v-if="!cell.block" aria-hidden="true" class="pointer-events-none leading-none">{{
-            game.letterAt({ row, col }) ?? ''
-          }}</span>
+            <span
+              v-if="!cell.block && cell.number !== undefined && !classic"
+              aria-hidden="true"
+              class="pointer-events-none absolute top-[4%] left-[6%] leading-none font-medium opacity-80"
+              :style="{ fontSize: `calc(100cqi / ${width} * 0.26)` }"
+              >{{ cell.number }}</span
+            >
+            <span v-if="!cell.block" aria-hidden="true" class="pointer-events-none leading-none">{{
+              game.letterAt({ row, col }) ?? ''
+            }}</span>
+          </div>
         </div>
       </div>
+      <!-- Sans pointer-events : un toucher sur la case active doit atteindre la grille. -->
+      <input
+        ref="inputEl"
+        class="pointer-events-none absolute m-0 border-0 bg-transparent p-0 text-base opacity-0"
+        :style="{ ...inputStyle, caretColor: 'transparent', fontSize: '16px' }"
+        type="text"
+        inputmode="text"
+        enterkeyhint="next"
+        autocapitalize="characters"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+        :aria-label="inputLabel"
+        @keydown="onKeydown"
+        @beforeinput="onBeforeInput"
+        @input="onInput"
+        @compositionend="onCompositionEnd"
+        @focus="onFocus"
+        @blur="focused = false"
+      />
     </div>
-    <!-- Sans pointer-events : un toucher sur la case active doit atteindre la grille. -->
-    <input
-      ref="inputEl"
-      class="pointer-events-none absolute m-0 border-0 bg-transparent p-0 text-base opacity-0"
-      :style="{ ...inputStyle, caretColor: 'transparent', fontSize: '16px' }"
-      type="text"
-      inputmode="text"
-      enterkeyhint="next"
-      autocapitalize="characters"
-      autocomplete="off"
-      autocorrect="off"
-      spellcheck="false"
-      :aria-label="inputLabel"
-      @keydown="onKeydown"
-      @beforeinput="onBeforeInput"
-      @input="onInput"
-      @compositionend="onCompositionEnd"
-      @focus="onFocus"
-      @blur="focused = false"
-    />
   </div>
 </template>
 
