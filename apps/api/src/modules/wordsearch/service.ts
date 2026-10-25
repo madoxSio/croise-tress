@@ -61,6 +61,7 @@ export class WordSearchService {
     const dto: WordSearchDto = {
       puzzleId,
       seed,
+      format: loaded.summary.format,
       size: search.size,
       rows: [...search.rows],
       directions,
@@ -69,6 +70,8 @@ export class WordSearchService {
         number: clue.number,
         text: clue.text,
         length: clue.slot.length,
+        row: clue.slot.start.row,
+        col: clue.slot.start.col,
       })),
     }
     return { search, dto }

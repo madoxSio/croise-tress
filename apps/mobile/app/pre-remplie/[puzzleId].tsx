@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { api, errorMessage } from '../../src/api'
 import { Button, Card, ErrorNotice, Loading, Muted, StatusNotice } from '../../src/components/ui'
-import { formatClock, formatDuration } from '../../src/game/labels'
+import { clueSpoken, clueTag, formatClock, formatDuration } from '../../src/game/labels'
 import { TOUCH_TARGET, usePalette } from '../../src/theme'
 import { useNow } from '../../src/useNow'
 import {
@@ -66,6 +66,8 @@ export default function PrefilledPuzzle() {
   }, [load])
 
   const complete = data !== null && state.found.length === data.clues.length
+  /** Mots croisés classiques : définitions repérées par ligne et colonne (« Ligne IV »). */
+  const classic = data?.format === 'classic'
   const now = useNow(data !== null && !complete)
   const elapsed = (finishedAt ?? now) - startedAt
 
@@ -289,8 +291,9 @@ export default function PrefilledPuzzle() {
               <View style={styles.clueText}>
                 <Text style={{ color: palette.fg }}>
                   <Text style={{ color: palette.accent, fontWeight: '800' }}>
-                    {clue.number}
-                    {clue.direction === 'across' ? 'H' : 'V'}{' '}
+                    {classic
+                      ? clueTag(clue, true)
+                      : `${String(clue.number)}${clue.direction === 'across' ? 'H' : 'V'}`}{' '}
                   </Text>
                   {clue.text} ({clue.length})
                 </Text>
@@ -309,7 +312,7 @@ export default function PrefilledPuzzle() {
               {!word && !complete ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`Où est le mot ${String(clue.number)} ${clue.direction === 'across' ? 'horizontal' : 'vertical'} ?`}
+                  accessibilityLabel={`Où est le mot ${clueSpoken(clue, classic)} ?`}
                   disabled={busy}
                   onPress={() => void reveal(clue)}
                   style={styles.where}

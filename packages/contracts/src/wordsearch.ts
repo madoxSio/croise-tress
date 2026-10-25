@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { directionSchema, positionSchema } from './common.js'
+import { directionSchema, positionSchema, puzzleFormatSchema } from './common.js'
 
 /**
  * Mode « grille pré-remplie » (façon mots mêlés). La grille de lettres est publique ; seul le
@@ -17,6 +17,9 @@ export const wordSearchClueSchema = z.strictObject({
   number: z.int().positive(),
   text: z.string(),
   length: z.int().min(2),
+  /** Première case du mot dans la grille d'origine : repère « Ligne IV » des mots croisés classiques. */
+  row: z.int().min(0),
+  col: z.int().min(0),
 })
 export type WordSearchClue = z.infer<typeof wordSearchClueSchema>
 
@@ -28,6 +31,8 @@ export const wordSearchDirectionsSchema = z.strictObject({
 export const wordSearchSchema = z.strictObject({
   puzzleId: z.uuid(),
   seed: z.int(),
+  /** Présentation de la grille d'origine : les définitions sont repérées comme elle. */
+  format: puzzleFormatSchema,
   size: z.int().positive(),
   /** Une chaîne de `size` lettres par ligne. */
   rows: z.array(z.string()),
