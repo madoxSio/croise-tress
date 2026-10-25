@@ -176,6 +176,36 @@ model Puzzle {
   @@map("puzzles")
 }
 
+/// Mots mêlés « standard » : grille carrée entièrement remplie, liste des mots à trouver en
+/// clair et mot mystère formé par les lettres restantes (voir crossword-core/wordlist.ts).
+/// Rien n'y est secret : la liste des mots est l'énoncé. Mode d'entraînement, sans points.
+model WordList {
+  id               String       @id @default(uuid(7)) @db.Uuid
+  slug             String       @unique
+  title            String
+  themeId          String       @map("theme_id") @db.Uuid
+  /// Fixe les sens de lecture : droite et bas, puis diagonales, puis à l'envers.
+  difficulty       Difficulty
+  status           PuzzleStatus @default(draft)
+  /// Lignes de la grille (chaînes A–Z de même longueur que leur nombre).
+  rows             Json
+  /// Mots à trouver (A–Z), chacun présent une seule fois dans la grille.
+  words            Json
+  /// Lettres restantes, dans l'ordre de lecture, une fois tous les mots rayés.
+  mystery          String
+  /// Indice affiché pour le mot mystère.
+  mysteryClue      String       @map("mystery_clue")
+  estimatedMinutes Int          @map("estimated_minutes") @db.SmallInt
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  theme Theme @relation(fields: [themeId], references: [id], onDelete: Restrict)
+
+  @@index([themeId, status, difficulty])
+  @@index([status, difficulty])
+  @@map("word_lists")
+}
+
 /// Thème du catalogue, sur deux niveaux au plus : thème (sans parent) > sous-thème.
 /// La profondeur est garantie par le service d'administration et le chargement du catalogue.
 /// Champs d'habillage (`skin`, `icon`, `accent`, `accentAlt`) : NULL = hérité du parent.
@@ -196,10 +226,11 @@ model Theme {
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  parent   Theme?   @relation("ThemeTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children Theme[]  @relation("ThemeTree")
-  puzzles  Puzzle[]
-  paths    Path[]
+  parent    Theme?     @relation("ThemeTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Theme[]    @relation("ThemeTree")
+  puzzles   Puzzle[]
+  wordLists WordList[]
+  paths     Path[]
 
   @@index([parentId, sortOrder])
   @@map("themes")

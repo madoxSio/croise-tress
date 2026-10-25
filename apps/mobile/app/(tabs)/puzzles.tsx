@@ -154,6 +154,24 @@ export default function Puzzles() {
         ))}
       </View>
       <Muted>{PLAY_MODES.find((option) => option.id === mode)?.description}</Muted>
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel="Mots mêlés : une liste de mots à rayer et un mot mystère"
+        onPress={() => {
+          router.push('/mots-meles')
+        }}
+        style={({ pressed }) => [
+          styles.card,
+          {
+            backgroundColor: pressed ? palette.surface2 : palette.surface,
+            borderColor: palette.line,
+            borderLeftColor: palette.accent,
+          },
+        ]}
+      >
+        <Text style={[styles.title, { color: palette.fg }]}>🔎 Envie de mots mêlés ?</Text>
+        <Muted>Une liste de mots à rayer dans la grille, et un mot mystère à découvrir.</Muted>
+      </Pressable>
       <Button
         label={quickBusy ? 'Préparation…' : 'Partie rapide'}
         variant="neon"

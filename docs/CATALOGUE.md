@@ -60,6 +60,18 @@ s'y rattachent par `themeSlug`. Créations et modifications sont journalisées (
   autant de définitions que de mots. Filtre `?format=classic|freeform` sur `GET /puzzles` et
   `GET /quick-play` ; choix « Type de grille » dans l'éditeur d'administration.
 
+## Mots mêlés (D16)
+
+- `GET /word-lists?difficulty=&theme=&limit=&cursor=` et `GET /word-lists/:id` : publics. Le
+  détail contient les lignes, les mots (ordre alphabétique), les sens permis, la longueur et
+  l'indice du mot mystère, jamais le mot lui-même. Contrats : `packages/contracts/src/wordlists.ts`.
+- Contenu : `apps/api/prisma/seed/word-lists.ts` (8 grilles : 2 simples 10×10, 3 intermédiaires
+  et 3 compliquées 12×12), chargé par `syncWordLists` sans écrasement, comme les grilles.
+- Ajouter une grille : écrire un brouillon JSON (`words`, `extras` courts du même thème,
+  `mystery`, `size`, `difficulty`), lancer `pnpm --filter @crossverse/api exec tsx
+scripts/word-list.ts brouillon.json`, recopier `rows` et `words` dans le seed, puis
+  `pnpm --filter @crossverse/api test` (`wordlists.test.ts` revérifie chaque grille).
+
 ## Ajouter une grille au seed
 
 1. Choisir un slug unique et un sous-thème de `themes.ts`.

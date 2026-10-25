@@ -211,6 +211,26 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 | D13 | 2026-10-23 | Parcours à étapes et Coumba points : solde + journal idempotent en base       | appliquée |
 | D14 | 2026-10-24 | Grille pré-remplie : disposition déterministe (puzzle, graine), sans état     | appliquée |
 | D15 | 2026-10-25 | Mots croisés classiques : colonne `format`, même moteur, présentation seule   | appliquée |
+| D16 | 2026-10-25 | Mots mêlés standard : table `word_lists`, grille figée, jeu côté client       | appliquée |
+
+### Notes sur D16 (mots mêlés standard)
+
+- Demande : en plus des mots croisés à remplir et de la grille pré-remplie (D14, définitions),
+  de vrais mots mêlés « comme sur papier » : liste des mots en clair, mots cachés dans les sens
+  permis par le niveau, mot mystère formé par les lettres restantes.
+- Contenu distinct des grilles de mots croisés : table `word_lists` (lignes, mots, mot mystère et
+  son indice, thème, niveau, statut). Les grilles sont **figées** dans le seed
+  (`seed/word-lists.ts`), produites par `buildWordList` (`crossword-core/src/wordlist.ts`,
+  outil `apps/api/scripts/word-list.ts`) et vérifiées par `validateWordList` au chargement :
+  chaque mot est présent **une seule fois** dans les huit sens, ce qui rend le mot mystère
+  univoque.
+- Rien n'y est secret (la liste des mots est l'énoncé) : `GET /word-lists` et
+  `GET /word-lists/:id` sont publics, sans session, et la partie se joue dans le navigateur ou
+  l'app avec les règles de `crossword-core` (tracé dans les deux sens, lettres restantes). Le
+  mot mystère n'est pas envoyé, mais il se déduit de la grille : sans incidence, car ce mode
+  ne rapporte ni score, ni points, ni progression.
+- Sens de lecture par niveau : ceux de la grille pré-remplie (`directionsFor`).
+- Pas d'écran d'administration pour l'instant : une nouvelle grille passe par le seed.
 
 ### Notes sur D15 (mots croisés classiques)
 

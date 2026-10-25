@@ -207,6 +207,38 @@ const faq = [
     </section>
 
     <section
+      id="mots-meles"
+      v-reveal
+      aria-labelledby="mots-meles-title"
+      class="border-line bg-surface shadow-card scroll-mt-24 flex flex-col gap-4 rounded-3xl border p-5 sm:p-8"
+    >
+      <p class="text-accent text-xs font-bold tracking-wider uppercase">Comme sur papier</p>
+      <h2 id="mots-meles-title" class="text-3xl font-extrabold sm:text-4xl">Les mots mêlés</h2>
+      <ol class="text-muted flex list-decimal flex-col gap-2 pl-5 leading-relaxed">
+        <li>
+          La liste des mots à trouver est affichée à côté de la grille, par ordre alphabétique.
+        </li>
+        <li>
+          Surligne chaque mot en glissant de sa première à sa dernière lettre : il se raye dans la
+          liste.
+        </li>
+        <li>
+          Simple : les mots se lisent de gauche à droite et de haut en bas. Intermédiaire :
+          diagonales en plus. Compliqué : dans tous les sens, même à l’envers.
+        </li>
+        <li>
+          Les lettres qui restent, lues de gauche à droite et de haut en bas, forment le mot
+          mystère. Tu peux le proposer avant la fin !
+        </li>
+      </ol>
+      <NuxtLink
+        to="/mots-meles"
+        class="bg-accent text-accent-fg inline-flex min-h-11 w-fit items-center rounded-2xl px-5 font-bold"
+        >Jouer aux mots mêlés</NuxtLink
+      >
+    </section>
+
+    <section
       id="commandes"
       aria-labelledby="commandes-title"
       class="scroll-mt-24 flex flex-col gap-6"

@@ -187,6 +187,16 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Mobile : écran `pre-remplie/[puzzleId]` (glisser ou deux taps, cases colorées), choix du mode dans l'onglet Grilles, partie rapide de l'accueil dans le mode choisi, `Loading` avec Sougoudou et cases animées (immobile si « réduire les animations »).
 - Preuves : `wordsearch.test.ts` côté core (8), API (7, dont toutes les grilles du catalogue et les 8 classiques sur 5 graines, AUTHZ parcours, VAL), web (9), mobile (3) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 62, web 72, mobile 44, api 166 (**344 verts** ; 365 après fusion des mots croisés classiques) ; E2E : **13 passed, 2 skipped** (grille pré-remplie jouée à la suite de `solo.spec.ts`, en mobile et bureau, dans la même session invitée et avec peu de requêtes : limite de 30 invités/h par IP ; la limite globale de 300 requêtes/min, que la suite dépasse depuis une seule IP, est relevée pour les E2E seulement via `RATE_LIMIT_MAX`). Écran mobile vérifié dans Chromium via l'export web Expo ; pas d'appareil iOS/Android réel ici.
 
+### 2026-10-25 — Mots mêlés standard et pré-rempli des classiques ✅ (hors Docker)
+
+- Demande de madox : un mode « qui respecte les standards » des mots mêlés, en plus des modes existants, dans le style Crossverse (D16).
+- Moteur : `crossword-core/src/wordlist.ts` (occurrences dans les huit sens, tracé dans les deux sens selon le niveau, lettres restantes, validation, générateur `buildWordList` qui complète avec des mots du thème jusqu'à la place exacte du mot mystère).
+- API : table `word_lists` (migration `20261025180015_word_lists`), `GET /word-lists` (filtres, pagination) et `GET /word-lists/:id`, publics ; 8 grilles à thème chargées au démarrage par `syncWordLists`, refusées si un mot est absent, en double ou si le mot mystère ne correspond pas. Outil `scripts/word-list.ts`.
+- Web : `/mots-meles` (liste par niveau) et `/mots-meles/:id` (grille de surlignage partagée avec le pré-rempli, liste alphabétique rayée, « Où est ? », mot mystère à proposer ou révélé en fin de partie, cases du mot mystère cerclées, partie gardée dans le navigateur) ; accès depuis l'accueil, la liste des grilles et Comment jouer. Mobile : écrans `mots-meles/index` et `mots-meles/[id]`, lien dans l'onglet Grilles (non vus sur un appareil : vérifiés par types et tests).
+- Grille pré-remplie des mots croisés classiques (PR #22) : définitions repérées « Ligne IV / Col. 4 ».
+- Défi du jour (PR #21) : n'attribue plus une étape de parcours verrouillable.
+- Preuves : `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 74, web 74, mobile 48, api 186 (**382 verts**) ; E2E local **13 passed, 2 skipped** (mots mêlés joués à la suite de `solo.spec.ts`, `/mots-meles` et une partie ajoutées aux contrôles 320 px et accessibilité) ; captures Chromium 390 px et 1280 px sans défilement horizontal.
+
 ## Points ouverts (repérés pendant la construction)
 
 - Classement et `/me/matches` : `limit` ≤ 100 sans curseur ; schémas de réponse à déplacer dans `contracts` ; variation Elo absente de `MatchState`.
@@ -194,6 +204,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Sessions sans libellé d'appareil ; favoris plafonnés à 100.
 - E2E non branchés dans la CI ; limites d'inscription (5/h par IP, en mémoire) : redémarrer l'API entre deux exécutions E2E.
 - Limites de débit en mémoire : remises à zéro au redémarrage, et une seule instance.
+- Mots mêlés : pas d'écran d'administration (seed seulement) ; sur mobile, partie non gardée entre deux ouvertures.
 - Grille pré-remplie : partie gardée dans le navigateur seulement (rien côté serveur, aucune statistique) ; sur mobile, ni persistance ni retour haptique ; grilles jusqu'à 18 lettres de côté, serrées sur un téléphone de 320 px.
 - Catalogue : pas d'écran d'administration des thèmes (API seule) ; les grilles du seed déjà présentes en base ne sont jamais mises à jour par le chargement (corrections via l'éditeur) ; grilles « en croix » jusqu'à 15 colonnes, à vérifier sur petit écran avec la nouvelle interface.
 - Admin : pas de MFA (T17), pas de modération des pseudos ni d'export/suppression RGPD par l'administrateur, durée de conservation de `audit_log` à fixer ; série « inscriptions » datée par la confirmation d'e-mail (décalée par un changement d'adresse).
@@ -229,11 +240,11 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 
 2026-10-25, depuis la racine, Node 24.22.0, PostgreSQL 16 locale (hors Docker) :
 
-| Commande         | Résultat réel                                                                                 |
-| ---------------- | --------------------------------------------------------------------------------------------- |
-| `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                            |
-| `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                             |
-| `pnpm test`      | core 67/67, web 74/74, mobile 46/46, api 178/178 : **365 tests verts** (après fusion de main) |
-| `make e2e-local` | **13 passed, 2 skipped** : les 2 ignorés lisent le build statique, absent (pas de build)      |
+| Commande         | Résultat réel                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                       |
+| `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                        |
+| `pnpm test`      | core 74/74, web 74/74, mobile 48/48, api 186/186 : **382 tests verts**                   |
+| `make e2e-local` | **13 passed, 2 skipped** : les 2 ignorés lisent le build statique, absent (pas de build) |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.

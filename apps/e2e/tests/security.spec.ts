@@ -7,6 +7,7 @@ import { allSeedAnswers, SEED_PUZZLES } from '../support/puzzles.ts'
 const MAIN_PAGES = [
   '/',
   '/puzzles',
+  '/mots-meles',
   '/duel',
   '/history',
   '/preferences',
@@ -93,5 +94,12 @@ test('pas de défilement horizontal à 320 px', async ({ page }) => {
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   )
   if (play > 0) overflowing.push(`/play (${play} px)`)
+  await page.goto('/mots-meles')
+  await page.locator('a[href^="/mots-meles/"]').first().click()
+  await expect(page.getByRole('grid')).toBeVisible()
+  const wordList = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+  if (wordList > 0) overflowing.push(`/mots-meles/:id (${wordList} px)`)
   expect(overflowing).toEqual([])
 })

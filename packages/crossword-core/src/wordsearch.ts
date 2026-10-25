@@ -57,7 +57,7 @@ const DIAGONAL: readonly WordSearchStep[] = [
 ]
 
 /** Générateur pseudo-aléatoire reproductible (mulberry32) : pas de cryptographie ici. */
-function random(seed: number): () => number {
+export function seededRandom(seed: number): () => number {
   let state = seed >>> 0
   return () => {
     state = (state + 0x6d2b79f5) >>> 0
@@ -162,7 +162,7 @@ function tryPlace(
 export function buildWordSearch(puzzle: Puzzle, options: WordSearchOptions): WordSearch {
   const words = answers(puzzle).sort((a, b) => b.answer.length - a.answer.length)
   const steps = wordSearchSteps(options)
-  const next = random(mixSeed(options.seed, puzzle.id))
+  const next = seededRandom(mixSeed(options.seed, puzzle.id))
   for (let size = initialSize(words.map((w) => w.answer)); size <= WORD_SEARCH_MAX_SIZE; size++) {
     const result = tryPlace(words, size, steps, next)
     if (!result) continue

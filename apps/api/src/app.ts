@@ -32,6 +32,8 @@ import { registerAuth } from './plugins/auth.ts'
 import { MatchGateway } from './modules/match/gateway.ts'
 import { matchRoutes } from './modules/match/routes.ts'
 import { MatchService } from './modules/match/service.ts'
+import { WordListRepository } from './modules/wordlists/repository.ts'
+import { wordListRoutes } from './modules/wordlists/routes.ts'
 import { wordSearchRoutes } from './modules/wordsearch/routes.ts'
 import { WordSearchService } from './modules/wordsearch/service.ts'
 
@@ -127,6 +129,7 @@ export async function buildApp({
           paths.assertCanStart(userId, puzzleId),
         ),
       )
+      wordListRoutes(api, new WordListRepository(db))
       adminRoutes(api, admin, adminUsers, auth, new AdminThemeService(db))
       done()
     },
