@@ -1,10 +1,18 @@
-import type { CatalogTheme, PuzzleSummary } from '@crossverse/contracts'
+import type { CatalogTheme, PuzzleFormat, PuzzleSummary } from '@crossverse/contracts'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { api, errorMessage } from '../../src/api'
 import { Button, ErrorNotice, Loading, Muted } from '../../src/components/ui'
-import { LEVELS, type LevelId, levelOf, lookOf, parentTheme } from '../../src/game/catalog'
+import {
+  FORMATS,
+  LEVELS,
+  type LevelId,
+  formatLabel,
+  levelOf,
+  lookOf,
+  parentTheme,
+} from '../../src/game/catalog'
 import { PLAY_MODES, puzzleRoute, setPlayMode, usePlayMode } from '../../src/playMode'
 import { TOUCH_TARGET, radius, usePalette } from '../../src/theme'
 
@@ -15,12 +23,17 @@ const LEVEL_LIMIT = 50
 interface Filter {
   readonly theme: string | null
   readonly level: LevelId | null
+  readonly format: PuzzleFormat | null
 }
 
 export default function Puzzles() {
   const palette = usePalette()
   const [themes, setThemes] = useState<CatalogTheme[]>([])
-  const [filter, setFilter] = useState<Filter>({ theme: null, level: null })
+  const [filter, setFilter] = useState<Filter>({
+    theme: null,
+    level: null,
+    format: null,
+  })
   const [items, setItems] = useState<PuzzleSummary[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -31,7 +44,10 @@ export default function Puzzles() {
   /** Charge une page (ou toutes les grilles d'un niveau) ; l'état change après la réponse. */
   const fetchPage = useCallback(async (current: Filter, after: string | null) => {
     try {
-      const theme = current.theme === null ? {} : { theme: current.theme }
+      const theme = {
+        ...(current.theme === null ? {} : { theme: current.theme }),
+        ...(current.format === null ? {} : { format: current.format }),
+      }
       const level = LEVELS.find((l) => l.id === current.level)
       if (level) {
         const pages = await Promise.all(
@@ -61,7 +77,7 @@ export default function Puzzles() {
     // Chargement initial : l'état n'est modifié qu'après la réponse (après `await`), ce que la
     // règle ne sait pas distinguer d'une mise à jour synchrone.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchPage({ theme: null, level: null }, null)
+    void fetchPage({ theme: null, level: null, format: null }, null)
     // Confort : sans catalogue, la liste reste utilisable (habillage par défaut).
     api.getCatalog().then(setThemes, () => undefined)
   }, [fetchPage])
@@ -77,7 +93,7 @@ export default function Puzzles() {
     setQuickBusy(true)
     setError(null)
     try {
-      const pick = await api.quickPlay(filter.theme ?? undefined)
+      const pick = await api.quickPlay(filter.theme ?? undefined, filter.format ?? undefined)
       if (pick) router.push(puzzleRoute(pick.id, mode))
       else setError('Aucune grille disponible pour le moment.')
     } catch (cause) {
@@ -199,6 +215,19 @@ export default function Puzzles() {
         </ScrollView>
       ) : null}
       <View style={styles.levels}>
+        {chip('any-format', 'Tous types', filter.format === null, () => {
+          apply({ ...filter, format: null })
+        })}
+        {FORMATS.map((format) =>
+          chip(format.id, format.label, filter.format === format.id, () => {
+            apply({ ...filter, format: format.id })
+          }),
+        )}
+      </View>
+      {filter.format !== null ? (
+        <Muted>{FORMATS.find((format) => format.id === filter.format)?.hint}</Muted>
+      ) : null}
+      <View style={styles.levels}>
         {chip('any', 'Tous niveaux', filter.level === null, () => {
           apply({ ...filter, level: null })
         })}
@@ -221,10 +250,11 @@ export default function Puzzles() {
       renderItem={({ item }) => {
         const look = lookOf(themes, item.themeSlug)
         const level = levelOf(item.difficulty).label
+        const kind = item.format === 'classic' ? `${formatLabel(item.format)} · ` : ''
         return (
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel={`${item.title}, ${level}, ${item.theme}, environ ${item.estimatedMinutes} minutes`}
+            accessibilityLabel={`${item.title}, ${kind}${level}, ${item.theme}, environ ${item.estimatedMinutes} minutes`}
             onPress={() => {
               router.push(puzzleRoute(item.id, mode))
             }}
@@ -241,6 +271,7 @@ export default function Puzzles() {
               {look.icon} {item.title}
             </Text>
             <Muted>
+              {kind}
               {level} · {item.theme} · {item.width}×{item.height} · {item.estimatedMinutes} min
             </Muted>
           </Pressable>

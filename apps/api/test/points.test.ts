@@ -115,7 +115,11 @@ describe('portefeuille', () => {
     const player = await new Client(ctx.app).account(ctx.db)
     const first = await wallet(player)
     expect(first).toMatchObject({ eligible: true, balance: 20, earned: 20, spent: 0 })
-    expect(first.rules).toEqual({ freeHintsPerGame: 3, hintCost: { letter: 5, word: 15 } })
+    expect(first.rules).toEqual({
+      freeHintsPerGame: 3,
+      hintCost: { letter: 5, word: 15 },
+      duelHintCost: 10,
+    })
     await Promise.all([wallet(player), wallet(player), wallet(player)])
     expect((await wallet(player)).balance).toBe(20)
     expect((await ledger(player)).items).toMatchObject([{ amount: 20, reason: 'welcome' }])

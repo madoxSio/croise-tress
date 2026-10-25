@@ -4,13 +4,21 @@ import {
   revealSlot,
   toPublicPuzzle,
   findSlot,
+  solutionAt,
   type Direction,
   type Puzzle,
 } from '@crossverse/crossword-core'
-import { ERROR_CODES, MATCH_DURATION_MS, type MatchState } from '@crossverse/contracts'
+import {
+  ERROR_CODES,
+  MATCH_DURATION_MS,
+  type MatchHintResult,
+  type MatchState,
+} from '@crossverse/contracts'
 import type { Db } from '../../db.ts'
 import { Prisma } from '../../generated/prisma/client.ts'
 import { AppError, conflict, notFound } from '../../http/errors.ts'
+import { POINT_RULES, POINTS } from '../points/rules.ts'
+import type { PointsService } from '../points/service.ts'
 import type { PuzzleRepository } from '../puzzles/repository.ts'
 import { ELO_INITIAL, eloUpdate } from './elo.ts'
 
@@ -44,6 +52,8 @@ export class MatchService {
     private readonly db: Db,
     private readonly puzzles: PuzzleRepository,
     private readonly now: () => Date,
+    /** Coumba points : indices payants et gains des duels rapides. */
+    private readonly points: PointsService,
   ) {}
 
   /** Entre dans la file ; renvoie le match créé si un adversaire attendait. */
@@ -224,6 +234,54 @@ export class MatchService {
         return { correct: stored?.correct ?? false, finished: null }
       }
       throw error
+    }
+  }
+
+  /**
+   * Indice payant : révèle la lettre d'une case au seul joueur qui l'achète (le mot doit toujours
+   * être soumis). Idempotent par `clientEventId` : un renvoi rend la même lettre sans redébiter.
+   * Le débit et l'événement sont écrits ensemble ; un solde insuffisant n'enregistre rien.
+   */
+  async hint(input: {
+    userId: string
+    matchId: string
+    clientEventId: string
+    cell: { row: number; col: number }
+  }): Promise<MatchHintResult> {
+    const previous = await this.findHint(input.matchId, input.userId, input.clientEventId)
+    if (previous) return { ...previous, balance: await this.points.balance(this.db, input.userId) }
+
+    const { puzzle } = await this.loadActive(input.userId, input.matchId)
+    if (puzzle.cells[input.cell.row]?.[input.cell.col]?.block !== false) {
+      throw new AppError(400, ERROR_CODES.validation, 'Case non jouable.')
+    }
+    const revealed = { ...input.cell, letter: solutionAt(puzzle, input.cell) }
+    try {
+      return await this.db.$transaction(async (tx) => {
+        await tx.matchEvent.create({
+          data: {
+            matchId: input.matchId,
+            userId: input.userId,
+            clientEventId: input.clientEventId,
+            type: 'hint',
+            payload: revealed,
+          },
+        })
+        await this.points.apply(tx, {
+          userId: input.userId,
+          amount: -POINT_RULES.duelHintCost,
+          reason: 'hint_purchase',
+          key: `match-hint:${input.matchId}:${input.clientEventId}`,
+          at: this.now(),
+        })
+        return { ...revealed, balance: await this.points.balance(tx, input.userId) }
+      })
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error
+      // Même achat reçu deux fois en parallèle : le premier a été enregistré et débité.
+      const stored = await this.findHint(input.matchId, input.userId, input.clientEventId)
+      if (!stored) throw error
+      return { ...stored, balance: await this.points.balance(this.db, input.userId) }
     }
   }
 
@@ -490,7 +548,7 @@ export class MatchService {
     if (updated.count !== 1) return null
     const participants = await tx.matchParticipant.findMany({
       where: { matchId },
-      select: { userId: true },
+      select: { userId: true, solvedWords: true },
     })
     for (const { userId } of participants) {
       const result =
@@ -516,8 +574,43 @@ export class MatchService {
         participants.map((p) => p.userId),
         winnerId,
       )
+      for (const participant of participants) {
+        await this.rewardMatch(tx, matchId, participant, winnerId)
+      }
     }
     return { matchId, userIds: participants.map((p) => p.userId) }
+  }
+
+  /**
+   * Gain d'un duel rapide, dans la transaction de clôture (une seule fois par match grâce à la
+   * clé `match:<id>`). Rien sans mot trouvé, rien au-delà du plafond quotidien.
+   */
+  private async rewardMatch(
+    tx: Tx,
+    matchId: string,
+    participant: { userId: string; solvedWords: string[] },
+    winnerId: string | null,
+  ): Promise<void> {
+    if (participant.solvedWords.length === 0) return
+    const now = this.now()
+    const dayStart = new Date(`${now.toISOString().slice(0, 10)}T00:00:00Z`)
+    const rewardedToday = await tx.pointTransaction.count({
+      where: { userId: participant.userId, reason: 'match_result', createdAt: { gte: dayStart } },
+    })
+    if (rewardedToday >= POINTS.match.dailyCap) return
+    const amount =
+      winnerId === null
+        ? POINTS.match.draw
+        : winnerId === participant.userId
+          ? POINTS.match.win
+          : POINTS.match.loss
+    await this.points.apply(tx, {
+      userId: participant.userId,
+      amount,
+      reason: 'match_result',
+      key: `match:${matchId}`,
+      at: now,
+    })
   }
 
   /** Classement Elo, dans la transaction de clôture : appliqué une seule fois par match. */
@@ -577,6 +670,20 @@ export class MatchService {
     if (!event) return null
     const payload = event.payload as { correct?: unknown }
     return { correct: payload.correct === true }
+  }
+
+  private async findHint(
+    matchId: string,
+    userId: string,
+    clientEventId: string,
+  ): Promise<{ row: number; col: number; letter: string } | null> {
+    const event = await this.db.matchEvent.findUnique({
+      where: { matchId_userId_clientEventId: { matchId, userId, clientEventId } },
+      select: { type: true, payload: true },
+    })
+    if (event?.type !== 'hint') return null
+    const payload = event.payload as { row: number; col: number; letter: string }
+    return { row: payload.row, col: payload.col, letter: payload.letter }
   }
 
   private async assertAvailable(userId: string): Promise<void> {

@@ -12,6 +12,7 @@
  */
 import {
   ERROR_CODES,
+  matchHintResultSchema,
   matchStateSchema,
   type Ack,
   type ClientToServerEvents,
@@ -102,6 +103,14 @@ const ACK_SCHEMAS: { [E in EventName]: z.ZodType<Ack<AckData<E>>> } = {
       ok: z.literal(true),
       data: z.strictObject({ correct: z.boolean(), state: matchStateSchema }),
     }),
+    z.strictObject({
+      ok: z.literal(false),
+      error: z.object({ code: z.string(), message: z.string() }),
+    }),
+  ]),
+  // Indice payant : pas encore proposé dans l'app, le contrat est seulement reconnu.
+  'match:hint': z.union([
+    z.strictObject({ ok: z.literal(true), data: matchHintResultSchema }),
     z.strictObject({
       ok: z.literal(false),
       error: z.object({ code: z.string(), message: z.string() }),

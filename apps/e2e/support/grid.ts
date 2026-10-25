@@ -3,9 +3,22 @@ import type { Page } from '@playwright/test'
 import type { Slot } from './puzzles.ts'
 
 const directionLabel = { across: 'Horizontal', down: 'Vertical' } as const
+const classicLabel = { across: 'Horizontalement', down: 'Verticalement' } as const
 
-/** Bouton de la définition `slot` dans la liste « Horizontal » ou « Vertical ». */
-export function clueButton(page: Page, slot: Pick<Slot, 'direction' | 'number'>) {
+type ClueRef = Pick<Slot, 'direction' | 'number' | 'text' | 'classic'>
+
+const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Bouton de la définition `slot` : par son numéro dans une grille en croix, par son texte en
+ * mots croisés classiques (plusieurs mots partagent la même ligne, sans numéro affiché).
+ */
+export function clueButton(page: Page, slot: ClueRef) {
+  if (slot.classic) {
+    return page
+      .getByRole('region', { name: classicLabel[slot.direction], exact: true })
+      .getByRole('button', { name: new RegExp(`: ${escape(slot.text)}\\s*, \\d+ lettres$`) })
+  }
   return page
     .getByRole('region', { name: directionLabel[slot.direction], exact: true })
     .getByRole('button', { name: new RegExp(`^${slot.number}\\s`) })
@@ -15,11 +28,7 @@ export function clueButton(page: Page, slot: Pick<Slot, 'direction' | 'number'>)
  * Sélectionne le mot (le curseur va sur sa première case vide, ou la première case s'il est
  * plein) puis tape `letters` : chaque lettre avance d'une case dans le mot.
  */
-export async function typeInSlot(
-  page: Page,
-  slot: Pick<Slot, 'direction' | 'number'>,
-  letters: string,
-): Promise<void> {
+export async function typeInSlot(page: Page, slot: ClueRef, letters: string): Promise<void> {
   await clueButton(page, slot).click()
   await page.keyboard.type(letters)
 }

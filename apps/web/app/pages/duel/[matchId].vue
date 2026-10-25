@@ -11,8 +11,9 @@ import { uuidSchema, type MatchState } from '@crossverse/contracts'
 import { useCrosswordGame } from '~/composables/useCrosswordGame'
 import type { ReactiveCrosswordGame } from '~/composables/useCrosswordGame'
 import { matchWordKey } from '~/composables/useMatch'
+import { api } from '~/services/api'
 import { matchApi, type Rating } from '~/services/match'
-import { directionLabel, difficultyLabel } from '~/utils/labels'
+import { clueTag, directionLabel, difficultyLabel } from '~/utils/labels'
 import { toEnginePuzzle } from '~/utils/puzzle'
 
 const route = useRoute()
@@ -29,10 +30,16 @@ const loadState = ref<'loading' | 'ready' | 'not-found' | 'error'>(
 )
 const loadError = ref<string | null>(null)
 const game = shallowRef<ReactiveCrosswordGame | null>(null)
+/** Mots croisés classiques : repères de lignes et colonnes au lieu des numéros. */
+const classic = computed(() => current.value?.puzzle?.format === 'classic')
 const notice = ref('')
 /** Annonces pour lecteurs d'écran : progression de l'adversaire, temps, connexion. */
 const announcement = ref('')
 const confirmForfeit = ref(false)
+const confirmHint = ref(false)
+/** Prix d'une lettre en duel et solde, lus dans le portefeuille (affichage seulement). */
+const hintCost = ref<number | null>(null)
+const balance = ref<number | null>(null)
 const gridRef = ref<{ focus: () => void } | null>(null)
 const resultRef = ref<{ focus: () => void } | null>(null)
 /** Dernière proposition envoyée par mot : on ne soumet pas deux fois les mêmes lettres. */
@@ -113,8 +120,10 @@ watch(
   { immediate: true },
 )
 
-const wordName = (clue: Pick<PublicClue, 'direction' | 'number'>): string =>
-  `${clue.number} ${directionLabel(clue.direction).toLowerCase()}`
+const wordName = (clue: PublicClue): string =>
+  classic.value
+    ? clueTag(clue, true)
+    : `${clue.number} ${directionLabel(clue.direction).toLowerCase()}`
 
 /** Soumet chaque mot nouvellement complet (et pas encore validé) : course au mot. */
 async function submitCompletedWords(): Promise<void> {
@@ -226,6 +235,32 @@ watch(isOver, async (over, before) => {
 const ratingDelta = computed(() =>
   rating.value && ratingBefore.value !== null ? rating.value.rating - ratingBefore.value : null,
 )
+
+onMounted(async () => {
+  try {
+    const wallet = await api.getWallet()
+    if (!wallet.eligible) return
+    hintCost.value = wallet.rules.duelHintCost
+    balance.value = wallet.balance
+  } catch {
+    // Sans portefeuille, le bouton d'indice reste masqué : le duel continue normalement.
+  }
+})
+
+/** Lettre de la case active, achetée en Coumba points puis soumise comme une saisie. */
+async function onBuyHint(): Promise<void> {
+  confirmHint.value = false
+  const target = game.value
+  const cell = target?.active
+  if (!target || !cell) return
+  const result = await match.buyHint({ row: cell.row, col: cell.col })
+  if (!result) return
+  balance.value = result.balance
+  target.applyRevealed([result])
+  notice.value = `Lettre révélée. Solde : ${String(result.balance)} Coumba points.`
+  void submitCompletedWords()
+  gridRef.value?.focus()
+}
 
 async function onForfeit(): Promise<void> {
   confirmForfeit.value = false
@@ -354,25 +389,48 @@ async function onForfeit(): Promise<void> {
             class="bg-surface border-line rounded-2xl border px-3 py-2 text-sm leading-snug sm:text-base"
           >
             <span class="text-accent mr-2 font-extrabold">
-              {{ game.activeClue.number }}{{ game.activeClue.direction === 'across' ? 'H' : 'V' }}
+              {{ clueTag(game.activeClue, classic) }}
             </span>
             {{ game.activeClue.text }}
           </p>
 
-          <CrosswordGrid ref="gridRef" :game="game" :label="gridLabel" />
+          <CrosswordGrid ref="gridRef" :game="game" :label="gridLabel" :classic="classic" />
 
           <p role="status" aria-live="polite" class="min-h-5 text-center text-sm">
             <span v-if="error" class="text-danger">{{ error }}</span>
             <span v-else-if="notice">{{ notice }}</span>
           </p>
+
+          <div v-if="isActive && hintCost !== null" class="flex items-center justify-center gap-3">
+            <button
+              type="button"
+              class="border-line hover:bg-surface-2 inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold"
+              :disabled="busy || !game.active"
+              @click="confirmHint = true"
+            >
+              Révéler la lettre · {{ hintCost }} pts
+            </button>
+            <span class="text-muted text-xs tabular-nums">{{ balance }} Coumba points</span>
+          </div>
         </div>
 
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          <ClueList :game="game" direction="across" @select="onSelectClue" />
-          <ClueList :game="game" direction="down" @select="onSelectClue" />
+          <ClueList :game="game" direction="across" :classic="classic" @select="onSelectClue" />
+          <ClueList :game="game" direction="down" :classic="classic" @select="onSelectClue" />
         </div>
       </div>
     </template>
+
+    <ConfirmDialog
+      :open="confirmHint"
+      :title="`Utiliser ${hintCost ?? 0} Coumba points ?`"
+      :confirm-label="`Payer ${hintCost ?? 0} points`"
+      @confirm="onBuyHint"
+      @cancel="confirmHint = false"
+    >
+      La lettre de la case sélectionnée vous sera révélée, à vous seul. Solde actuel :
+      {{ balance ?? 0 }} points.
+    </ConfirmDialog>
 
     <ConfirmDialog
       :open="confirmForfeit"

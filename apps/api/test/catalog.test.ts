@@ -2,6 +2,7 @@ import { catalogSchema, puzzleListSchema, quickPlaySchema } from '@crossverse/co
 import { parsePuzzle } from '@crossverse/crossword-core'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { CATALOG_PUZZLES } from '../prisma/seed/catalog-puzzles.ts'
+import { CLASSIC_PUZZLES, classicPuzzle } from '../prisma/seed/classic-puzzles.ts'
 import { SEED_PUZZLES } from '../prisma/seed/puzzles.ts'
 import { syncCatalog } from '../prisma/seed/sync.ts'
 import { SEED_THEMES } from '../prisma/seed/themes.ts'
@@ -14,9 +15,38 @@ import {
   type TestContext,
 } from './helpers.ts'
 
-const ALL_PUZZLES = [...SEED_PUZZLES, ...CATALOG_PUZZLES]
+const ALL_PUZZLES = [...SEED_PUZZLES, ...CATALOG_PUZZLES, ...CLASSIC_PUZZLES]
 
 describe('contenu éditorial du catalogue', () => {
+  it('les mots croisés classiques sont denses et rangés ligne par ligne', () => {
+    expect(CLASSIC_PUZZLES.length).toBeGreaterThanOrEqual(6)
+    for (const seed of CLASSIC_PUZZLES) {
+      expect(seed.format, seed.slug).toBe('classic')
+      const cells = seed.grid.join('')
+      const blocks = cells.replaceAll(/[^#]/g, '').length
+      // Grille « de journal » : au plus un quart de cases noires (les grilles en croix en ont plus).
+      expect(blocks / cells.length, seed.slug).toBeLessThanOrEqual(0.25)
+    }
+    expect(new Set(CLASSIC_PUZZLES.map((p) => p.difficulty))).toEqual(
+      new Set(['easy', 'intermediate', 'hard']),
+    )
+  })
+
+  it('classicPuzzle refuse une ligne dont le nombre de définitions ne correspond pas', () => {
+    expect(() =>
+      classicPuzzle({
+        slug: 'decalee',
+        title: 'Décalée',
+        theme: 'mots-croises',
+        difficulty: 'easy',
+        estimatedMinutes: 1,
+        grid: ['ET#', 'TA#', '###'],
+        across: [['Conjonction', 'En trop'], ['Possessif'], []],
+        down: [['Saison'], ['Article'], []],
+      }),
+    ).toThrow(/2 définition/)
+  })
+
   it('chaque grille est valide pour le moteur et rangée dans un thème connu', () => {
     const slugs = new Set(SEED_THEMES.map((theme) => theme.slug))
     for (const seed of ALL_PUZZLES) {
@@ -201,6 +231,26 @@ describe('GET /puzzles par thème', () => {
     ])
   })
 
+  it('filtre par type de grille : mots croisés classiques ou grilles en croix', async () => {
+    const client = new Client(ctx.app)
+    const classic = puzzleListSchema.parse(
+      (await client.request('GET', '/api/v1/puzzles?format=classic&limit=50')).json(),
+    )
+    expect(classic.items.map((p) => p.slug).sort()).toEqual(
+      CLASSIC_PUZZLES.map((p) => p.slug).sort(),
+    )
+    expect(new Set(classic.items.map((p) => p.format))).toEqual(new Set(['classic']))
+
+    const freeform = puzzleListSchema.parse(
+      (
+        await client.request('GET', '/api/v1/puzzles?format=freeform&theme=culture&limit=50')
+      ).json(),
+    )
+    expect(freeform.items.length).toBeGreaterThan(0)
+    expect(new Set(freeform.items.map((p) => p.format))).toEqual(new Set(['freeform']))
+    expect((await client.request('GET', '/api/v1/puzzles?format=fleche')).statusCode).toBe(400)
+  })
+
   it('un slug inconnu renvoie une liste vide', async () => {
     const res = await new Client(ctx.app).request('GET', '/api/v1/puzzles?theme=inconnu')
     expect(res.statusCode).toBe(200)
@@ -249,6 +299,19 @@ describe('GET /quick-play', () => {
       (await client.request('GET', '/api/v1/quick-play?theme=dragon-ball')).json(),
     )
     expect(dragonBall.puzzle.slug).toBe('dragon-ball-guerriers-z')
+  })
+
+  it('respecte le type de grille demandé', async () => {
+    const client = new Client(ctx.app)
+    for (let i = 0; i < 3; i++) {
+      const { puzzle } = quickPlaySchema.parse(
+        (await client.request('GET', '/api/v1/quick-play?format=classic')).json(),
+      )
+      expect(puzzle.format).toBe('classic')
+      expect(['discovery', 'easy']).toContain(puzzle.difficulty)
+    }
+    const football = await client.request('GET', '/api/v1/quick-play?theme=football&format=classic')
+    expect(football.statusCode).toBe(404)
   })
 
   it('404 pour un thème sans grille, 400 pour un slug mal formé', async () => {

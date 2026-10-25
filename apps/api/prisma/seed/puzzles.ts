@@ -1,4 +1,4 @@
-import type { Difficulty } from '@crossverse/contracts'
+import type { Difficulty, PuzzleFormat } from '@crossverse/contracts'
 import type { PuzzleSource } from '@crossverse/crossword-core'
 
 export interface SeedPuzzle extends Omit<PuzzleSource, 'id'> {
@@ -6,6 +6,8 @@ export interface SeedPuzzle extends Omit<PuzzleSource, 'id'> {
   /** Slug d'un thème de `SEED_THEMES` (en pratique un sous-thème). */
   readonly theme: string
   readonly difficulty: Difficulty
+  /** Absent = grille « en croix ». */
+  readonly format?: PuzzleFormat
   readonly estimatedMinutes: number
 }
 

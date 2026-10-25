@@ -1,6 +1,7 @@
 import { buildWordSearch, lineCells, parsePuzzle } from '@crossverse/crossword-core'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { CATALOG_PUZZLES } from '../prisma/seed/catalog-puzzles.ts'
+import { CLASSIC_PUZZLES } from '../prisma/seed/classic-puzzles.ts'
 import { SEED_PUZZLES } from '../prisma/seed/puzzles.ts'
 import { directionsFor } from '../src/modules/wordsearch/service.ts'
 import {
@@ -44,8 +45,8 @@ const url = (slug: string, suffix = ''): string =>
   `/api/v1/puzzles/${ids[slug] ?? ''}/word-search${suffix}`
 
 describe('grilles du catalogue', () => {
-  it('toutes les grilles de démonstration et du catalogue se convertissent en grille pré-remplie', () => {
-    for (const source of [...SEED_PUZZLES, ...CATALOG_PUZZLES]) {
+  it('toutes les grilles (démonstration, catalogue, classiques) se convertissent en grille pré-remplie', () => {
+    for (const source of [...SEED_PUZZLES, ...CATALOG_PUZZLES, ...CLASSIC_PUZZLES]) {
       const parsed = parsePuzzle({
         id: source.slug,
         title: source.title,

@@ -6,6 +6,7 @@ import { buildApp } from '../src/app.ts'
 import { loadConfig } from '../src/config.ts'
 import { createAccount } from '../src/modules/admin/accounts.ts'
 import { MatchService } from '../src/modules/match/service.ts'
+import { PointsService } from '../src/modules/points/service.ts'
 import { PuzzleRepository } from '../src/modules/puzzles/repository.ts'
 import { generateToken, hashToken } from '../src/modules/session/tokens.ts'
 import { SEED_PUZZLES } from '../prisma/seed/puzzles.ts'
@@ -78,10 +79,11 @@ async function account(
 function connect(
   cookie: string | null,
   origin: string | null = ORIGIN,
-  options: { polling?: boolean; headers?: Record<string, string> } = {},
+  options: { polling?: boolean; headers?: Record<string, string>; noTrailingSlash?: boolean } = {},
 ): Promise<ClientSocket> {
   const socket: ClientSocket = io(url, {
     path: '/ws',
+    addTrailingSlash: !options.noTrailingSlash,
     transports: options.polling ? ['polling'] : ['websocket'],
     reconnection: false,
     extraHeaders: {
@@ -185,6 +187,13 @@ describe('connexion temps réel (WS-01)', () => {
     await expect(
       connect(cookie, 'https://evil.example', { polling: true, headers: sameOrigin }),
     ).rejects.toThrow()
+  })
+
+  it('accepte le chemin sans barre finale (relais Vercel `/ws/:path*`)', async () => {
+    const { cookie } = await account()
+    await expect(
+      connect(cookie, ORIGIN, { polling: true, noTrailingSlash: true }),
+    ).resolves.toBeTruthy()
   })
 
   it('refuse un message non conforme au schéma (champs forgés)', async () => {
@@ -396,6 +405,112 @@ describe('classement', () => {
   })
 })
 
+async function quickMatch(): Promise<{
+  s1: ClientSocket
+  s2: ClientSocket
+  p1: string
+  p2: string
+  matchId: string
+}> {
+  const p1 = await account()
+  const p2 = await account()
+  const [s1, s2] = await Promise.all([connect(p1.cookie), connect(p2.cookie)])
+  await emit(s1, 'queue:join', { clientEventId: id() })
+  const matched = nextState(s1, (s) => s.status === 'active')
+  await emit(s2, 'queue:join', { clientEventId: id() })
+  const state = await matched
+  return { s1, s2, p1: p1.id, p2: p2.id, matchId: state.id }
+}
+
+const submit = (socket: ClientSocket, matchId: string, index: number) => {
+  const [direction, number, answer] = ANSWERS[index] ?? ['across', 1, 'TABLE']
+  return emit(socket, 'match:submit-word', {
+    clientEventId: id(),
+    matchId,
+    direction,
+    number,
+    answer,
+  })
+}
+
+const pointsOf = async (userId: string): Promise<number[]> =>
+  (
+    await ctx.db.pointTransaction.findMany({
+      where: { userId, reason: 'match_result' },
+      select: { amount: true },
+    })
+  ).map((row) => row.amount)
+
+describe('Coumba points en duel', () => {
+  it('duel rapide : gains selon le résultat, une seule fois, seulement après un mot trouvé', async () => {
+    const { s1, s2, p1, p2, matchId } = await quickMatch()
+    await submit(s1, matchId, 0)
+    await submit(s2, matchId, 1)
+    await emit(s2, 'match:forfeit', { clientEventId: id(), matchId })
+    await emit(s2, 'match:forfeit', { clientEventId: id(), matchId })
+    expect(await pointsOf(p1)).toEqual([15])
+    expect(await pointsOf(p2)).toEqual([2])
+
+    // Abandon sans avoir joué : rien pour personne.
+    const idle = await quickMatch()
+    await emit(idle.s1, 'match:forfeit', { clientEventId: id(), matchId: idle.matchId })
+    expect(await pointsOf(idle.p1)).toEqual([])
+    expect(await pointsOf(idle.p2)).toEqual([])
+  })
+
+  it('un duel privé ne rapporte rien', async () => {
+    const { a, b, matchId, aId } = await privateMatch()
+    await submit(a, matchId, 0)
+    await emit(b, 'match:forfeit', { clientEventId: id(), matchId })
+    expect(await pointsOf(aId)).toEqual([])
+  })
+
+  it('au-delà du plafond quotidien, un duel ne rapporte plus rien', async () => {
+    const { s1, s2, p1, matchId } = await quickMatch()
+    await ctx.db.pointTransaction.createMany({
+      data: Array.from({ length: 10 }, (_, index) => ({
+        userId: p1,
+        amount: 15,
+        balanceAfter: 15 * (index + 1),
+        reason: 'match_result' as const,
+        idempotencyKey: `ancien-${String(index)}`,
+      })),
+    })
+    await submit(s1, matchId, 0)
+    await emit(s2, 'match:forfeit', { clientEventId: id(), matchId })
+    expect(await pointsOf(p1)).toHaveLength(10)
+  })
+
+  it('indice payant : lettre révélée au seul acheteur, débit unique, refus sans solde', async () => {
+    const { s1, p1, matchId } = await quickMatch()
+    const cell = { row: 0, col: 1 }
+    const poor = await emit(s1, 'match:hint', { clientEventId: id(), matchId, cell })
+    expect(poor).toMatchObject({ ok: false, error: { code: 'insufficient_points' } })
+    expect(await ctx.db.matchEvent.count({ where: { type: 'hint' } })).toBe(0)
+
+    await ctx.db.wallet.create({ data: { userId: p1, balance: 25, earned: 25 } })
+    const eventId = id()
+    const bought = await emit(s1, 'match:hint', { clientEventId: eventId, matchId, cell })
+    expect(bought).toEqual({ ok: true, data: { row: 0, col: 1, letter: 'A', balance: 15 } })
+    const replay = await emit(s1, 'match:hint', { clientEventId: eventId, matchId, cell })
+    expect(replay).toEqual(bought)
+    const block = await emit(s1, 'match:hint', {
+      clientEventId: id(),
+      matchId,
+      cell: { row: 1, col: 1 },
+    })
+    expect(block).toMatchObject({ ok: false, error: { code: 'validation_error' } })
+    expect(await ctx.db.wallet.findUnique({ where: { userId: p1 } })).toMatchObject({
+      balance: 15,
+      spent: 10,
+    })
+
+    const outsider = await connect((await account()).cookie)
+    const refused = await emit(outsider, 'match:hint', { clientEventId: id(), matchId, cell })
+    expect(refused).toMatchObject({ ok: false, error: { code: 'not_found' } })
+  })
+})
+
 describe('déconnexion et reprise (WS-07, WS-08)', () => {
   it('une reconnexion dans le délai de grâce reprend le match', async () => {
     const { a, matchId } = await privateMatch()
@@ -474,7 +589,12 @@ describe('échéance', () => {
       where: { id: matchId },
       data: { deadlineAt: new Date(Date.now() - 1000) },
     })
-    const service = new MatchService(ctx.db, new PuzzleRepository(ctx.db), () => new Date())
+    const service = new MatchService(
+      ctx.db,
+      new PuzzleRepository(ctx.db),
+      () => new Date(),
+      new PointsService(ctx.db),
+    )
     const late = await emit(b, 'match:submit-word', {
       clientEventId: id(),
       matchId,

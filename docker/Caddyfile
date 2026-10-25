@@ -7,7 +7,9 @@
 	handle /api/* {
 		reverse_proxy api:3001
 	}
-	handle /ws/* {
+	# `/ws` sans barre finale : chemin du client web (cf. apps/web/app/services/match.ts).
+	@ws path /ws /ws/*
+	handle @ws {
 		reverse_proxy api:3001
 	}
 

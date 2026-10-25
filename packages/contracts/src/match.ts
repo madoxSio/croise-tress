@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { directionSchema, uuidSchema } from './common.js'
+import { directionSchema, positionSchema, uuidSchema } from './common.js'
 import { publicPuzzleSchema } from './puzzles.js'
 
 /** Chemin Socket.IO, servi par l'API sous la même origine que le web. */
@@ -28,6 +28,21 @@ export const submitWordSchema = z.strictObject({
   number: z.int().positive(),
   answer: z.string().min(1).max(30),
 })
+/** Indice payant en duel : révèle la lettre d'une case, au seul joueur qui l'achète. */
+export const matchHintSchema = z.strictObject({
+  clientEventId: clientEventIdSchema,
+  matchId: uuidSchema,
+  cell: positionSchema,
+})
+export const matchHintResultSchema = z.strictObject({
+  row: z.int(),
+  col: z.int(),
+  letter: z.string(),
+  /** Solde de Coumba points après l'achat. */
+  balance: z.int().min(0),
+})
+export type MatchHintResult = z.infer<typeof matchHintResultSchema>
+
 export const matchRefSchema = z.strictObject({
   clientEventId: clientEventIdSchema,
   matchId: uuidSchema,
@@ -91,6 +106,10 @@ export interface ClientToServerEvents {
   'match:submit-word': (
     payload: z.input<typeof submitWordSchema>,
     ack: (res: Ack<{ correct: boolean; state: MatchState }>) => void,
+  ) => void
+  'match:hint': (
+    payload: z.input<typeof matchHintSchema>,
+    ack: (res: Ack<MatchHintResult>) => void,
   ) => void
   'match:forfeit': (
     payload: z.input<typeof matchRefSchema>,

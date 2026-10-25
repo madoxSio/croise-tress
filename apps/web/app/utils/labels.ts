@@ -1,5 +1,5 @@
 import type { Difficulty } from '@crossverse/contracts'
-import type { Direction } from '@crossverse/crossword-core'
+import { classicLabel, type Direction, type PublicClue } from '@crossverse/crossword-core'
 
 export const DIFFICULTIES: readonly Difficulty[] = [
   'discovery',
@@ -27,6 +27,27 @@ export function difficultyLabel(value: string): string {
 
 export function directionLabel(direction: Direction): string {
   return direction === 'across' ? 'Horizontal' : 'Vertical'
+}
+
+type LocatedClue = Pick<PublicClue, 'direction' | 'number' | 'row' | 'col'>
+
+/**
+ * Repère court d'une définition : « 3H » pour une grille en croix, « Ligne III » ou
+ * « Col. 4 » pour des mots croisés classiques (numérotation par ligne et par colonne).
+ */
+export function clueTag(clue: LocatedClue, classic: boolean): string {
+  if (classic) return `${clue.direction === 'across' ? 'Ligne' : 'Col.'} ${classicLabel(clue)}`
+  return `${String(clue.number)}${clue.direction === 'across' ? 'H' : 'V'}`
+}
+
+/** Même repère, en toutes lettres pour les lecteurs d'écran (pas de chiffres romains). */
+export function clueSpoken(clue: LocatedClue, classic: boolean): string {
+  if (classic) {
+    return clue.direction === 'across'
+      ? `ligne ${String(clue.row + 1)}`
+      : `colonne ${String(clue.col + 1)}`
+  }
+  return `${String(clue.number)} ${clue.direction === 'across' ? 'horizontal' : 'vertical'}`
 }
 
 /** Durée lisible : « 4 min 05 s », « 1 h 02 min ». */

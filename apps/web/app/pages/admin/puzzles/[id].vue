@@ -5,10 +5,12 @@ import type {
   AdminPuzzleBody,
   AdminTheme,
   Difficulty,
+  PuzzleFormat,
 } from '@crossverse/contracts'
 import { gridSlots, type Direction } from '@crossverse/crossword-core'
 import { adminApi } from '~/services/admin'
 import { errorMessage } from '~/services/api'
+import { FORMATS } from '~/services/catalog'
 import { DIFFICULTIES, difficultyLabel, directionLabel } from '~/utils/labels'
 
 useHead({ title: 'Éditer une grille — Administration Crossverse' })
@@ -33,6 +35,7 @@ const themeGroups = computed(() =>
     })),
 )
 const difficulty = ref<Difficulty>('easy')
+const format = ref<PuzzleFormat>('freeform')
 const estimatedMinutes = ref(5)
 const gridText = ref('')
 /** Définitions saisies, par mot (`across:1`) : conservées quand la grille est retouchée. */
@@ -50,6 +53,7 @@ function fill(source: AdminPuzzle): void {
   slugTouched.value = true
   themeSlug.value = source.themeSlug
   difficulty.value = source.difficulty
+  format.value = source.format
   estimatedMinutes.value = source.estimatedMinutes
   gridText.value = source.grid.join('\n')
   clueTexts.value = Object.fromEntries(
@@ -129,6 +133,7 @@ function body(): AdminPuzzleBody {
     title: title.value.trim(),
     themeSlug: themeSlug.value,
     difficulty: difficulty.value,
+    format: format.value,
     estimatedMinutes: estimatedMinutes.value,
     grid: gridLines.value,
     clues,
@@ -223,6 +228,14 @@ const inputClass = 'bg-surface border-line min-h-11 w-full rounded-xl border px-
                 {{ child.name }}
               </option>
             </optgroup>
+          </select>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label for="p-format" class="text-sm font-semibold">Type de grille</label>
+          <select id="p-format" v-model="format" :class="inputClass">
+            <option v-for="item in FORMATS" :key="item.id" :value="item.id">
+              {{ item.label }}
+            </option>
           </select>
         </div>
         <div class="grid grid-cols-2 gap-4">

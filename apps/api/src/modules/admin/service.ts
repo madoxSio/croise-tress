@@ -61,6 +61,7 @@ const puzzleSummarySelect = {
   title: true,
   theme: { select: { slug: true, name: true } },
   difficulty: true,
+  format: true,
   status: true,
   width: true,
   height: true,
@@ -548,6 +549,7 @@ function toPuzzleSummary(row: PuzzleSummaryRow, completed = 0): AdminPuzzleSumma
     theme: row.theme.name,
     themeSlug: row.theme.slug,
     difficulty: row.difficulty,
+    format: row.format,
     status: row.status,
     width: row.width,
     height: row.height,
@@ -579,6 +581,7 @@ function validatedData(body: AdminPuzzleBody) {
   return {
     title: body.title,
     difficulty: body.difficulty,
+    format: body.format,
     estimatedMinutes: body.estimatedMinutes,
     width: checked.value.width,
     height: checked.value.height,

@@ -5,6 +5,7 @@ import {
   SOCKET_PATH,
   inviteAcceptSchema,
   inviteCreateSchema,
+  matchHintSchema,
   matchRefSchema,
   queueJoinSchema,
   submitWordSchema,
@@ -65,6 +66,10 @@ export class MatchGateway {
     this.log = app.log
     this.io = new Server(app.server, {
       path: SOCKET_PATH,
+      // Accepte `/ws?…` autant que `/ws/?…` : la réécriture Vercel `/ws/:path*` du déploiement
+      // provisoire retire la barre finale quand le reste du chemin est vide, et Engine.IO
+      // n'acceptait alors que `/ws/` (404, client bloqué en reconnexion).
+      addTrailingSlash: false,
       serveClient: false,
       maxHttpBufferSize: MAX_SOCKET_MESSAGE_BYTES,
       // Protection contre le détournement de WebSocket inter-sites (CSWSH) : un navigateur envoie
@@ -174,6 +179,9 @@ export class MatchGateway {
         state: await this.matches.state(userId, payload.matchId, (id) => this.isConnected(id)),
       }
     })
+    this.on(socket, 'match:hint', matchHintSchema, async (payload) =>
+      this.matches.hint({ userId, ...payload }),
+    )
     this.on(socket, 'match:forfeit', matchRefSchema, async (payload) => {
       const finished = await this.matches.forfeit(userId, payload.matchId)
       if (finished) this.ended(finished)

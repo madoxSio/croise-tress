@@ -98,6 +98,17 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - CI/CD : ✅ CI (lint, types, tests, E2E, audit, gitleaks) et images GHCR exécutées et vertes sur GitHub (2026-10-22). 🟡 Déploiements Render + Vercel (provisoire), VPS (`deploy-vps`, `docs/deploy/vps-bootstrap.sh`) et TestFlight écrits, jamais exécutés. Voir `docs/deploy/README.md`.
 - App mobile Expo (`apps/mobile`) : ajoutée par un autre fil. Son authentification native par jeton (validée par madox) attend son intégration dans l'API.
 
+### 2026-10-24 — Coumba points en duel ✅ (hors Docker)
+
+- Barème validé par madox. Indice payant en duel (`match:hint`, 10 points la lettre, réservé à
+  l'acheteur, idempotent, refusé sans solde) ; gains des duels rapides (15/5/2) dans la
+  transaction de clôture, avec au moins un mot trouvé et 10 duels récompensés par jour. Voir D13.
+- Web : bouton « Révéler la lettre » avec confirmation et solde dans le match.
+- Preuves : 4 tests dans `match.test.ts` (gains uniques, abandon sans mot, duel privé, plafond,
+  indice : solde insuffisant, rejeu, case noire, non-participant) ; duel joué à la main dans
+  Chromium (Pixel 7) à deux joueurs : lettre révélée, solde 20 → 10.
+- Reste : achat d'indices dans l'app mobile (contrat reconnu, pas d'interface).
+
 ### 2026-10-23 — Parcours, indices limités et Coumba points ✅ (hors Docker)
 
 - API : parcours thématiques à étapes débloquées une à une (`GET /paths`, `GET /paths/:slug`,
@@ -111,8 +122,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Preuves : `test/points.test.ts` (17 tests : invité, consentement, solde insuffisant sans effet,
   achats concurrents, idempotence des gains, verrous de parcours) ; 3 tests web ; parcours
   vérifié à la main dans Chromium (Pixel 7) contre l'API locale.
-- Reste : barème à valider ; autres parcours ; lien de navigation
-  (fil design) ; indices payants et gains en duel ; app mobile (affiche l'erreur de l'API).
+- Reste : autres parcours ; app mobile (affiche l'erreur de l'API).
 
 ### 2026-10-23 — Admin : gestion des comptes ✅ (hors Docker)
 
@@ -155,12 +165,27 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Contenu : 7 thèmes, 21 sous-thèmes, 32 nouvelles grilles en français (Culture, Histoire, Football, Manga, Art, Musique) sur trois niveaux, plus les 6 grilles de découverte. Chargées par `prisma/seed.ts`, en insertion seule, à chaque démarrage de l'image de production.
 - Preuves : `catalog.test.ts` (17 tests : validité de chaque grille, idempotence sans écrasement, reclassement, arbre et comptes, filtre, partie rapide, admin des thèmes) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 54, web 60, mobile 37, api 142 (**293 verts**, après fusion de main) ; `make e2e-local` équivalent : **13 passed, 2 skipped** avec le catalogue complet chargé.
 
-### 2026-10-24 — Grille pré-remplie, loader Sougoudou ✅ (hors Docker)
+### 2026-10-24 — Correctif : duel bloqué sur le site en ligne
+
+- Symptôme (signalé par madox) : « Créer une invitation » et « Trouver un adversaire » restent grisés, la connexion temps réel ne s'établit jamais.
+- Cause probable : la réécriture Vercel `/ws/:path*` envoie `/ws?EIO=4…` (barre finale perdue quand le reste du chemin est vide) et Engine.IO n'acceptait que `/ws/` : 404, client en reconnexion permanente. Non observé directement (prod injoignable depuis le conteneur) ; reproduit en test (404 sans le correctif).
+- Correctif : `addTrailingSlash: false` côté serveur (`gateway.ts`), qui accepte les deux formes. Test de non-régression dans `match.test.ts` (25 verts).
+- Insuffisant seul (madox, 17:55) : mesuré depuis l'extérieur, Vercel relaie `GET /ws?EIO=4&transport=polling` (poignée de main Engine.IO reçue) mais répond en erreur 4xx à `/ws/?EIO=4…`, la forme qu'envoie le client par défaut. Le client web demande donc `/ws` sans barre finale (`addTrailingSlash: false`, `services/match.ts`) ; le Caddyfile relaie `/ws` et `/ws/*`.
+
+### 2026-10-25 — Mots croisés classiques ✅ (hors Docker)
+
+- Demande de madox : des grilles de mots croisés « en plus des flèches qui existent déjà ». Les grilles existantes sont des grilles « en croix » (mots libres, numéro dans la première case) ; le nouveau type est la grille de journal : dense, cases noires, définitions par ligne (I, II…) et par colonne (1, 2…).
+- Données : colonne `puzzles.format` (migration `puzzle_format`, défaut `freeform`), exposée dans les contrats ; filtre `?format=` sur `GET /puzzles` et `GET /quick-play` ; type modifiable dans l'éditeur d'administration (décision D15).
+- Contenu : sous-thème « Mots croisés » (Culture générale), 8 grilles de 6×6 à 9×9 (3 simples, 3 intermédiaires, 2 compliquées), remplies à partir d'un lexique courant puis relues, définitions écrites à la main.
+- Web : repères de lignes et colonnes autour de la grille, définitions groupées par ligne/colonne, barre « Ligne IV / Col. 4 », filtre « Type de grille » et badge sur les cartes, duel compris. Mobile : repères, barre de définition, filtre et badge (non vu sur un appareil : vérifié par types et tests).
+- Preuves : `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 59, web 65, mobile 43, api 169 (**336 verts**) ; captures Chromium 390 px et 1280 px de la grille 9×9 sans défilement horizontal.
+
+### 2026-10-25 — Grille pré-remplie, loader Sougoudou ✅ (hors Docker)
 
 - Mode « grille pré-remplie » (D14) : `crossword-core/src/wordsearch.ts` (génération déterministe, validation d'un tracé dans les deux sens, alignement d'un glisser), contrats `contracts/src/wordsearch.ts`, API `GET /puzzles/:id/word-search`, `POST …/check` (120/min), `POST …/reveal` (30/min), session exigée, verrou de parcours respecté.
 - Web : page `/pre-remplie/:id` (surlignage par traits SVG, glisser, deux taps ou clavier, « Où est-il ? », récapitulatif des mots appris, partie gardée dans le navigateur), choix du mode au-dessus de la liste des grilles (préférence de l'appareil, suivie par les cartes et la partie rapide), lien entre les deux modes, section « Deux façons de jouer » de la page Comment jouer. Loader `SougoudouLoader` (cases « MOTS » qui se remplissent) sur les pages de jeu et de listes, barre de progression entre les pages.
 - Mobile : écran `pre-remplie/[puzzleId]` (glisser ou deux taps, cases colorées), choix du mode dans l'onglet Grilles, partie rapide de l'accueil dans le mode choisi, `Loading` avec Sougoudou et cases animées (immobile si « réduire les animations »).
-- Preuves : `wordsearch.test.ts` côté core (8), API (7, dont toutes les grilles du catalogue sur 5 graines, AUTHZ parcours, VAL), web (9), mobile (3) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 62, web 72, mobile 44, api 166 (**344 verts**, 345 après fusion de main) ; E2E : **13 passed, 2 skipped** (grille pré-remplie jouée à la suite de `solo.spec.ts`, en mobile et bureau, dans la même session invitée et avec peu de requêtes : limites de 30 invités/h et de 300 requêtes/min par IP, la suite frôle la seconde). Écran mobile vérifié dans Chromium via l'export web Expo ; pas d'appareil iOS/Android réel ici.
+- Preuves : `wordsearch.test.ts` côté core (8), API (7, dont toutes les grilles du catalogue et les 8 classiques sur 5 graines, AUTHZ parcours, VAL), web (9), mobile (3) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 62, web 72, mobile 44, api 166 (**344 verts** ; 363 après fusion des mots croisés classiques) ; E2E : **13 passed, 2 skipped** (grille pré-remplie jouée à la suite de `solo.spec.ts`, en mobile et bureau, dans la même session invitée et avec peu de requêtes : limites de 30 invités/h et de 300 requêtes/min par IP, la suite frôle la seconde). Écran mobile vérifié dans Chromium via l'export web Expo ; pas d'appareil iOS/Android réel ici.
 
 ## Points ouverts (repérés pendant la construction)
 
@@ -202,13 +227,13 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 
 ## Dernière vérification complète
 
-2026-10-24, depuis la racine, Node 24.22.0, PostgreSQL 16 locale (hors Docker) :
+2026-10-25, depuis la racine, Node 24.22.0, PostgreSQL 16 locale (hors Docker) :
 
 | Commande         | Résultat réel                                                                                 |
 | ---------------- | --------------------------------------------------------------------------------------------- |
 | `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                            |
 | `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                             |
-| `pnpm test`      | core 62/62, web 72/72, mobile 44/44, api 167/167 : **345 tests verts** (après fusion de main) |
+| `pnpm test`      | core 67/67, web 74/74, mobile 46/46, api 176/176 : **363 tests verts** (après fusion de main) |
 | `make e2e-local` | **13 passed, 2 skipped** : les 2 ignorés lisent le build statique, absent (pas de build)      |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.

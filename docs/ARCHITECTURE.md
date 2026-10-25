@@ -210,6 +210,19 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 | D12 | 2026-10-23 | Catalogue : table `themes` à deux niveaux, contenu chargé sans écrasement     | appliquée |
 | D13 | 2026-10-23 | Parcours à étapes et Coumba points : solde + journal idempotent en base       | appliquée |
 | D14 | 2026-10-24 | Grille pré-remplie : disposition déterministe (puzzle, graine), sans état     | appliquée |
+| D15 | 2026-10-25 | Mots croisés classiques : colonne `format`, même moteur, présentation seule   | appliquée |
+
+### Notes sur D15 (mots croisés classiques)
+
+- `puzzles.format` (`freeform` = grille « en croix », défaut ; `classic` = mots croisés de
+  journal). Le moteur, la vérification, les indices, le score et le duel sont **identiques** :
+  seule la présentation change (repères I, II… / 1, 2…, pas de numéro dans les cases,
+  définitions regroupées par ligne et par colonne, `crossword-core/src/classic.ts`).
+- Le contrat public expose `format` dans chaque résumé de grille, et `GET /puzzles` et
+  `GET /quick-play` acceptent `?format=`. Champ requis dans les réponses : une ancienne version
+  de l'app mobile (schémas stricts) n'est pas concernée tant qu'aucune n'est distribuée.
+- Contenu : `seed/classic-puzzles.ts`, écrit ligne par ligne comme dans un journal
+  (`classicPuzzle` traduit vers la numérotation du moteur et refuse un décalage).
 
 ### Notes sur D13 (parcours et Coumba points)
 
@@ -225,8 +238,13 @@ MVP hébergeable sur une petite VM (1–2 vCPU) ou une plateforme conteneurs + P
 - **Indices** : 3 gratuits par partie (lettre ou mot), puis payants avec consentement explicite
   (`usePoints: true`, sinon 409 `hint_limit_reached`). Le débit et la révélation sont écrits dans
   la même transaction que la partie (révision optimiste) : un refus ou un conflit n'enlève rien.
+- **Duel** : aucun indice gratuit ; `match:hint` révèle la lettre d'une case au seul acheteur
+  (10 points), idempotent par `clientEventId` (événement de match + clé `match-hint:<match>:<id>`).
+  Gains des duels rapides seulement (15 victoire, 5 nul, 2 défaite), versés dans la transaction
+  qui clôt le match (clé `match:<id>`), à condition d'avoir trouvé au moins un mot et dans la
+  limite de 10 duels récompensés par jour UTC : ni duel privé, ni abandon immédiat en boucle.
 - **Barème** dans `apps/api/src/modules/points/rules.ts`, renvoyé aux clients par `GET /me/wallet`.
-  Proposé le 2026-10-23, en attente de validation.
+  Validé par le porteur du projet le 2026-10-24.
 - Risque résiduel : les gains sont versés juste après la transaction qui termine la partie (pas
   dans la même) ; un arrêt de l'API entre les deux perd la récompense, sans jamais la doubler.
 

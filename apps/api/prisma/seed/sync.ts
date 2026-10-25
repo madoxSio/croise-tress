@@ -95,6 +95,7 @@ export async function syncCatalog(
           title: seed.title,
           themeId: target,
           difficulty: seed.difficulty,
+          format: seed.format ?? 'freeform',
           status: 'published',
           width,
           height,

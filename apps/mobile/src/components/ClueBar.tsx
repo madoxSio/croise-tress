@@ -1,6 +1,6 @@
 import type { PublicClue } from '@crossverse/crossword-core'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { directionLabel } from '../game/labels'
+import { clueTag } from '../game/labels'
 import { TOUCH_TARGET, radius, usePalette } from '../theme'
 
 interface Props {
@@ -8,10 +8,12 @@ interface Props {
   readonly onPrevious: () => void
   readonly onNext: () => void
   readonly onToggle: () => void
+  /** Mots croisés classiques : repère de ligne (I, II…) ou de colonne (1, 2…). */
+  readonly classic?: boolean
 }
 
 /** Définition du mot actif, avec mot précédent / suivant ; toucher le texte change de sens. */
-export function ClueBar({ clue, onPrevious, onNext, onToggle }: Props) {
+export function ClueBar({ clue, onPrevious, onNext, onToggle, classic = false }: Props) {
   const palette = usePalette()
   const arrow = (label: string, symbol: string, onPress: () => void) => (
     <Pressable
@@ -34,9 +36,7 @@ export function ClueBar({ clue, onPrevious, onNext, onToggle }: Props) {
         style={styles.text}
       >
         <Text style={[styles.label, { color: palette.accentFg }]}>
-          {clue
-            ? `${clue.number} ${directionLabel(clue.direction).toLowerCase()} · ${clue.length} lettres`
-            : 'Touchez une case'}
+          {clue ? `${clueTag(clue, classic)} · ${clue.length} lettres` : 'Touchez une case'}
         </Text>
         <Text numberOfLines={2} style={[styles.clue, { color: palette.accentFg }]}>
           {clue?.text ?? 'Choisissez une case de la grille pour commencer.'}

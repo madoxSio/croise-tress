@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { emailSchema, passwordSchema, usernameSchema } from './auth.js'
 import { hexColorSchema, themeSlugSchema } from './catalog.js'
-import { difficultySchema, directionSchema, uuidSchema } from './common.js'
+import { difficultySchema, directionSchema, puzzleFormatSchema, uuidSchema } from './common.js'
 
 /**
  * Contrats de l'espace d'administration (`/admin/*`). Ces routes sont réservées au rôle
@@ -187,6 +187,8 @@ export const adminPuzzleBodySchema = z.strictObject({
   /** Slug d'un thème ou sous-thème existant (`GET /admin/themes`). */
   themeSlug: themeSlugSchema,
   difficulty: difficultySchema,
+  /** Présentation de la grille ; absente = grille « en croix ». */
+  format: puzzleFormatSchema.default('freeform'),
   estimatedMinutes: z.int().min(1).max(180),
   /** Une chaîne par ligne : `#` pour une case noire, une lettre A–Z sinon. */
   grid: z.array(z.string().min(3).max(25)).min(3).max(25),
@@ -204,6 +206,7 @@ export const adminPuzzleSummarySchema = z.strictObject({
   theme: z.string(),
   themeSlug: z.string(),
   difficulty: difficultySchema,
+  format: puzzleFormatSchema,
   status: puzzleStatusSchema,
   width: z.int(),
   height: z.int(),

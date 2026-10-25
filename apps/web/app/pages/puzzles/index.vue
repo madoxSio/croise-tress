@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { PuzzleSummary } from '@crossverse/contracts'
+import type { PuzzleFormat, PuzzleSummary } from '@crossverse/contracts'
 import { api, errorMessage } from '~/services/api'
-import { LEVELS, type LevelId } from '~/services/catalog'
+import { FORMATS, LEVELS, type LevelId } from '~/services/catalog'
 
 useHead({ title: 'Grilles — Crossverse' })
 
@@ -21,7 +21,12 @@ const level = computed<LevelId | ''>(() => {
   return LEVELS.some((l) => l.id === value) ? (value as LevelId) : ''
 })
 
-function setFilter(patch: { theme?: string; level?: string }): void {
+const format = computed<PuzzleFormat | ''>(() => {
+  const value = route.query['type']
+  return FORMATS.some((f) => f.id === value) ? (value as PuzzleFormat) : ''
+})
+
+function setFilter(patch: { theme?: string; level?: string; type?: string }): void {
   // Une valeur vide retire le filtre de l'URL.
   const query = Object.fromEntries(
     Object.entries({ ...route.query, ...patch }).filter(([, value]) => value !== ''),
@@ -52,13 +57,17 @@ async function fetchPage(reset: boolean): Promise<void> {
   loading.value = true
   error.value = null
   const theme = themeKey.value || undefined
+  const scope = {
+    ...(theme ? { theme } : {}),
+    ...(format.value ? { format: format.value } : {}),
+  }
   try {
     if (level.value) {
       // Un niveau regroupe plusieurs difficultés : une requête par difficulté, sans pagination.
       const found = LEVELS.find((l) => l.id === level.value)
       const pages = await Promise.all(
         (found?.difficulties ?? []).map((difficulty) =>
-          api.listPuzzles({ limit: 50, difficulty, ...(theme ? { theme } : {}) }),
+          api.listPuzzles({ limit: 50, difficulty, ...scope }),
         ),
       )
       if (id !== requestId) return
@@ -68,7 +77,7 @@ async function fetchPage(reset: boolean): Promise<void> {
     }
     const page = await api.listPuzzles({
       limit: PAGE_SIZE,
-      ...(theme ? { theme } : {}),
+      ...scope,
       ...(reset || nextCursor.value === null ? {} : { cursor: nextCursor.value }),
     })
     if (id !== requestId) return
@@ -120,7 +129,7 @@ async function toggleFavorite(puzzle: PuzzleSummary): Promise<void> {
   }
 }
 
-watch([themeKey, level], () => void fetchPage(true))
+watch([themeKey, level, format], () => void fetchPage(true))
 onMounted(() => {
   void catalog.load()
   void fetchPage(true)
@@ -136,14 +145,15 @@ onMounted(() => {
         <p class="text-accent text-sm font-bold tracking-wider uppercase">Catalogue</p>
         <h1 class="mt-1 text-3xl font-extrabold sm:text-5xl">Grilles</h1>
         <p class="text-muted mt-2 max-w-xl">
-          Choisissez un thème et un niveau, ou laissez Sougoudou choisir pour vous.
+          Choisissez un type de grille, un thème et un niveau, ou laissez Sougoudou choisir pour
+          vous.
         </p>
       </div>
       <button
         type="button"
         class="bg-accent text-accent-fg shadow-cta inline-flex min-h-12 items-center gap-2 rounded-2xl px-6 font-bold disabled:opacity-60"
         :disabled="quickPlay.busy.value"
-        @click="quickPlay.start(themeKey || undefined)"
+        @click="quickPlay.start(themeKey || undefined, format || undefined)"
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5" fill="currentColor">
           <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
@@ -228,6 +238,31 @@ onMounted(() => {
       </nav>
 
       <fieldset>
+        <legend class="sr-only">Type de grille</legend>
+        <div class="bg-surface-2 inline-flex flex-wrap gap-1 rounded-2xl p-1">
+          <label
+            v-for="option in [{ id: '', label: 'Tous types', hint: '' }, ...FORMATS]"
+            :key="option.id"
+            :title="option.hint || undefined"
+            class="has-[:checked]:bg-surface has-[:checked]:text-fg has-[:checked]:shadow-card text-muted has-[:focus-visible]:ring-accent inline-flex min-h-10 cursor-pointer items-center rounded-xl px-4 text-sm font-semibold has-[:focus-visible]:ring-2"
+          >
+            <input
+              type="radio"
+              name="format"
+              class="sr-only"
+              :value="option.id"
+              :checked="format === option.id"
+              @change="setFilter({ type: option.id })"
+            />
+            {{ option.label }}
+          </label>
+        </div>
+        <p v-if="format" class="text-muted mt-2 text-sm">
+          {{ FORMATS.find((f) => f.id === format)?.hint }}
+        </p>
+      </fieldset>
+
+      <fieldset>
         <legend class="sr-only">Niveau</legend>
         <div class="bg-surface-2 inline-flex flex-wrap gap-1 rounded-2xl p-1">
           <label
@@ -270,7 +305,7 @@ onMounted(() => {
 
     <!-- Tous les thèmes : cartes -->
     <section
-      v-else-if="!level && (catalog.themes.value?.length ?? 0) > 0"
+      v-else-if="!level && !format && (catalog.themes.value?.length ?? 0) > 0"
       aria-labelledby="themes-title"
       class="flex flex-col gap-4"
     >

@@ -11,6 +11,7 @@
 import {
   ERROR_CODES,
   SOCKET_PATH,
+  matchHintResultSchema,
   matchStateSchema,
   uuidSchema,
   type Ack,
@@ -131,6 +132,9 @@ export type SocketFactory = () => SocketLike
 const defaultFactory: SocketFactory = () =>
   io({
     path: SOCKET_PATH,
+    // `/ws?…` plutôt que `/ws/?…` : la réécriture Vercel du déploiement provisoire relaie le
+    // premier mais répond en erreur au second (constaté en prod le 2026-10-24).
+    addTrailingSlash: false,
     withCredentials: true,
     // Transports par défaut (long polling puis passage en WebSocket) : le proxy de dev Nuxt ne
     // relaie pas l'upgrade WebSocket, le polling garantit la connexion ; en production le
@@ -177,6 +181,13 @@ const ACK_SCHEMAS: { [E in EventName]: z.ZodType<Ack<AckData<E>>> } = {
       ok: z.literal(true),
       data: z.strictObject({ correct: z.boolean(), state: matchStateSchema }),
     }),
+    z.strictObject({
+      ok: z.literal(false),
+      error: z.object({ code: z.string(), message: z.string() }),
+    }),
+  ]),
+  'match:hint': z.union([
+    z.strictObject({ ok: z.literal(true), data: matchHintResultSchema }),
     z.strictObject({
       ok: z.literal(false),
       error: z.object({ code: z.string(), message: z.string() }),

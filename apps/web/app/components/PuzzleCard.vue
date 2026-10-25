@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PuzzleSummary } from '@crossverse/contracts'
 import type { ThemeLook } from '~/composables/useCatalog'
-import { levelOf } from '~/services/catalog'
+import { formatLabel, levelOf } from '~/services/catalog'
 import { puzzlePath } from '~/utils/playModes'
 
 /**
@@ -44,6 +44,11 @@ const to = computed(() => puzzlePath(props.puzzle.id, preferences.value.playMode
       <span class="bg-accent-soft rounded-full px-2 py-0.5">{{
         levelOf(puzzle.difficulty).label
       }}</span>
+      <span
+        v-if="puzzle.format === 'classic'"
+        class="border-line rounded-full border px-2 py-0.5"
+        >{{ formatLabel(puzzle.format) }}</span
+      >
       <span class="text-muted">{{ puzzle.theme }}</span>
     </div>
     <h3
