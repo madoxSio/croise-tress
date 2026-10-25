@@ -115,6 +115,8 @@ export class PuzzleRepository {
    * Défi du jour : l'association date → puzzle est créée au premier appel de la journée,
    * de façon déterministe (jour depuis l'époque modulo le nombre de puzzles publiés, triés par slug),
    * puis figée par la clé primaire sur la date (une requête concurrente ne peut pas en créer un second).
+   * Une grille qui n'est pas la première étape d'un parcours publié est écartée : elle serait
+   * verrouillée pour un invité ou un joueur qui n'a pas encore franchi les étapes précédentes.
    */
   async findOrAssignDaily(date: Date): Promise<PuzzleSummary | null> {
     const existing = await this.db.dailyChallenge.findUnique({
@@ -124,7 +126,10 @@ export class PuzzleRepository {
     if (existing) return toPuzzleSummary(existing.puzzle)
 
     const candidates = await this.db.puzzle.findMany({
-      where: { status: 'published' },
+      where: {
+        status: 'published',
+        pathSteps: { none: { position: { gt: 1 }, path: { status: 'published' } } },
+      },
       orderBy: { slug: 'asc' },
       select: { id: true },
     })
