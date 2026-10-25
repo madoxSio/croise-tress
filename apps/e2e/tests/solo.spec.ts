@@ -1,8 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { clueButton, fillAll, typeInSlot } from '../support/grid.ts'
+import { playPrefilled } from '../support/prefilled.ts'
 import { displayedPuzzleTitle, seedPuzzleByTitle, slotsOf } from '../support/puzzles.ts'
 
-test('solo : défi du jour, vérification, indice, fin de partie et historique', async ({ page }) => {
+test('solo : défi du jour, vérification, indice, fin de partie, historique et grille pré-remplie', async ({
+  page,
+}) => {
   await page.goto('/')
   await expect(
     page.getByRole('heading', { level: 1, name: 'Les mots croisés, version arène.' }),
@@ -50,4 +53,7 @@ test('solo : défi du jour, vérification, indice, fin de partie et historique',
   await page.goto('/history')
   await expect(page.getByRole('heading', { level: 1, name: 'Mes parties terminées' })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Gardez la trace de vos parties' })).toBeVisible()
+
+  // Même session invitée : la même grille, cette fois en mode pré-rempli.
+  await playPrefilled(page)
 })

@@ -20,6 +20,34 @@ const basics = [
   },
 ] as const
 
+/** Les deux façons de jouer une même grille (voir utils/playModes.ts). */
+const modes = [
+  {
+    id: 'classic',
+    title: 'Grille à trous',
+    tag: 'La partie officielle',
+    steps: [
+      'Les cases sont vides : seules les définitions guident.',
+      'Touche une case, lis la définition et écris le mot.',
+      'Vérifie, demande un indice si besoin : le score, les Coumba points et les parcours comptent.',
+    ],
+  },
+  {
+    id: 'prefilled',
+    title: 'Grille pré-remplie',
+    tag: 'Pour apprendre des mots',
+    steps: [
+      'Toutes les lettres sont déjà là, comme dans des mots mêlés.',
+      'Lis une définition, cherche le mot dans la grille et surligne-le : glisse de la première à la dernière lettre, ou touche-les l’une après l’autre.',
+      'Le mot apparaît sous sa définition : tu retiens son sens. Bloqué ? « Où est-il ? » le montre. Pas de points ici, c’est l’entraînement.',
+    ],
+  },
+] as const
+
+/** Mini-grilles décoratives des deux modes : 3 × 3 lettres, `null` pour une case vide. */
+const classicDemo = ['C', null, 'L', null, null, 'U', 'R', null, 'E'] as const
+const prefilledDemo = ['M', 'O', 'T', 'A', 'R', 'S', 'N', 'E', 'U'] as const
+
 const keys = [
   { keys: ['A–Z'], text: 'écrire une lettre (les accents sont ignorés)' },
   { keys: ['←', '↑', '→', '↓'], text: 'se déplacer de case en case' },
@@ -70,6 +98,7 @@ const faq = [
             <li
               v-for="item in [
                 { href: '#principe', label: 'Le principe' },
+                { href: '#modes', label: 'Deux façons de jouer' },
                 { href: '#commandes', label: 'Les commandes' },
                 { href: '#aides', label: 'Aides et score' },
                 { href: '#duel', label: 'Le duel' },
@@ -125,6 +154,56 @@ const faq = [
         </ol>
         <HowToDemo v-reveal />
       </div>
+    </section>
+
+    <section id="modes" aria-labelledby="modes-title" class="scroll-mt-24 flex flex-col gap-6">
+      <div v-reveal class="flex flex-col gap-2">
+        <h2 id="modes-title" class="text-3xl font-extrabold sm:text-4xl">Deux façons de jouer</h2>
+        <p class="text-muted max-w-2xl leading-relaxed">
+          Chaque grille se joue de deux manières. Choisis ton mode au-dessus de la liste des grilles
+          (il est retenu sur ton appareil) ou passe de l’un à l’autre depuis une partie.
+        </p>
+      </div>
+      <div class="grid gap-4 md:grid-cols-2">
+        <article
+          v-for="(mode, index) in modes"
+          :key="mode.id"
+          v-reveal
+          class="border-line bg-surface shadow-card flex flex-col gap-4 rounded-3xl border p-5 sm:p-6"
+          :style="{ '--cv-delay': `${index * 100}ms` }"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              aria-hidden="true"
+              class="border-block bg-block relative grid size-20 shrink-0 grid-cols-3 gap-px overflow-hidden rounded-lg border-2"
+            >
+              <span
+                v-for="(letter, cell) in mode.id === 'classic' ? classicDemo : prefilledDemo"
+                :key="cell"
+                class="bg-cell text-fg grid place-items-center text-xs font-bold"
+                >{{ letter ?? '' }}</span
+              >
+              <!-- Trait de surligneur sur la ligne « MOT » de la mini-grille pré-remplie. -->
+              <span
+                v-if="mode.id === 'prefilled'"
+                class="absolute top-[7%] left-[5%] h-[22%] w-[90%] rounded-full bg-[rgb(255_216_77/0.55)]"
+              />
+            </div>
+            <div>
+              <p class="text-accent text-xs font-bold tracking-wider uppercase">{{ mode.tag }}</p>
+              <h3 class="text-xl font-extrabold">{{ mode.title }}</h3>
+            </div>
+          </div>
+          <ol class="text-muted flex list-decimal flex-col gap-2 pl-5 leading-relaxed">
+            <li v-for="step in mode.steps" :key="step">{{ step }}</li>
+          </ol>
+        </article>
+      </div>
+      <p v-reveal class="text-muted text-sm">
+        Au clavier, en grille pré-remplie : flèches pour se déplacer (Début, Fin, Page préc. et Page
+        suiv. pour les diagonales), Entrée sur la première lettre puis sur la dernière, Échap pour
+        annuler.
+      </p>
     </section>
 
     <section

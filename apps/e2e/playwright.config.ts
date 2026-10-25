@@ -17,6 +17,9 @@ const webServer =
         {
           command: 'pnpm --filter @crossverse/api start',
           url: 'http://127.0.0.1:3001/api/v1/health',
+          // Toute la suite passe par une seule IP et dépasse la limite globale de 300 requêtes
+          // par minute : relevée ici seulement (les limites par route restent celles de la prod).
+          env: { RATE_LIMIT_MAX: process.env['RATE_LIMIT_MAX'] ?? '1000' },
           cwd: '../..',
           reuseExistingServer: true,
           timeout: 60_000,

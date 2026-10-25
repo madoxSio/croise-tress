@@ -79,3 +79,23 @@ describe('IP cliente derrière un proxy (TRUST_PROXY)', () => {
     }
   })
 })
+
+describe('limite globale de débit (RATE_LIMIT_MAX)', () => {
+  it('vaut 300 requêtes/min par défaut, se règle et refuse une valeur absurde', async () => {
+    expect(loadConfig(productionEnv).rateLimitMax).toBe(300)
+    expect(() => loadConfig({ ...productionEnv, RATE_LIMIT_MAX: '0' })).toThrow('RATE_LIMIT_MAX')
+    const config = loadConfig({ ...productionEnv, RATE_LIMIT_MAX: '2' })
+    const db = createDb(config.databaseUrl)
+    const app = await buildApp({ config, db, mailer: new MemoryMailer() })
+    try {
+      const hit = () =>
+        app.inject({ method: 'GET', url: '/api/v1/health', remoteAddress: '10.7.7.7' })
+      expect((await hit()).statusCode).toBe(200)
+      expect((await hit()).statusCode).toBe(200)
+      expect((await hit()).statusCode).toBe(429)
+    } finally {
+      await app.close()
+      await db.$disconnect()
+    }
+  })
+})

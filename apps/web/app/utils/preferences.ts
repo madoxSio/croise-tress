@@ -1,5 +1,8 @@
+import { isPlayMode, type PlayModeId } from './playModes'
+
 /**
- * Préférences d'interface (aucune valeur officielle) : thème, taille du texte, animations.
+ * Préférences d'interface (aucune valeur officielle) : thème, taille du texte, animations,
+ * mode de jeu proposé par défaut.
  * Pour ajouter un thème : une entrée dans `THEMES` + un bloc `[data-theme='…']` dans main.css.
  */
 export const THEMES = [
@@ -28,12 +31,14 @@ export interface Preferences {
   readonly theme: ThemeId
   readonly textScale: TextScaleId
   readonly reducedMotion: boolean
+  readonly playMode: PlayModeId
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'auto',
   textScale: 'normal',
   reducedMotion: false,
+  playMode: 'classic',
 }
 
 export const PREFERENCES_STORAGE_KEY = 'crossverse:preferences'
@@ -62,6 +67,7 @@ export function parsePreferences(raw: string | null): Preferences {
       typeof record['reducedMotion'] === 'boolean'
         ? record['reducedMotion']
         : DEFAULT_PREFERENCES.reducedMotion,
+    playMode: isPlayMode(record['playMode']) ? record['playMode'] : DEFAULT_PREFERENCES.playMode,
   }
 }
 

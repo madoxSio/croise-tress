@@ -79,7 +79,7 @@ onMounted(() => {
       </p>
     </section>
 
-    <p v-if="loading && !board" role="status" class="text-muted">Chargement…</p>
+    <SougoudouLoader v-if="loading && !board" label="Chargement du classement…" />
     <div v-else-if="error" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4 text-sm">
       {{ error }}
       <button type="button" class="ml-2 font-semibold underline" @click="load">Réessayer</button>

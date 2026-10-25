@@ -256,7 +256,7 @@ const featuredThemes = computed(() => (catalog.themes.value ?? []).slice(0, 6))
     <section aria-labelledby="today-title" class="flex flex-col gap-4">
       <h2 id="today-title" class="sr-only">Aujourd’hui</h2>
 
-      <p v-if="loading" class="text-muted" role="status">Chargement…</p>
+      <SougoudouLoader v-if="loading" inline />
 
       <div
         v-else-if="error"

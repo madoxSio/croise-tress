@@ -29,6 +29,9 @@ import {
   sessionResponseSchema,
   statsSchema,
   uuidSchema,
+  wordSearchCheckResultSchema,
+  wordSearchHitSchema,
+  wordSearchSchema,
 } from '@crossverse/contracts'
 import type {
   CatalogTheme,
@@ -47,6 +50,8 @@ import type {
   SessionResponse,
   Stats,
 } from '@crossverse/contracts'
+import type { Position } from '@crossverse/crossword-core'
+import type { WordSearchClueRef, WordSearchDto, WordSearchHit } from '@crossverse/contracts'
 import { z } from 'zod'
 import { ApiRequestError, CLIENT_ERROR_CODES } from './errors'
 import type { AuthTransport, OpenedSession } from './transport'
@@ -368,6 +373,43 @@ export class ApiClient {
     return this.request('POST', `/play-sessions/${segment(sessionId)}/hints`, hintResponseSchema, {
       body,
     })
+  }
+
+  // --- Grille pré-remplie (mode entraînement, sans récompense) ---------------
+
+  /** Grille de lettres et définitions ; le serveur seul sait où se cachent les mots. */
+  async getWordSearch(puzzleId: string, seed?: number): Promise<WordSearchDto> {
+    await this.ensureSession()
+    return this.request(
+      'GET',
+      `/puzzles/${segment(puzzleId)}/word-search${query({ seed })}`,
+      wordSearchSchema,
+    )
+  }
+
+  async checkWordSearch(
+    puzzleId: string,
+    body: { seed: number; from: Position; to: Position; found: WordSearchClueRef[] },
+  ): Promise<WordSearchHit | null> {
+    const result = await this.request(
+      'POST',
+      `/puzzles/${segment(puzzleId)}/word-search/check`,
+      wordSearchCheckResultSchema,
+      { body },
+    )
+    return result.hit
+  }
+
+  revealWordSearch(
+    puzzleId: string,
+    body: WordSearchClueRef & { seed: number },
+  ): Promise<WordSearchHit> {
+    return this.request(
+      'POST',
+      `/puzzles/${segment(puzzleId)}/word-search/reveal`,
+      wordSearchHitSchema,
+      { body },
+    )
   }
 
   getHistory(): Promise<HistoryResponse> {

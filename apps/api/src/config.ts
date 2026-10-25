@@ -36,6 +36,12 @@ const envSchema = z
      * la droite (1 derrière Caddy seul). `true` (tous les sauts) n'est sûr que si aucun client ne
      * peut joindre l'API sans passer par le proxy : sinon un en-tête forgé contourne les limites.
      */
+    /**
+     * Requêtes par minute et par IP, toutes routes confondues (les routes sensibles ont leurs
+     * propres limites, plus basses). 300 par défaut ; les E2E le relèvent, car toute la suite
+     * passe par une seule IP (proxy du web local) et dépasse 300 requêtes en une minute.
+     */
+    RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(10_000).default(300),
     TRUST_PROXY: z
       .string()
       .default('false')
@@ -71,6 +77,7 @@ export interface Config {
   readonly webOrigins: readonly string[]
   readonly logLevel: string
   readonly trustProxy: boolean | number
+  readonly rateLimitMax: number
   readonly isProduction: boolean
   readonly sessionCookieName: string
   readonly sessionTtlMs: number
@@ -104,6 +111,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     webOrigins: value.WEB_ORIGINS,
     logLevel: value.LOG_LEVEL,
     trustProxy: value.TRUST_PROXY,
+    rateLimitMax: value.RATE_LIMIT_MAX,
     isProduction,
     // Le préfixe __Host- impose Secure : réservé à la production (HTTPS).
     sessionCookieName: isProduction ? '__Host-cv_session' : 'cv_session',

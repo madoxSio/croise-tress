@@ -4,6 +4,7 @@ import type { MenuItem } from '~/utils/menu'
 import type { CheckScope, HintKind } from '~/composables/usePlaySession'
 import { formatLabel } from '~/services/catalog'
 import { clueSpoken, clueTag, difficultyLabel, formatClock, formatDuration } from '~/utils/labels'
+import { puzzlePath } from '~/utils/playModes'
 
 const route = useRoute()
 const rawId = route.params['puzzleId']
@@ -172,7 +173,7 @@ const gridLabel = computed(() =>
 
 <template>
   <div class="flex flex-col gap-4">
-    <p v-if="loading" role="status" class="text-muted">Chargement de la grille…</p>
+    <SougoudouLoader v-if="loading" label="Sougoudou prépare la grille…" />
 
     <div v-else-if="loadError" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4">
       <p>{{ loadError }}</p>
@@ -331,6 +332,11 @@ const gridLabel = computed(() =>
           <div v-else class="flex flex-wrap items-center justify-center gap-2">
             <ActionMenu label="Vérifier" :items="checkItems" :disabled="busy" @choose="onCheck" />
             <ActionMenu label="Indice" :items="hintItems" :disabled="busy" @choose="onHint" />
+            <NuxtLink
+              :to="puzzlePath(puzzleId, 'prefilled')"
+              class="border-line bg-surface hover:border-accent inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-semibold"
+              >Version pré-remplie</NuxtLink
+            >
             <p v-if="freeHintsLeft !== null" class="text-muted w-full text-center text-xs">
               {{ freeHintsLabel }}
               <template v-if="wallet?.eligible"> · {{ wallet.balance }} Coumba points</template>

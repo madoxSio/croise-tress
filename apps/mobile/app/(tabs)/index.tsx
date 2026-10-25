@@ -7,6 +7,7 @@ import { api, errorMessage } from '../../src/api'
 import { Button, Card, ErrorNotice, Loading, Muted, Screen } from '../../src/components/ui'
 import { difficultyLabel } from '../../src/game/labels'
 import { MASCOT_GREETING, MASCOT_NAME } from '../../src/mascot'
+import { puzzleRoute, usePlayMode } from '../../src/playMode'
 import { radius, usePalette } from '../../src/theme'
 
 const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -46,6 +47,7 @@ export default function Home() {
 
   // Partie rapide : le serveur tire une grille simple au hasard.
   const [quickBusy, setQuickBusy] = useState(false)
+  const mode = usePlayMode()
   const [quickError, setQuickError] = useState<string | null>(null)
   const quickPlay = useCallback(async () => {
     setQuickBusy(true)
@@ -53,14 +55,14 @@ export default function Home() {
     try {
       await api.ensureSession()
       const pick = await api.quickPlay()
-      if (pick) router.push(`/play/${pick.id}`)
+      if (pick) router.push(puzzleRoute(pick.id, mode))
       else setQuickError('Aucune grille disponible pour le moment.')
     } catch (cause) {
       setQuickError(errorMessage(cause))
     } finally {
       setQuickBusy(false)
     }
-  }, [])
+  }, [mode])
 
   const resume = data?.resume
   const daily = data?.daily

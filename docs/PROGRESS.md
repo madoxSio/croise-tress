@@ -180,6 +180,13 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Web : repères de lignes et colonnes autour de la grille, définitions groupées par ligne/colonne, barre « Ligne IV / Col. 4 », filtre « Type de grille » et badge sur les cartes, duel compris. Mobile : repères, barre de définition, filtre et badge (non vu sur un appareil : vérifié par types et tests).
 - Preuves : `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 59, web 65, mobile 43, api 169 (**336 verts**) ; captures Chromium 390 px et 1280 px de la grille 9×9 sans défilement horizontal.
 
+### 2026-10-25 — Grille pré-remplie, loader Sougoudou ✅ (hors Docker)
+
+- Mode « grille pré-remplie » (D14) : `crossword-core/src/wordsearch.ts` (génération déterministe, validation d'un tracé dans les deux sens, alignement d'un glisser), contrats `contracts/src/wordsearch.ts`, API `GET /puzzles/:id/word-search`, `POST …/check` (120/min), `POST …/reveal` (30/min), session exigée, verrou de parcours respecté.
+- Web : page `/pre-remplie/:id` (surlignage par traits SVG, glisser, deux taps ou clavier, « Où est-il ? », récapitulatif des mots appris, partie gardée dans le navigateur), choix du mode au-dessus de la liste des grilles (préférence de l'appareil, suivie par les cartes et la partie rapide), lien entre les deux modes, section « Deux façons de jouer » de la page Comment jouer. Loader `SougoudouLoader` (cases « MOTS » qui se remplissent) sur les pages de jeu et de listes, barre de progression entre les pages.
+- Mobile : écran `pre-remplie/[puzzleId]` (glisser ou deux taps, cases colorées), choix du mode dans l'onglet Grilles, partie rapide de l'accueil dans le mode choisi, `Loading` avec Sougoudou et cases animées (immobile si « réduire les animations »).
+- Preuves : `wordsearch.test.ts` côté core (8), API (7, dont toutes les grilles du catalogue et les 8 classiques sur 5 graines, AUTHZ parcours, VAL), web (9), mobile (3) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 62, web 72, mobile 44, api 166 (**344 verts** ; 365 après fusion des mots croisés classiques) ; E2E : **13 passed, 2 skipped** (grille pré-remplie jouée à la suite de `solo.spec.ts`, en mobile et bureau, dans la même session invitée et avec peu de requêtes : limite de 30 invités/h par IP ; la limite globale de 300 requêtes/min, que la suite dépasse depuis une seule IP, est relevée pour les E2E seulement via `RATE_LIMIT_MAX`). Écran mobile vérifié dans Chromium via l'export web Expo ; pas d'appareil iOS/Android réel ici.
+
 ## Points ouverts (repérés pendant la construction)
 
 - Classement et `/me/matches` : `limit` ≤ 100 sans curseur ; schémas de réponse à déplacer dans `contracts` ; variation Elo absente de `MatchState`.
@@ -187,6 +194,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Sessions sans libellé d'appareil ; favoris plafonnés à 100.
 - E2E non branchés dans la CI ; limites d'inscription (5/h par IP, en mémoire) : redémarrer l'API entre deux exécutions E2E.
 - Limites de débit en mémoire : remises à zéro au redémarrage, et une seule instance.
+- Grille pré-remplie : partie gardée dans le navigateur seulement (rien côté serveur, aucune statistique) ; sur mobile, ni persistance ni retour haptique ; grilles jusqu'à 18 lettres de côté, serrées sur un téléphone de 320 px.
 - Catalogue : pas d'écran d'administration des thèmes (API seule) ; les grilles du seed déjà présentes en base ne sont jamais mises à jour par le chargement (corrections via l'éditeur) ; grilles « en croix » jusqu'à 15 colonnes, à vérifier sur petit écran avec la nouvelle interface.
 - Admin : pas de MFA (T17), pas de modération des pseudos ni d'export/suppression RGPD par l'administrateur, durée de conservation de `audit_log` à fixer ; série « inscriptions » datée par la confirmation d'e-mail (décalée par un changement d'adresse).
 
@@ -219,13 +227,13 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 
 ## Dernière vérification complète
 
-2026-10-23, depuis la racine, Node 24.22.0, PostgreSQL 16 locale (hors Docker) :
+2026-10-25, depuis la racine, Node 24.22.0, PostgreSQL 16 locale (hors Docker) :
 
-| Commande         | Résultat réel                                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                               |
-| `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                                |
-| `pnpm test`      | core 54/54, web 63/63, mobile 41/41, api 164/164 : **322 tests verts**                           |
-| `make e2e-local` | **13 passed, 2 skipped (45.4s)** : les 2 ignorés lisent le build statique, absent (pas de build) |
+| Commande         | Résultat réel                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                            |
+| `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                             |
+| `pnpm test`      | core 67/67, web 74/74, mobile 46/46, api 178/178 : **365 tests verts** (après fusion de main) |
+| `make e2e-local` | **13 passed, 2 skipped** : les 2 ignorés lisent le build statique, absent (pas de build)      |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.

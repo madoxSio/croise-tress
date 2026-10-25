@@ -13,6 +13,7 @@ import {
   lookOf,
   parentTheme,
 } from '../../src/game/catalog'
+import { PLAY_MODES, puzzleRoute, setPlayMode, usePlayMode } from '../../src/playMode'
 import { TOUCH_TARGET, radius, usePalette } from '../../src/theme'
 
 const PAGE_SIZE = 20
@@ -38,6 +39,7 @@ export default function Puzzles() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [quickBusy, setQuickBusy] = useState(false)
+  const mode = usePlayMode()
 
   /** Charge une page (ou toutes les grilles d'un niveau) ; l'état change après la réponse. */
   const fetchPage = useCallback(async (current: Filter, after: string | null) => {
@@ -92,7 +94,7 @@ export default function Puzzles() {
     setError(null)
     try {
       const pick = await api.quickPlay(filter.theme ?? undefined, filter.format ?? undefined)
-      if (pick) router.push(`/play/${pick.id}`)
+      if (pick) router.push(puzzleRoute(pick.id, mode))
       else setError('Aucune grille disponible pour le moment.')
     } catch (cause) {
       setError(errorMessage(cause))
@@ -123,6 +125,35 @@ export default function Puzzles() {
 
   const header = (
     <View style={styles.header}>
+      <View accessibilityRole="radiogroup" accessibilityLabel="Mode de jeu" style={styles.levels}>
+        {PLAY_MODES.map((option) => (
+          <Pressable
+            key={option.id}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: mode === option.id }}
+            onPress={() => {
+              setPlayMode(option.id)
+            }}
+            style={[
+              styles.chip,
+              {
+                backgroundColor: mode === option.id ? palette.accent : palette.surface,
+                borderColor: mode === option.id ? palette.accent : palette.line,
+              },
+            ]}
+          >
+            <Text
+              style={{
+                color: mode === option.id ? palette.accentFg : palette.fg,
+                fontWeight: '700',
+              }}
+            >
+              {option.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <Muted>{PLAY_MODES.find((option) => option.id === mode)?.description}</Muted>
       <Button
         label={quickBusy ? 'Préparation…' : 'Partie rapide'}
         variant="neon"
@@ -225,7 +256,7 @@ export default function Puzzles() {
             accessibilityRole="link"
             accessibilityLabel={`${item.title}, ${kind}${level}, ${item.theme}, environ ${item.estimatedMinutes} minutes`}
             onPress={() => {
-              router.push(`/play/${item.id}`)
+              router.push(puzzleRoute(item.id, mode))
             }}
             style={({ pressed }) => [
               styles.card,

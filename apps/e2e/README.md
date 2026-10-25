@@ -8,7 +8,7 @@ Dépendance : `@playwright/test` 1.56.1 (Apache-2.0, Microsoft), épinglée exac
 
 | Spec               | Contenu                                                                                                                                                                                      |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `solo.spec.ts`     | accueil → défi du jour → saisie, « Vérifier le mot », indice lettre, grille terminée, historique                                                                                             |
+| `solo.spec.ts`     | accueil → défi du jour → saisie, « Vérifier le mot », indice lettre, grille terminée, historique, puis grille pré-remplie (choix du mode, glisser, clavier, « Où est-il ? », fin)            |
 | `account.spec.ts`  | inscription → lien de confirmation (e-mail) → compte → déconnexion → connexion → mot de passe oublié / réinitialisation → suppression                                                        |
 | `duel.spec.ts`     | deux comptes (bureau + mobile) : invitation par code, mot faux refusé puis mot juste validé, score adverse en direct et après rechargement, abandon, partie rapide, classement (bureau seul) |
 | `security.spec.ts` | SOL-02 (aucune réponse dans le JavaScript servi ni dans `apps/web/.output/public` s'il existe), invité refusé en duel, pas de défilement horizontal à 320 px                                 |
@@ -38,7 +38,10 @@ Hors de l'environnement de travail, installer le navigateur une fois :
 ## Limites de débit
 
 Les limites de l'API sont en mémoire et comptées par IP (tout passe par le proxy Nuxt) :
-5 inscriptions/h, 5 connexions/15 min, 3 « mot de passe oublié »/h, 30 sessions invitées/h.
+5 inscriptions/h, 5 connexions/15 min, 3 « mot de passe oublié »/h, 30 sessions invitées/h,
+et 300 requêtes/min toutes routes confondues. La suite dépasse cette dernière en moins d'une
+minute : l'API lancée par `E2E_START_SERVERS=1` (CI) reçoit `RATE_LIMIT_MAX=1000` ; pour une API
+lancée à la main, la démarrer avec `RATE_LIMIT_MAX=1000`.
 Une exécution complète consomme 4 inscriptions, 4 connexions et 2 demandes de réinitialisation :
 **redémarrer l'API entre deux exécutions** (`make restart`, ou relancer `pnpm --filter
 @crossverse/api start`), sinon des 429 apparaissent.
