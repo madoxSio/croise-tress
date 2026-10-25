@@ -419,6 +419,48 @@ const featuredThemes = computed(() => (catalog.themes.value ?? []).slice(0, 6))
       </ol>
     </section>
 
+    <!-- Mots mêlés -->
+    <section
+      v-reveal
+      aria-labelledby="wordlists-title"
+      class="border-line bg-surface shadow-card grid items-center gap-6 rounded-[2rem] border p-6 sm:p-10 md:grid-cols-[1fr_auto]"
+    >
+      <div>
+        <p class="text-accent text-sm font-bold tracking-wider uppercase">Mots mêlés</p>
+        <h2 id="wordlists-title" class="mt-2 text-3xl font-extrabold sm:text-4xl">
+          Raye les mots, trouve le mot mystère.
+        </h2>
+        <p class="text-muted mt-3 text-lg">
+          Comme sur papier : une liste de mots cachés dans la grille, dans tous les sens. Les
+          lettres qui restent forment le mot mystère.
+        </p>
+        <NuxtLink
+          to="/mots-meles"
+          class="bg-fg text-bg mt-6 inline-flex min-h-12 items-center rounded-2xl px-6 font-bold transition-transform hover:-translate-y-0.5"
+        >
+          Jouer aux mots mêlés
+        </NuxtLink>
+      </div>
+      <!-- Mini-grille décorative avec un trait de surligneur : le texte dit déjà tout. -->
+      <div
+        aria-hidden="true"
+        class="border-line bg-cell relative grid size-40 grid-cols-5 overflow-hidden rounded-2xl border-2 p-1"
+      >
+        <span
+          v-for="(letter, cell) in 'MERSOALGUEPLAGESABLEHOULE'"
+          :key="cell"
+          class="text-fg font-display grid place-items-center text-sm font-bold"
+          >{{ letter }}</span
+        >
+        <span
+          class="absolute top-[42%] left-[4%] h-[16%] w-[92%] rounded-full bg-[rgb(255_216_77/0.55)]"
+        />
+        <span
+          class="absolute top-[22%] left-[4%] h-[16%] w-[92%] rounded-full bg-[rgb(120_200_255/0.5)]"
+        />
+      </div>
+    </section>
+
     <!-- Comment jouer -->
     <section aria-labelledby="howto-title" class="grid items-center gap-10 lg:grid-cols-2">
       <div class="flex flex-col gap-6">

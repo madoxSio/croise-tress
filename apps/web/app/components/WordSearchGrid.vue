@@ -9,7 +9,13 @@ import type { Position } from '@crossverse/crossword-core'
 import type { Selection, WordSearchGame } from '~/composables/useWordSearchGame'
 import { hitColor } from '~/utils/wordsearch'
 
-const props = defineProps<{ game: WordSearchGame; label: string; disabled?: boolean }>()
+// `marked` : cases mises en valeur (lettres du mot mystère des mots mêlés, en fin de partie).
+const props = defineProps<{
+  game: WordSearchGame
+  label: string
+  disabled?: boolean
+  marked?: readonly Position[]
+}>()
 const emit = defineEmits<{ select: [selection: Selection]; escape: [] }>()
 
 const gridEl = ref<HTMLElement | null>(null)
@@ -21,6 +27,7 @@ const cellId = (position: Position): string => `${uid}-c-${position.row}-${posit
 const key = (position: Position): string => `${position.row}:${position.col}`
 
 const previewKeys = computed(() => new Set(props.game.preview.map(key)))
+const markedKeys = computed(() => new Set((props.marked ?? []).map(key)))
 /** Cases couvertes par un mot trouvé, pour les annoncer aux lecteurs d'écran. */
 const foundByCell = computed(() => {
   const map = new Map<string, string[]>()
@@ -62,6 +69,7 @@ function cellLabel(row: number, col: number): string {
   else if (previewKeys.value.has(key(position))) parts.push('dans la sélection')
   const words = foundByCell.value.get(key(position))
   if (words) parts.push(`dans ${words.join(' et ')}`)
+  if (markedKeys.value.has(key(position))) parts.push('lettre du mot mystère')
   return parts.join(', ')
 }
 
@@ -268,11 +276,12 @@ defineExpose({ focus: () => gridEl.value?.focus({ preventScroll: true }) })
           :data-row="row"
           :data-col="col"
           class="text-fg relative flex aspect-square items-center justify-center font-bold"
-          :class="
+          :class="[
             focused && game.cursor.row === row && game.cursor.col === col
               ? 'outline-accent rounded-md outline-2 -outline-offset-2'
-              : ''
-          "
+              : '',
+            markedKeys.has(`${row}:${col}`) ? 'cv-marked text-accent' : '',
+          ]"
           :style="{ fontSize: `calc(100cqi / ${size} * 0.52)` }"
         >
           <span aria-hidden="true" class="pointer-events-none leading-none">{{ letter }}</span>
@@ -293,6 +302,23 @@ defineExpose({ focus: () => gridEl.value?.focus({ preventScroll: true }) })
 @keyframes cv-draw {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* Lettre du mot mystère : pastille qui « s'allume » une fois tous les mots rayés. */
+.cv-marked::before {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border-radius: 9999px;
+  border: 2px solid var(--cv-accent);
+  animation: cv-glow 0.6s ease-out both;
+}
+
+@keyframes cv-glow {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
   }
 }
 </style>

@@ -47,3 +47,14 @@ export {
   type WordSearchPlacement,
   type WordSearchStep,
 } from './wordsearch.js'
+export {
+  buildWordList,
+  leftoverLetters,
+  matchWordList,
+  validateWordList,
+  wordOccurrences,
+  type WordListDirections,
+  type WordListGrid,
+  type WordListHit,
+  type WordListProblem,
+} from './wordlist.js'

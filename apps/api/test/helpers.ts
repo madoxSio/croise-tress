@@ -58,7 +58,7 @@ export async function createTestContext(
 }
 
 export async function resetDatabase(db: Db): Promise<void> {
-  await db.$executeRaw`TRUNCATE "point_transactions", "wallets", "path_steps", "paths", "audit_log", "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "auth_tokens", "sessions", "users", "puzzles", "themes" CASCADE`
+  await db.$executeRaw`TRUNCATE "point_transactions", "wallets", "path_steps", "paths", "audit_log", "ratings", "match_events", "match_participants", "matches", "match_queue", "play_sessions", "daily_challenges", "word_lists", "auth_tokens", "sessions", "users", "puzzles", "themes" CASCADE`
 }
 
 /**

@@ -171,6 +171,24 @@ onMounted(() => {
 
     <PlayModeSwitch />
 
+    <NuxtLink
+      to="/mots-meles"
+      class="border-line bg-surface hover:border-accent shadow-card group flex items-center gap-4 rounded-2xl border p-4 transition-all hover:-translate-y-0.5"
+    >
+      <span
+        aria-hidden="true"
+        class="bg-accent-soft font-display grid size-12 shrink-0 place-items-center rounded-xl text-lg font-extrabold"
+        >ML</span
+      >
+      <span class="min-w-0 flex-1">
+        <span class="block font-bold group-hover:underline">Envie de mots mêlés ?</span>
+        <span class="text-muted block text-sm"
+          >Une liste de mots à rayer dans la grille, et un mot mystère à découvrir.</span
+        >
+      </span>
+      <span aria-hidden="true" class="text-accent text-xl">→</span>
+    </NuxtLink>
+
     <!-- Filtres -->
     <div class="flex flex-col gap-4">
       <nav aria-label="Thèmes" class="-mx-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">

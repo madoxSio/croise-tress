@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
 import { clueButton, fillAll, typeInSlot } from '../support/grid.ts'
 import { playPrefilled } from '../support/prefilled.ts'
+import { playWordList } from '../support/wordlist.ts'
 import { displayedPuzzleTitle, seedPuzzleByTitle, slotsOf } from '../support/puzzles.ts'
 
-test('solo : défi du jour, vérification, indice, fin de partie, historique et grille pré-remplie', async ({
+test('solo : défi du jour, vérification, indice, fin de partie, historique, grille pré-remplie et mots mêlés', async ({
   page,
 }) => {
   await page.goto('/')
@@ -56,4 +57,6 @@ test('solo : défi du jour, vérification, indice, fin de partie, historique et 
 
   // Même session invitée : la même grille, cette fois en mode pré-rempli.
   await playPrefilled(page)
+  // Puis des mots mêlés, toujours dans la même session.
+  await playWordList(page)
 })

@@ -11,6 +11,7 @@ const PAGES = [
   '/register',
   '/forgot-password',
   '/comment-jouer',
+  '/mots-meles',
 ] as const
 
 test('accessibilité : un seul h1, un seul main, lang="fr" sur chaque page principale', async ({

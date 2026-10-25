@@ -52,6 +52,12 @@ import type {
 } from '@crossverse/contracts'
 import type { Position } from '@crossverse/crossword-core'
 import type { WordSearchClueRef, WordSearchDto, WordSearchHit } from '@crossverse/contracts'
+import {
+  wordListListSchema,
+  wordListSchema,
+  type WordListDto,
+  type WordListList,
+} from '@crossverse/contracts'
 import { z } from 'zod'
 import { ApiRequestError, CLIENT_ERROR_CODES } from './errors'
 import type { AuthTransport, OpenedSession } from './transport'
@@ -329,6 +335,15 @@ export class ApiClient {
       if (error instanceof ApiRequestError && error.isNotFound) return null
       throw error
     }
+  }
+
+  /** Mots mêlés « standard » : lecture publique, la partie se joue ensuite sur l'appareil. */
+  listWordLists(limit = 50): Promise<WordListList> {
+    return this.request('GET', `/word-lists${query({ limit })}`, wordListListSchema)
+  }
+
+  getWordList(id: string): Promise<WordListDto> {
+    return this.request('GET', `/word-lists/${segment(id)}`, wordListSchema)
   }
 
   getPuzzle(id: string): Promise<PublicPuzzleDto> {
