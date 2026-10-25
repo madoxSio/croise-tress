@@ -127,7 +127,8 @@ check-local: lint-local typecheck-local test-local ## Lint, types et tests sur l
 # --- E2E Playwright (lancés sur la machine : `make install-local` requis) --------
 # Chromium Playwright 1.56 requis (`pnpm --filter @crossverse/e2e exec playwright install chromium`).
 # Les limites de débit de l'API (en mémoire, par IP) n'autorisent qu'une exécution complète
-# par heure : redémarrer l'API entre deux exécutions (`make restart`). Voir apps/e2e/README.md.
+# par heure : redémarrer l'API entre deux exécutions (`make restart`), avec RATE_LIMIT_MAX=1000
+# (la suite dépasse 300 requêtes/min depuis une seule IP). Voir apps/e2e/README.md.
 
 e2e: ## E2E Playwright contre la stack Docker démarrée (make start ; e-mails lus dans Mailpit)
 	pnpm e2e

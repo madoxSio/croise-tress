@@ -38,7 +38,10 @@ Hors de l'environnement de travail, installer le navigateur une fois :
 ## Limites de débit
 
 Les limites de l'API sont en mémoire et comptées par IP (tout passe par le proxy Nuxt) :
-5 inscriptions/h, 5 connexions/15 min, 3 « mot de passe oublié »/h, 30 sessions invitées/h.
+5 inscriptions/h, 5 connexions/15 min, 3 « mot de passe oublié »/h, 30 sessions invitées/h,
+et 300 requêtes/min toutes routes confondues. La suite dépasse cette dernière en moins d'une
+minute : l'API lancée par `E2E_START_SERVERS=1` (CI) reçoit `RATE_LIMIT_MAX=1000` ; pour une API
+lancée à la main, la démarrer avec `RATE_LIMIT_MAX=1000`.
 Une exécution complète consomme 4 inscriptions, 4 connexions et 2 demandes de réinitialisation :
 **redémarrer l'API entre deux exécutions** (`make restart`, ou relancer `pnpm --filter
 @crossverse/api start`), sinon des 429 apparaissent.

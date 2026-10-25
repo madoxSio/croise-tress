@@ -57,6 +57,7 @@ Références : OWASP Top 10 (2021/2025), OWASP API Security Top 10 (2023), ASVS 
 ## 8. Abus et disponibilité
 
 - `@fastify/rate-limit` (mémoire, une instance) sur auth, renvoi d'e-mail, indices, vérifications, invitations, file de matchmaking.
+- Limite globale : 300 requêtes/min par IP toutes routes confondues (`RATE_LIMIT_MAX`, 300 par défaut, non défini en production). Seuls les E2E la relèvent (1000), parce que toute la suite passe par une seule IP ; les limites par route restent celles de la production.
 - Délais d'attente côté serveur, pagination maximale (ex. 50), limites de connexions WS par utilisateur.
 - Invitations : expiration, plafond d'invitations en attente, blocage possible d'un utilisateur.
 

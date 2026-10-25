@@ -185,7 +185,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Mode « grille pré-remplie » (D14) : `crossword-core/src/wordsearch.ts` (génération déterministe, validation d'un tracé dans les deux sens, alignement d'un glisser), contrats `contracts/src/wordsearch.ts`, API `GET /puzzles/:id/word-search`, `POST …/check` (120/min), `POST …/reveal` (30/min), session exigée, verrou de parcours respecté.
 - Web : page `/pre-remplie/:id` (surlignage par traits SVG, glisser, deux taps ou clavier, « Où est-il ? », récapitulatif des mots appris, partie gardée dans le navigateur), choix du mode au-dessus de la liste des grilles (préférence de l'appareil, suivie par les cartes et la partie rapide), lien entre les deux modes, section « Deux façons de jouer » de la page Comment jouer. Loader `SougoudouLoader` (cases « MOTS » qui se remplissent) sur les pages de jeu et de listes, barre de progression entre les pages.
 - Mobile : écran `pre-remplie/[puzzleId]` (glisser ou deux taps, cases colorées), choix du mode dans l'onglet Grilles, partie rapide de l'accueil dans le mode choisi, `Loading` avec Sougoudou et cases animées (immobile si « réduire les animations »).
-- Preuves : `wordsearch.test.ts` côté core (8), API (7, dont toutes les grilles du catalogue et les 8 classiques sur 5 graines, AUTHZ parcours, VAL), web (9), mobile (3) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 62, web 72, mobile 44, api 166 (**344 verts** ; 363 après fusion des mots croisés classiques) ; E2E : **13 passed, 2 skipped** (grille pré-remplie jouée à la suite de `solo.spec.ts`, en mobile et bureau, dans la même session invitée et avec peu de requêtes : limites de 30 invités/h et de 300 requêtes/min par IP, la suite frôle la seconde). Écran mobile vérifié dans Chromium via l'export web Expo ; pas d'appareil iOS/Android réel ici.
+- Preuves : `wordsearch.test.ts` côté core (8), API (7, dont toutes les grilles du catalogue et les 8 classiques sur 5 graines, AUTHZ parcours, VAL), web (9), mobile (3) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 62, web 72, mobile 44, api 166 (**344 verts** ; 365 après fusion des mots croisés classiques) ; E2E : **13 passed, 2 skipped** (grille pré-remplie jouée à la suite de `solo.spec.ts`, en mobile et bureau, dans la même session invitée et avec peu de requêtes : limite de 30 invités/h par IP ; la limite globale de 300 requêtes/min, que la suite dépasse depuis une seule IP, est relevée pour les E2E seulement via `RATE_LIMIT_MAX`). Écran mobile vérifié dans Chromium via l'export web Expo ; pas d'appareil iOS/Android réel ici.
 
 ## Points ouverts (repérés pendant la construction)
 
@@ -233,7 +233,7 @@ Voir [SECURITY-TEST-PLAN.md](SECURITY-TEST-PLAN.md) pour le détail des cas.
 | ---------------- | --------------------------------------------------------------------------------------------- |
 | `pnpm lint`      | ESLint sans erreur, « All matched files use Prettier code style! »                            |
 | `pnpm typecheck` | tous les paquets « Done » (dont api, web, mobile)                                             |
-| `pnpm test`      | core 67/67, web 74/74, mobile 46/46, api 176/176 : **363 tests verts** (après fusion de main) |
+| `pnpm test`      | core 67/67, web 74/74, mobile 46/46, api 178/178 : **365 tests verts** (après fusion de main) |
 | `make e2e-local` | **13 passed, 2 skipped** : les 2 ignorés lisent le build statique, absent (pas de build)      |
 
 Non exécuté : toutes les cibles Docker (`init`, `start`, `prod-up`, `e2e`), CI GitHub.

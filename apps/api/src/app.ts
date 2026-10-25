@@ -83,7 +83,7 @@ export async function buildApp({
     contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
     hsts: config.isProduction,
   })
-  await app.register(rateLimit, { global: true, max: 300, timeWindow: '1 minute' })
+  await app.register(rateLimit, { global: true, max: config.rateLimitMax, timeWindow: '1 minute' })
   await app.register(cookie)
 
   const sessions = new SessionService(db, config)
