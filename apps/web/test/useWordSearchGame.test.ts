@@ -8,12 +8,13 @@ import { hitColor } from '../app/utils/wordsearch'
 const DATA: WordSearchDto = {
   puzzleId: '00000000-0000-4000-8000-000000000001',
   seed: 1,
+  format: 'freeform',
   size: 4,
   rows: ['BALL', 'XEZA', 'QRTE', 'MNOP'],
   directions: { diagonals: true, reversed: false },
   clues: [
-    { direction: 'across', number: 1, text: 'Sphère de jeu', length: 4 },
-    { direction: 'down', number: 2, text: 'Autre mot', length: 3 },
+    { direction: 'across', number: 1, text: 'Sphère de jeu', length: 4, row: 0, col: 0 },
+    { direction: 'down', number: 2, text: 'Autre mot', length: 3, row: 0, col: 1 },
   ],
 }
 

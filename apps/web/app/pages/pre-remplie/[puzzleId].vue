@@ -2,7 +2,7 @@
 import type { WordSearchClue } from '@crossverse/contracts'
 import type { Selection } from '~/composables/useWordSearchGame'
 import { clueKey } from '~/composables/useWordSearchGame'
-import { difficultyLabel, formatClock, formatDuration } from '~/utils/labels'
+import { clueSpoken, clueTag, difficultyLabel, formatClock, formatDuration } from '~/utils/labels'
 import { puzzlePath } from '~/utils/playModes'
 import { hitColor } from '~/utils/wordsearch'
 
@@ -43,6 +43,8 @@ onBeforeUnmount(() => {
 const elapsed = computed(() => (finishedAt.value ?? now.value) - startedAt.value)
 
 const complete = computed(() => game.value?.complete === true)
+/** Mots croisés classiques : définitions repérées par ligne et colonne (« Ligne IV »). */
+const classic = computed(() => game.value?.data.format === 'classic')
 const total = computed(() => game.value?.data.clues.length ?? 0)
 const progressLabel = computed(() => {
   const current = game.value
@@ -169,10 +171,9 @@ const gridLabel = computed(() =>
         <div class="flex min-w-0 flex-col gap-3">
           <p class="bg-surface border-line rounded-2xl border px-4 py-2 text-sm">
             <template v-if="game.activeClue">
-              <span class="text-accent font-extrabold"
-                >{{ game.activeClue.number
-                }}{{ game.activeClue.direction === 'across' ? 'H' : 'V' }}</span
-              >
+              <span class="text-accent font-extrabold">{{
+                clueTag(game.activeClue, classic)
+              }}</span>
               {{ game.activeClue.text }}
               <span class="text-muted">({{ game.activeClue.length }} lettres)</span>
             </template>
@@ -286,9 +287,7 @@ const gridLabel = computed(() =>
                   "
                   @click="pickClue(clue)"
                 >
-                  <span class="text-accent mr-1 font-extrabold"
-                    >{{ clue.number }}{{ clue.direction === 'across' ? 'H' : 'V' }}</span
-                  >
+                  <span class="text-accent mr-1 font-extrabold">{{ clueTag(clue, classic) }}</span>
                   <span :class="foundWord(clue) ? 'text-muted' : ''">{{ clue.text }}</span>
                   <span class="text-muted"> ({{ clue.length }})</span>
                   <span
@@ -313,7 +312,7 @@ const gridLabel = computed(() =>
                   v-if="!foundWord(clue) && !complete"
                   type="button"
                   class="text-muted hover:text-fg hover:bg-surface-2 min-h-11 shrink-0 rounded-lg px-2 text-xs font-semibold"
-                  :aria-label="`Où est le mot ${clue.number} ${clue.direction === 'across' ? 'horizontal' : 'vertical'} ?`"
+                  :aria-label="`Où est le mot ${clueSpoken(clue, classic)} ?`"
                   :disabled="busy"
                   @click="revealClue(clue)"
                 >

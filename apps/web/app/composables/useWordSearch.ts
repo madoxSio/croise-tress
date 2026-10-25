@@ -9,12 +9,14 @@ import {
   wordSearchHitSchema,
   type PublicPuzzleDto,
   type WordSearchClue,
+  type WordSearchClueRef,
 } from '@crossverse/contracts'
 import type { Position } from '@crossverse/crossword-core'
 import { z } from 'zod'
 import { api, errorMessage, ApiRequestError } from '~/services/api'
 import { checkWordSearch, getWordSearch, revealWordSearch } from '~/services/wordsearch'
 import { useWordSearchGame, type WordSearchGame } from '~/composables/useWordSearchGame'
+import { clueSpoken } from '~/utils/labels'
 
 const STORAGE_PREFIX = 'crossverse:pre-remplie:'
 
@@ -46,8 +48,11 @@ function writeSaved(puzzleId: string, saved: Saved | null): void {
   }
 }
 
-const clueName = (clue: { direction: string; number: number }): string =>
-  `${String(clue.number)} ${clue.direction === 'across' ? 'horizontal' : 'vertical'}`
+/** « 12 horizontal », ou « ligne 4 » pour des mots croisés classiques. */
+function clueName(game: WordSearchGame, hit: WordSearchClueRef & { answer: string }): string {
+  const clue = game.data.clues.find((c) => c.direction === hit.direction && c.number === hit.number)
+  return clue ? clueSpoken(clue, game.data.format === 'classic') : hit.answer
+}
 
 export function useWordSearch(puzzleId: string) {
   const details = shallowRef<PublicPuzzleDto | null>(null)
@@ -128,7 +133,7 @@ export function useWordSearch(puzzleId: string) {
         notice.value = 'Pas de mot ici. Essaie un autre tracé !'
       } else if (current.addHit(hit)) {
         noticeKind.value = 'hit'
-        notice.value = `Trouvé : ${hit.answer} (${clueName(hit)}).`
+        notice.value = `Trouvé : ${hit.answer} (${clueName(current, hit)}).`
         current.selectClue(null)
       } else {
         noticeKind.value = 'info'
