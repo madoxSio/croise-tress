@@ -16,6 +16,7 @@ Au 2026-10-23 (dépôt GitHub `madoxSio/croise-tress`, qui fait foi) — détail
 - **Points ouverts** : voir PROGRESS.md.
 - **Écrit, non vérifié** : `docker-compose.yml`, `compose.prod.yml` et les cibles Docker du `Makefile` (`make init`, `make start`, `make prod-up` : jamais exécutés faute de démon Docker dans l'environnement de travail) ; la CI GitHub Actions tourne et est verte, le déploiement provisoire (Render + Vercel) est suivi dans `docs/deploy/README.md`.
 - **Refonte visuelle (2026-10-23)** : landing page, mascotte Sougoudou, page « Comment jouer », icônes ; invité limité au solo (D11). Refonte v2 : landing néon + Partie rapide, ourson Sougoudou animé, interrupteur soleil/lune, cartes de thèmes et habillages, fenêtre floutée d'invitation au compte, web branché sur le catalogue de thèmes et lien vers les parcours.
+- **Mots croisés classiques (2026-10-25)** : type de grille `classic` (D15) à côté des grilles « en croix », 8 grilles, filtre au catalogue, web et mobile.
 - **Pas commencé** : MFA admin, modération, observabilité, PWA/Capacitor.
 
 Mettre à jour cette section à chaque étape livrée.

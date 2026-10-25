@@ -35,6 +35,7 @@ import type {
   CheckBody,
   DailyChallenge,
   Difficulty,
+  PuzzleFormat,
   HintBody,
   HintResponse,
   HistoryResponse,
@@ -114,6 +115,7 @@ interface RequestOptions {
 export interface ListPuzzlesParams {
   readonly difficulty?: Difficulty
   readonly theme?: string
+  readonly format?: PuzzleFormat
   readonly limit?: number
   readonly cursor?: string
 }
@@ -300,6 +302,7 @@ export class ApiClient {
       `/puzzles${query({
         difficulty: params.difficulty,
         theme: params.theme,
+        format: params.format,
         limit: params.limit,
         cursor: params.cursor,
       })}`,
@@ -313,9 +316,10 @@ export class ApiClient {
   }
 
   /** Grille simple tirée au hasard (éventuellement dans un thème), ou `null` s'il n'y en a pas. */
-  async quickPlay(theme?: string): Promise<PuzzleSummary | null> {
+  async quickPlay(theme?: string, format?: PuzzleFormat): Promise<PuzzleSummary | null> {
     try {
-      return (await this.request('GET', `/quick-play${query({ theme })}`, quickPlaySchema)).puzzle
+      return (await this.request('GET', `/quick-play${query({ theme, format })}`, quickPlaySchema))
+        .puzzle
     } catch (error) {
       if (error instanceof ApiRequestError && error.isNotFound) return null
       throw error

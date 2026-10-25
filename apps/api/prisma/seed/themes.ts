@@ -52,6 +52,14 @@ export const SEED_THEMES: readonly SeedTheme[] = [
     sortOrder: 3,
   },
   {
+    slug: 'mots-croises',
+    name: 'Mots croisés',
+    description: 'Grilles classiques à cases noires, définitions par ligne et par colonne.',
+    parent: 'culture',
+    icon: '✏️',
+    sortOrder: 4,
+  },
+  {
     slug: 'histoire',
     name: 'Histoire',
     description: 'Rois de France, grandes batailles et dates qui ont tout changé.',

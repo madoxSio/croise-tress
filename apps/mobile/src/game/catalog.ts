@@ -1,4 +1,4 @@
-import type { CatalogSubTheme, CatalogTheme, Difficulty } from '@crossverse/contracts'
+import type { CatalogSubTheme, CatalogTheme, Difficulty, PuzzleFormat } from '@crossverse/contracts'
 
 /** Les trois niveaux affichés, regroupant les cinq niveaux du moteur (comme sur le web). */
 export const LEVELS = [
@@ -12,6 +12,24 @@ export const LEVELS = [
 }[]
 
 export type LevelId = (typeof LEVELS)[number]['id']
+
+/** Types de grille proposés au catalogue (comme sur le web). */
+export const FORMATS = [
+  {
+    id: 'classic',
+    label: 'Mots croisés',
+    hint: 'Grille pleine à cases noires, définitions par ligne (I, II…) et par colonne (1, 2…).',
+  },
+  {
+    id: 'freeform',
+    label: 'Grilles en croix',
+    hint: 'Mots qui se croisent librement, chaque mot numéroté dans sa première case.',
+  },
+] as const satisfies readonly { id: PuzzleFormat; label: string; hint: string }[]
+
+export function formatLabel(format: PuzzleFormat): string {
+  return FORMATS.find((item) => item.id === format)?.label ?? format
+}
 
 export function levelOf(difficulty: Difficulty): (typeof LEVELS)[number] {
   return (

@@ -73,6 +73,7 @@ export default function Play() {
   }
 
   const clue = activeClue(puzzle, game)
+  const classic = details?.format === 'classic'
   const elapsed = session.durationMs ?? now - new Date(session.startedAt).getTime()
 
   const checkActions: SheetAction[] = [
@@ -116,6 +117,7 @@ export default function Play() {
         <CrosswordGrid
           puzzle={puzzle}
           game={game}
+          classic={classic}
           onSelect={(row, col) => {
             controller.dispatch({ type: 'select', position: { row, col } })
           }}
@@ -140,6 +142,7 @@ export default function Play() {
           <>
             <ClueBar
               clue={clue}
+              classic={classic}
               onPrevious={() => {
                 controller.dispatch({ type: 'moveToClue', delta: -1 })
               }}

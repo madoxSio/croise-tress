@@ -1,5 +1,5 @@
 import { parsePuzzle, type Puzzle } from '@crossverse/crossword-core'
-import type { Difficulty, PuzzleSummary } from '@crossverse/contracts'
+import type { Difficulty, PuzzleFormat, PuzzleSummary } from '@crossverse/contracts'
 import { z } from 'zod'
 import type { Db } from '../../db.ts'
 import type { Prisma } from '../../generated/prisma/client.ts'
@@ -10,6 +10,7 @@ export const puzzleSummarySelect = {
   slug: true,
   title: true,
   difficulty: true,
+  format: true,
   width: true,
   height: true,
   estimatedMinutes: true,
@@ -66,6 +67,7 @@ export class PuzzleRepository {
   async listPublished(filter: {
     difficulty?: Difficulty | undefined
     theme?: string | undefined
+    format?: PuzzleFormat | undefined
     limit: number
     cursor?: string | undefined
   }): Promise<{ items: PuzzleSummary[]; nextCursor: string | null }> {
@@ -73,6 +75,7 @@ export class PuzzleRepository {
       where: {
         ...publishedInTheme(filter.theme),
         ...(filter.difficulty ? { difficulty: filter.difficulty } : {}),
+        ...(filter.format ? { format: filter.format } : {}),
       },
       select: puzzleSummarySelect,
       orderBy: { id: 'asc' },

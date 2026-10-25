@@ -13,7 +13,7 @@ import type { ReactiveCrosswordGame } from '~/composables/useCrosswordGame'
 import { matchWordKey } from '~/composables/useMatch'
 import { api } from '~/services/api'
 import { matchApi, type Rating } from '~/services/match'
-import { directionLabel, difficultyLabel } from '~/utils/labels'
+import { clueTag, directionLabel, difficultyLabel } from '~/utils/labels'
 import { toEnginePuzzle } from '~/utils/puzzle'
 
 const route = useRoute()
@@ -30,6 +30,8 @@ const loadState = ref<'loading' | 'ready' | 'not-found' | 'error'>(
 )
 const loadError = ref<string | null>(null)
 const game = shallowRef<ReactiveCrosswordGame | null>(null)
+/** Mots croisés classiques : repères de lignes et colonnes au lieu des numéros. */
+const classic = computed(() => current.value?.puzzle?.format === 'classic')
 const notice = ref('')
 /** Annonces pour lecteurs d'écran : progression de l'adversaire, temps, connexion. */
 const announcement = ref('')
@@ -118,8 +120,10 @@ watch(
   { immediate: true },
 )
 
-const wordName = (clue: Pick<PublicClue, 'direction' | 'number'>): string =>
-  `${clue.number} ${directionLabel(clue.direction).toLowerCase()}`
+const wordName = (clue: PublicClue): string =>
+  classic.value
+    ? clueTag(clue, true)
+    : `${clue.number} ${directionLabel(clue.direction).toLowerCase()}`
 
 /** Soumet chaque mot nouvellement complet (et pas encore validé) : course au mot. */
 async function submitCompletedWords(): Promise<void> {
@@ -385,12 +389,12 @@ async function onForfeit(): Promise<void> {
             class="bg-surface border-line rounded-2xl border px-3 py-2 text-sm leading-snug sm:text-base"
           >
             <span class="text-accent mr-2 font-extrabold">
-              {{ game.activeClue.number }}{{ game.activeClue.direction === 'across' ? 'H' : 'V' }}
+              {{ clueTag(game.activeClue, classic) }}
             </span>
             {{ game.activeClue.text }}
           </p>
 
-          <CrosswordGrid ref="gridRef" :game="game" :label="gridLabel" />
+          <CrosswordGrid ref="gridRef" :game="game" :label="gridLabel" :classic="classic" />
 
           <p role="status" aria-live="polite" class="min-h-5 text-center text-sm">
             <span v-if="error" class="text-danger">{{ error }}</span>
@@ -411,8 +415,8 @@ async function onForfeit(): Promise<void> {
         </div>
 
         <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          <ClueList :game="game" direction="across" @select="onSelectClue" />
-          <ClueList :game="game" direction="down" @select="onSelectClue" />
+          <ClueList :game="game" direction="across" :classic="classic" @select="onSelectClue" />
+          <ClueList :game="game" direction="down" :classic="classic" @select="onSelectClue" />
         </div>
       </div>
     </template>

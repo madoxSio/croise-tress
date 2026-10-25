@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { PuzzleSummary } from '@crossverse/contracts'
 import type { ThemeLook } from '~/composables/useCatalog'
-import { levelOf } from '~/services/catalog'
+import { formatLabel, levelOf } from '~/services/catalog'
 
 /**
  * Carte de grille. Le lien du titre couvre toute la carte (pseudo-élément) ; le bouton
@@ -39,6 +39,11 @@ const emit = defineEmits<{ 'toggle-favorite': [] }>()
       <span class="bg-accent-soft rounded-full px-2 py-0.5">{{
         levelOf(puzzle.difficulty).label
       }}</span>
+      <span
+        v-if="puzzle.format === 'classic'"
+        class="border-line rounded-full border px-2 py-0.5"
+        >{{ formatLabel(puzzle.format) }}</span
+      >
       <span class="text-muted">{{ puzzle.theme }}</span>
     </div>
     <h3

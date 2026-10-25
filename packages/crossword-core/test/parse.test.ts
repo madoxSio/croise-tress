@@ -96,18 +96,18 @@ describe('parsePuzzle', () => {
 describe('gridSlots', () => {
   it('liste les mots dans l’ordre de numérotation avec leur réponse', () => {
     expect(gridSlots(['TABLE', 'A#A#L', 'BALLE', 'L#L#V', 'ELEVE'])).toEqual([
-      { direction: 'across', number: 1, length: 5, answer: 'TABLE' },
-      { direction: 'down', number: 1, length: 5, answer: 'TABLE' },
-      { direction: 'down', number: 2, length: 5, answer: 'BALLE' },
-      { direction: 'down', number: 3, length: 5, answer: 'ELEVE' },
-      { direction: 'across', number: 4, length: 5, answer: 'BALLE' },
-      { direction: 'across', number: 5, length: 5, answer: 'ELEVE' },
+      { direction: 'across', number: 1, row: 0, col: 0, length: 5, answer: 'TABLE' },
+      { direction: 'down', number: 1, row: 0, col: 0, length: 5, answer: 'TABLE' },
+      { direction: 'down', number: 2, row: 0, col: 2, length: 5, answer: 'BALLE' },
+      { direction: 'down', number: 3, row: 0, col: 4, length: 5, answer: 'ELEVE' },
+      { direction: 'across', number: 4, row: 2, col: 0, length: 5, answer: 'BALLE' },
+      { direction: 'across', number: 5, row: 4, col: 0, length: 5, answer: 'ELEVE' },
     ])
   })
 
   it('ignore les cases isolées (moins de deux lettres)', () => {
     expect(gridSlots(['A#B', '###', 'CD#'])).toEqual([
-      { direction: 'across', number: 1, length: 2, answer: 'CD' },
+      { direction: 'across', number: 1, row: 2, col: 0, length: 2, answer: 'CD' },
     ])
   })
 })

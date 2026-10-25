@@ -32,6 +32,7 @@ function matchState(solved: { direction: 'across' | 'down'; number: number; answ
       parentThemeSlug: null,
       skin: 'default',
       difficulty: 'easy',
+      format: 'freeform',
       estimatedMinutes: 5,
       cells: PUZZLE.cells.map((line) => [...line]),
       clues: [...PUZZLE.clues],

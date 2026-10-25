@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { difficultySchema, directionSchema, uuidSchema } from './common.js'
+import { difficultySchema, directionSchema, puzzleFormatSchema, uuidSchema } from './common.js'
 
 export const publicCellSchema = z.union([
   z.strictObject({ block: z.literal(true) }),
@@ -28,6 +28,7 @@ export const puzzleSummarySchema = z.strictObject({
   /** Clé d'habillage résolue (voir `catalog.ts`). */
   skin: z.string(),
   difficulty: difficultySchema,
+  format: puzzleFormatSchema,
   width: z.int(),
   height: z.int(),
   estimatedMinutes: z.int(),
@@ -45,6 +46,7 @@ export const listPuzzlesQuerySchema = z.strictObject({
   difficulty: difficultySchema.optional(),
   /** Slug d'un thème (sous-thèmes inclus) ou d'un sous-thème ; inconnu = liste vide. */
   theme: z.string().max(60).optional(),
+  format: puzzleFormatSchema.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(20),
   /** Pagination par curseur : `id` du dernier élément de la page précédente. */
   cursor: uuidSchema.optional(),

@@ -10,6 +10,14 @@ export {
 } from './parse.js'
 export { toPublicPuzzle } from './public.js'
 export {
+  toRoman,
+  classicLabel,
+  classicLineLabel,
+  classicLines,
+  type ClassicLine,
+  type PuzzleFormat,
+} from './classic.js'
+export {
   createEmptyGrid,
   sanitizeGrid,
   setLetter,

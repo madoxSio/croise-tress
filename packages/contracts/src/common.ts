@@ -5,6 +5,13 @@ export const API_PREFIX = '/api/v1'
 export const directionSchema = z.enum(['across', 'down'])
 export const difficultySchema = z.enum(['discovery', 'easy', 'intermediate', 'hard', 'expert'])
 export type Difficulty = z.infer<typeof difficultySchema>
+/**
+ * Présentation d'une grille : `freeform` = grille « en croix » (numéros dans les cases),
+ * `classic` = mots croisés classiques (grille dense, définitions par ligne I, II… et
+ * par colonne 1, 2…). Voir `crossword-core/src/classic.ts`.
+ */
+export const puzzleFormatSchema = z.enum(['freeform', 'classic'])
+export type PuzzleFormat = z.infer<typeof puzzleFormatSchema>
 
 export const uuidSchema = z.uuid()
 export const positionSchema = z.strictObject({
