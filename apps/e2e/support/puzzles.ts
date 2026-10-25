@@ -5,6 +5,7 @@
  */
 import { expect, type Page } from '@playwright/test'
 import { CATALOG_PUZZLES } from '../../api/prisma/seed/catalog-puzzles.ts'
+import { CLASSIC_PUZZLES } from '../../api/prisma/seed/classic-puzzles.ts'
 import { SEED_PUZZLES, type SeedPuzzle } from '../../api/prisma/seed/puzzles.ts'
 
 export interface Slot {
@@ -12,6 +13,10 @@ export interface Slot {
   readonly number: number
   readonly cells: readonly { readonly row: number; readonly col: number }[]
   readonly answer: string
+  /** Définition affichée (sert à retrouver le mot dans la liste des mots croisés classiques). */
+  readonly text: string
+  /** Mots croisés classiques : définitions groupées par ligne/colonne, sans numéro affiché. */
+  readonly classic: boolean
 }
 
 /** Titre de la grille affiché dans le h1 de la page (sans la difficulté, dans un <span>). */
@@ -27,8 +32,10 @@ export async function displayedPuzzleTitle(page: Page): Promise<string> {
 }
 
 export function seedPuzzleByTitle(title: string): SeedPuzzle {
-  // Le seed charge aussi le catalogue thématique : défi du jour et duels peuvent en tirer une.
-  const puzzle = [...SEED_PUZZLES, ...CATALOG_PUZZLES].find((p) => p.title === title.trim())
+  // Le seed charge aussi les catalogues : défi du jour et duels peuvent en tirer une.
+  const puzzle = [...SEED_PUZZLES, ...CATALOG_PUZZLES, ...CLASSIC_PUZZLES].find(
+    (p) => p.title === title.trim(),
+  )
   if (!puzzle) throw new Error(`Grille de démonstration inconnue : « ${title} »`)
   return puzzle
 }
@@ -60,7 +67,10 @@ export function slotsOf(puzzle: SeedPuzzle): Slot[] {
           else r++
         }
         const answer = cells.map((cell) => grid[cell.row]?.[cell.col] ?? '').join('')
-        slots.push({ direction, number, cells, answer })
+        const text =
+          puzzle.clues.find((clue) => clue.direction === direction && clue.number === number)
+            ?.text ?? ''
+        slots.push({ direction, number, cells, answer, text, classic: puzzle.format === 'classic' })
       }
     }
   })

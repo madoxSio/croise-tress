@@ -51,7 +51,11 @@ test('duel : invitation, mot validé par le serveur, abandon, partie rapide, cla
     await typeInSlot(a, word, 'Z'.repeat(word.answer.length))
     await expect(a.getByText('ce n’est pas le bon mot')).toBeVisible()
     await typeInSlot(a, word, word.answer)
-    await expect(a.getByText(`Mot trouvé : ${word.number} horizontal.`)).toBeVisible()
+    await expect(
+      a.getByText(
+        word.classic ? /^Mot trouvé : Ligne [IVX]+\.$/ : `Mot trouvé : ${word.number} horizontal.`,
+      ),
+    ).toBeVisible()
     // L'adversaire voit le score en direct, y compris après rechargement (resynchronisation).
     const scoreOfA = new RegExp(`${playerA.username} : 1 mots`)
     await expect(b.getByRole('progressbar', { name: scoreOfA })).toBeVisible()
