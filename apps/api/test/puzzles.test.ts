@@ -145,6 +145,29 @@ describe('défi du jour', () => {
     ctx.clock = new Date('2026-10-17T10:00:00Z')
   })
 
+  it('ne tire jamais une étape de parcours verrouillable (régression : invité bloqué)', async () => {
+    const [first, ...others] = Object.values(ids)
+    if (!first) throw new Error('seed vide')
+    await ctx.db.path.create({
+      data: {
+        slug: 'parcours-du-jour',
+        title: 'Parcours',
+        description: 'Toutes les grilles en étapes',
+        theme: { connect: { slug: 'maison' } },
+        status: 'published',
+        steps: {
+          create: [first, ...others].map((puzzleId, index) => ({
+            position: index + 1,
+            title: `Étape ${String(index + 1)}`,
+            puzzleId,
+          })),
+        },
+      },
+    })
+    const daily = await new Client(ctx.app).request('GET', '/api/v1/daily')
+    expect(daily.json<{ puzzle: { id: string } }>().puzzle.id).toBe(first)
+  })
+
   it('résiste aux appels concurrents (un seul enregistrement)', async () => {
     const results = await Promise.all(
       Array.from({ length: 10 }, () => new Client(ctx.app).request('GET', '/api/v1/daily')),
