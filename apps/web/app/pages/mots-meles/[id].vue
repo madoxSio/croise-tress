@@ -52,7 +52,7 @@ const revealedCount = computed(
 const summary = computed(() => {
   const mine = `${String(total.value - revealedCount.value)} mot(s) trouvé(s) par toi`
   const shown =
-    revealedCount.value > 0 ? `, ${String(revealedCount.value)} montré(s) par Sougoudou` : ''
+    revealedCount.value > 0 ? `, ${String(revealedCount.value)} montré(s) par Meyron` : ''
   return `${mine}${shown}, en ${formatDuration(elapsed.value)}.`
 })
 
@@ -95,7 +95,7 @@ const gridLabel = computed(() =>
 
 <template>
   <div class="flex flex-col gap-4">
-    <SougoudouLoader v-if="loading" label="Sougoudou mélange les lettres…" />
+    <MeyronLoader v-if="loading" label="Meyron mélange les lettres…" />
 
     <div v-else-if="loadError" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4">
       <p>{{ loadError }}</p>
@@ -173,7 +173,7 @@ const gridLabel = computed(() =>
             aria-labelledby="completion-title"
             class="bg-accent text-accent-fg cv-pop rounded-3xl p-6 text-center focus:outline-none"
           >
-            <SougoudouMascot mood="cheer" class="mx-auto size-24" />
+            <MeyronMascot mood="cheer" class="mx-auto size-24" />
             <h2 id="completion-title" class="mt-2 text-2xl font-extrabold">
               Grille terminée ! Le mot mystère était {{ mystery.letters }}.
             </h2>

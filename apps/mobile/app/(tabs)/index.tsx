@@ -2,7 +2,7 @@ import type { DailyChallenge, ResumeResponse } from '@crossverse/contracts'
 import { router, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { Image, StyleSheet, Text, View } from 'react-native'
-import sougoudou from '../../assets/sougoudou.png'
+import meyron from '../../assets/meyron.png'
 import { api, errorMessage } from '../../src/api'
 import { Button, Card, ErrorNotice, Loading, Muted, Screen } from '../../src/components/ui'
 import { difficultyLabel } from '../../src/game/labels'
@@ -68,11 +68,11 @@ export default function Home() {
   const daily = data?.daily
   return (
     <Screen>
-      {/* Scène sombre (comme le web) : Sougoudou se présente, partie rapide en un geste. */}
+      {/* Scène sombre (comme le web) : Meyron se présente, partie rapide en un geste. */}
       <View style={styles.stage}>
         <View style={styles.hero}>
           <Image
-            source={sougoudou}
+            source={meyron}
             style={styles.mascot}
             accessibilityIgnoresInvertColors
             accessible={false}

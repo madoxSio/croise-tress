@@ -49,7 +49,7 @@ function onCancel(event: Event): void {
     @click.self="close"
   >
     <div class="relative px-6 pt-16 pb-6 text-center sm:px-8">
-      <SougoudouMascot class="absolute -top-14 left-1/2 w-28 -translate-x-1/2" />
+      <MeyronMascot class="absolute -top-14 left-1/2 w-28 -translate-x-1/2" />
       <h2 :id="titleId" class="text-2xl font-extrabold">{{ request?.title }}</h2>
       <p :id="bodyId" class="text-muted mt-2 leading-relaxed">
         {{ request?.reason }} Crée ton compte en quelques secondes : un pseudo, un e-mail, un mot de

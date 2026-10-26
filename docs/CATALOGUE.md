@@ -8,7 +8,7 @@ champions). Deux niveaux au plus. Chaque thème porte un habillage pour l'interf
 - Table `themes` : `slug` (stable, sert d'identifiant public), `name`, `description`,
   `parent_id` (NULL pour un thème de premier niveau), `sort_order` (ordre éditorial), et
   l'habillage : `skin` (clé interprétée par le client : `culture`, `histoire`, `football`,
-  `champions`, `manga`, `art`, `musique`, `nature`…), `icon` (emoji), `accent` et `accent_alt`
+  `champions`, `sport`, `manga`, `art`, `musique`, `nature`…), `icon` (emoji), `accent` et `accent_alt`
   (`#RRGGBB`, dégradé de la carte). Un champ d'habillage NULL est hérité du parent ; l'API
   renvoie toujours des valeurs résolues.
 - `puzzles.theme_id` → `themes` (`ON DELETE RESTRICT`). La difficulté garde ses cinq niveaux ;

@@ -155,7 +155,7 @@ export default function PrefilledPuzzle() {
       </View>
     )
   }
-  if (!data) return <Loading label="Sougoudou cache les mots dans la grille…" />
+  if (!data) return <Loading label="Meyron cache les mots dans la grille…" />
 
   const colors = cellColors(state.found)
   const selected = new Set(
@@ -244,7 +244,7 @@ export default function PrefilledPuzzle() {
             </Text>
             <Muted>
               {data.clues.length - revealedCount} trouvé(s) par toi
-              {revealedCount > 0 ? `, ${String(revealedCount)} montré(s) par Sougoudou` : ''}, en{' '}
+              {revealedCount > 0 ? `, ${String(revealedCount)} montré(s) par Meyron` : ''}, en{' '}
               {formatDuration(elapsed)}. Mode entraînement : pas de points ici.
             </Muted>
             <Button

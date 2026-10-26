@@ -41,7 +41,7 @@ async function load(): Promise<void> {
 }
 
 /**
- * Sougoudou « parle » : sa présentation s'écrit lettre à lettre après son arrivée. Le texte
+ * Meyron « parle » : sa présentation s'écrit lettre à lettre après son arrivée. Le texte
  * complet est toujours exposé aux lecteurs d'écran ; sans animation, il s'affiche d'un coup.
  */
 const typed = ref('')
@@ -204,7 +204,7 @@ const featuredThemes = computed(() => (catalog.themes.value ?? []).slice(0, 6))
           </ul>
         </div>
 
-        <!-- Sougoudou arrive et se présente -->
+        <!-- Meyron arrive et se présente -->
         <figure class="relative order-first mx-auto w-full max-w-md lg:order-none">
           <div
             aria-hidden="true"
@@ -239,11 +239,7 @@ const featuredThemes = computed(() => (catalog.themes.value ?? []).slice(0, 6))
               class="absolute -bottom-2 left-1/2 size-4 -translate-x-1/2 rotate-45 bg-white"
             />
           </blockquote>
-          <SougoudouMascot
-            entrance
-            mood="wave"
-            class="relative mx-auto mt-4 w-44 sm:w-56 lg:w-64"
-          />
+          <MeyronMascot entrance mood="wave" class="relative mx-auto mt-4 w-44 sm:w-56 lg:w-64" />
           <figcaption class="relative mt-2 text-center text-sm text-white/70">
             <span class="font-semibold text-white">{{ MASCOT_NAME }}</span
             >, votre guide
@@ -256,7 +252,7 @@ const featuredThemes = computed(() => (catalog.themes.value ?? []).slice(0, 6))
     <section aria-labelledby="today-title" class="flex flex-col gap-4">
       <h2 id="today-title" class="sr-only">Aujourd’hui</h2>
 
-      <SougoudouLoader v-if="loading" inline />
+      <MeyronLoader v-if="loading" inline />
 
       <div
         v-else-if="error"
@@ -538,12 +534,12 @@ const featuredThemes = computed(() => (catalog.themes.value ?? []).slice(0, 6))
         aria-hidden="true"
         class="from-accent/15 to-accent-2/15 absolute inset-0 bg-gradient-to-br"
       />
-      <SougoudouMascot mood="cheer" class="relative mx-auto w-24" />
+      <MeyronMascot mood="cheer" class="relative mx-auto w-24" />
       <h2 id="cta-title" class="relative mt-4 text-3xl font-extrabold sm:text-4xl">
         Prêt à remplir votre première grille ?
       </h2>
       <p class="text-muted relative mx-auto mt-3 max-w-lg">
-        Aucune inscription pour commencer. Sougoudou vous attend.
+        Aucune inscription pour commencer. Meyron vous attend.
       </p>
       <button
         type="button"

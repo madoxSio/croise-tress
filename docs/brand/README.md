@@ -1,10 +1,10 @@
 # Identité visuelle
 
-- **Mascotte** : Sougoudou, une case de mots croisés avec un visage et un crayon. Source
-  vectorielle animée : `apps/web/app/components/SougoudouMascot.vue` ; version statique :
-  `sougoudou.svg`. Phrase d'accroche : `apps/web/app/utils/mascot.ts` (et
+- **Mascotte** : Meyron, une case de mots croisés avec un visage et un crayon. Source
+  vectorielle animée : `apps/web/app/components/MeyronMascot.vue` ; version statique :
+  `meyron.svg`. Phrase d'accroche : `apps/web/app/utils/mascot.ts` (et
   `apps/mobile/src/mascot.ts`).
-- **Icône** : le visage de Sougoudou sur une tuile violette. `apps/web/public/favicon.svg`
+- **Icône** : le visage de Meyron sur une tuile violette. `apps/web/public/favicon.svg`
   (coins arrondis) ; `icon-square.svg` (pleine page, pour iOS/Android qui découpent
   eux-mêmes) ; `icon-foreground.svg`, `icon-background.svg`, `icon-monochrome.svg` pour
   l'icône adaptative Android.

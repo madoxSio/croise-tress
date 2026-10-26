@@ -126,7 +126,7 @@ const gridLabel = computed(() =>
 
 <template>
   <div class="flex flex-col gap-4">
-    <SougoudouLoader v-if="loading" label="Sougoudou cache les mots dans la grille…" />
+    <MeyronLoader v-if="loading" label="Meyron cache les mots dans la grille…" />
 
     <div v-else-if="loadError" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4">
       <p>{{ loadError }}</p>
@@ -209,13 +209,13 @@ const gridLabel = computed(() =>
             aria-labelledby="completion-title"
             class="bg-accent text-accent-fg cv-pop rounded-3xl p-6 text-center focus:outline-none"
           >
-            <SougoudouMascot mood="cheer" class="mx-auto size-24" />
+            <MeyronMascot mood="cheer" class="mx-auto size-24" />
             <h2 id="completion-title" class="mt-2 text-2xl font-extrabold">
               Tous les mots trouvés !
             </h2>
             <p class="mt-2">
               {{ total - revealedCount }} trouvé(s) par toi<template v-if="revealedCount > 0">
-                , {{ revealedCount }} montré(s) par Sougoudou</template
+                , {{ revealedCount }} montré(s) par Meyron</template
               >, en {{ formatDuration(elapsed) }}.
             </p>
             <p class="mt-1 text-sm opacity-90">

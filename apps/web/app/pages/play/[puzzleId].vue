@@ -173,7 +173,7 @@ const gridLabel = computed(() =>
 
 <template>
   <div class="flex flex-col gap-4">
-    <SougoudouLoader v-if="loading" label="Sougoudou prépare la grille…" />
+    <MeyronLoader v-if="loading" label="Meyron prépare la grille…" />
 
     <div v-else-if="loadError" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4">
       <p>{{ loadError }}</p>

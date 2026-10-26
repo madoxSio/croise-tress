@@ -149,7 +149,7 @@ export default function WordListScreen() {
       </View>
     )
   }
-  if (!list) return <Loading label="Sougoudou mélange les lettres…" />
+  if (!list) return <Loading label="Meyron mélange les lettres…" />
 
   const colors = cellColors(state.found)
   const mystery = mysteryOf(list)
@@ -294,7 +294,7 @@ export default function WordListScreen() {
             </Text>
             <Muted>
               {list.words.length - revealedCount} mot(s) trouvé(s) par toi
-              {revealedCount > 0 ? `, ${String(revealedCount)} montré(s) par Sougoudou` : ''}, en{' '}
+              {revealedCount > 0 ? `, ${String(revealedCount)} montré(s) par Meyron` : ''}, en{' '}
               {formatDuration(elapsed)}. Mode entraînement : pas de points ici.
             </Muted>
             <Button

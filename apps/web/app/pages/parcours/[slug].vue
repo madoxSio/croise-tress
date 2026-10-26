@@ -51,7 +51,7 @@ onMounted(load)
       <span aria-hidden="true">←&nbsp;</span>Parcours
     </NuxtLink>
 
-    <SougoudouLoader v-if="loading" label="Chargement du parcours…" />
+    <MeyronLoader v-if="loading" label="Chargement du parcours…" />
     <div v-else-if="error" role="alert" class="bg-danger-soft text-danger rounded-2xl p-4 text-sm">
       {{ error }}
       <button type="button" class="ml-2 font-semibold underline" @click="load">Réessayer</button>

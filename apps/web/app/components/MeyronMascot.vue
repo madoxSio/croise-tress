@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Sougoudou, la mascotte : un mini ourson doudou, écharpe violette à damier de grille et
+ * Meyron, la mascotte : un mini ourson doudou, écharpe violette à damier de grille et
  * crayon à la patte (le lien avec les mots croisés).
  * Purement décorative (aria-hidden) : le texte qui l'accompagne porte l'information.
  *
@@ -12,9 +12,9 @@
  * quand la réduction des animations les ramène à 0,01 ms (main.css), l'ourson reste visible,
  * en place et dans la bonne pose (patte levée pour `wave` et `cheer`).
  */
-type SougoudouMood = 'idle' | 'wave' | 'cheer'
+type MeyronMood = 'idle' | 'wave' | 'cheer'
 
-withDefaults(defineProps<{ animated?: boolean; mood?: SougoudouMood; entrance?: boolean }>(), {
+withDefaults(defineProps<{ animated?: boolean; mood?: MeyronMood; entrance?: boolean }>(), {
   animated: true,
   mood: 'idle',
   entrance: false,
@@ -37,7 +37,7 @@ const ink = '#16132a'
     viewBox="0 0 240 240"
     aria-hidden="true"
     focusable="false"
-    class="sougoudou"
+    class="meyron"
     :class="[`is-${mood}`, { 'is-animated': animated, 'has-entrance': animated && entrance }]"
   >
     <defs>
@@ -249,7 +249,7 @@ const ink = '#16132a'
 </template>
 
 <style scoped>
-.sougoudou {
+.meyron {
   overflow: visible;
 }
 
@@ -356,19 +356,19 @@ const ink = '#16132a'
  * Les animations d'humeur attendent la fin de l'arrivée. Le sélecteur porte quatre classes pour
  * l'emporter sur les raccourcis `animation` des humeurs, qui remettraient le délai à 0.
  */
-.sougoudou.has-entrance .sgd-arrive {
+.meyron.has-entrance .sgd-arrive {
   animation: sgd-arrive 0.9s cubic-bezier(0.3, 0.7, 0.4, 1);
 }
 
-.sougoudou.has-entrance .sgd-shadow {
+.meyron.has-entrance .sgd-shadow {
   animation: sgd-arrive-shadow 0.9s ease-out;
 }
 
-.sougoudou.is-animated.has-entrance .sgd-figure,
-.sougoudou.is-animated.has-entrance .sgd-head,
-.sougoudou.is-animated.has-entrance .sgd-ear,
-.sougoudou.is-animated.has-entrance .sgd-eyes,
-.sougoudou.is-animated.has-entrance .sgd-arm {
+.meyron.is-animated.has-entrance .sgd-figure,
+.meyron.is-animated.has-entrance .sgd-head,
+.meyron.is-animated.has-entrance .sgd-ear,
+.meyron.is-animated.has-entrance .sgd-eyes,
+.meyron.is-animated.has-entrance .sgd-arm {
   animation-delay: 0.9s;
 }
 
@@ -376,7 +376,7 @@ const ink = '#16132a'
  * L'ombre de cheer prend le relais après l'arrivée : deux animations sur le même élément,
  * la seconde retardée.
  */
-.sougoudou.has-entrance.is-cheer .sgd-shadow {
+.meyron.has-entrance.is-cheer .sgd-shadow {
   animation:
     sgd-arrive-shadow 0.9s ease-out,
     sgd-jump-shadow 1.1s ease-in-out 0.9s infinite;

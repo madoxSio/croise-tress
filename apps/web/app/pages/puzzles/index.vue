@@ -145,8 +145,7 @@ onMounted(() => {
         <p class="text-accent text-sm font-bold tracking-wider uppercase">Catalogue</p>
         <h1 class="mt-1 text-3xl font-extrabold sm:text-5xl">Grilles</h1>
         <p class="text-muted mt-2 max-w-xl">
-          Choisissez un type de grille, un thème et un niveau, ou laissez Sougoudou choisir pour
-          vous.
+          Choisissez un type de grille, un thème et un niveau, ou laissez Meyron choisir pour vous.
         </p>
       </div>
       <button
@@ -372,10 +371,10 @@ onMounted(() => {
         Aucune grille ne correspond à ces filtres.
       </p>
 
-      <SougoudouLoader
+      <MeyronLoader
         v-if="loading"
         :inline="items.length > 0"
-        :label="items.length > 0 ? 'Chargement…' : 'Sougoudou prépare les grilles…'"
+        :label="items.length > 0 ? 'Chargement…' : 'Meyron prépare les grilles…'"
       />
       <button
         v-else-if="nextCursor"

@@ -54,7 +54,7 @@ async function confirmDelete(): Promise<void> {
   <div class="mx-auto flex max-w-4xl flex-col gap-10">
     <h1 class="text-3xl font-extrabold tracking-tight">Mon compte</h1>
 
-    <SougoudouLoader v-if="status !== 'ready'" />
+    <MeyronLoader v-if="status !== 'ready'" />
 
     <section
       v-else-if="isGuest"

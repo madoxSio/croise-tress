@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Indicateur de chargement aux couleurs de Crossverse : Sougoudou attend pendant que des cases
+ * Indicateur de chargement aux couleurs de Crossverse : Meyron attend pendant que des cases
  * de grille se remplissent une à une. Le texte (annoncé par `role="status"`) porte
  * l'information ; le dessin est décoratif. Animations réduites : les cases restent pleines.
  *
@@ -20,7 +20,7 @@ const TILES = ['M', 'O', 'T', 'S'] as const
     class="text-muted flex items-center justify-center"
     :class="inline ? 'gap-3 py-2' : 'flex-col gap-3 py-10'"
   >
-    <SougoudouMascot v-if="!inline" mood="idle" class="size-24" />
+    <MeyronMascot v-if="!inline" mood="idle" class="size-24" />
     <div aria-hidden="true" class="flex gap-1.5">
       <span
         v-for="(letter, index) in TILES"

@@ -137,10 +137,10 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Moteur : `gridSlots` (mots d'une grille, pour l'éditeur).
 - Preuves : `admin.test.ts` (10 tests), 2 tests `gridSlots` ; parcours réel dans Chromium contre API et web locaux (joueur → « Page introuvable », administrateur : vue d'ensemble, création puis publication d'une grille, parcours joueur, journal ; aucun débordement à 320 px). `make account-local` exécuté (mot de passe fourni et généré, refus d'un compte inconnu). Cibles Docker non exécutées.
 
-### 2026-10-23 — Refonte visuelle, landing page, mascotte Sougoudou ✅
+### 2026-10-23 — Refonte visuelle, landing page, mascotte Meyron ✅
 
 - Identité : palette violet / corail / citron (thèmes clair et sombre, contraste élevé inchangé), Inter et Bricolage Grotesque auto-hébergées (Fontsource, OFL, `font-src 'self'`), fond d'ambiance, en-tête et barre d'onglets mobile « verre » avec icônes. Sources dans `docs/brand/`.
-- Mascotte **Sougoudou** (`SougoudouMascot.vue`, SVG animé, décoratif) et sa phrase (`utils/mascot.ts`) sur l'accueil web et mobile.
+- Mascotte **Meyron** (`MeyronMascot.vue`, SVG animé, décoratif) et sa phrase (`utils/mascot.ts`) sur l'accueil web et mobile.
 - Accueil transformé en landing page : héros animé, défi du jour, trois modes, démonstration de grille animée (`HowToDemo.vue`), comparatif sans compte / avec compte. Nouvelle page `/comment-jouer` (règles, commandes, aides, duel, comparatif, FAQ). Apparitions au défilement (`v-reveal`) neutralisées par la réduction des animations.
 - Icône d'application : `favicon.svg`, `apple-touch-icon.png`, `icon-192/512.png` ; icônes iOS/Android et écran de démarrage de l'app mobile régénérés (`docs/brand/render-icons.mjs`).
 - Invité limité au solo (D11) : API `requireAccount`, encart `AccountRequired` sur `/history`, favoris masqués pour l'invité, onglet Compte mobile sans appel refusé. Correctif : `PuzzleCard` affichait le bouton favori sans favoris chargés (booléen absent converti en `false`).
@@ -148,7 +148,7 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 
 ### 2026-10-23 — Refonte v2 : landing néon, thèmes, invitation au compte ✅
 
-- Sougoudou devient un petit ourson doudou (écharpe, crayon) qui arrive à l'écran et se présente (salutation tapée, texte complet lu par les lecteurs d'écran). Icônes régénérées.
+- Meyron devient un petit ourson doudou (écharpe, crayon) qui arrive à l'écran et se présente (salutation tapée, texte complet lu par les lecteurs d'écran). Icônes régénérées.
 - Landing sombre animée (grille, faisceau néon), gros bouton « Partie rapide » (`useQuickPlay`), carrousel de thèmes sur mobile.
 - Interrupteur soleil / lune dans l'en-tête (`ThemeSwitch.vue`, `role="switch"`).
 - `/puzzles` : cartes de thèmes (`ThemeCard.vue`), sous-thèmes, niveaux Simple / Intermédiaire / Compliqué (filtres dans l'URL), habillage de la grille par thème (`.cv-skin`, motifs football, manga, histoire, culture, art, musique, nature) jusque dans l'en-tête de partie.
@@ -180,11 +180,11 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Web : repères de lignes et colonnes autour de la grille, définitions groupées par ligne/colonne, barre « Ligne IV / Col. 4 », filtre « Type de grille » et badge sur les cartes, duel compris. Mobile : repères, barre de définition, filtre et badge (non vu sur un appareil : vérifié par types et tests).
 - Preuves : `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 59, web 65, mobile 43, api 169 (**336 verts**) ; captures Chromium 390 px et 1280 px de la grille 9×9 sans défilement horizontal.
 
-### 2026-10-25 — Grille pré-remplie, loader Sougoudou ✅ (hors Docker)
+### 2026-10-25 — Grille pré-remplie, loader Meyron ✅ (hors Docker)
 
 - Mode « grille pré-remplie » (D14) : `crossword-core/src/wordsearch.ts` (génération déterministe, validation d'un tracé dans les deux sens, alignement d'un glisser), contrats `contracts/src/wordsearch.ts`, API `GET /puzzles/:id/word-search`, `POST …/check` (120/min), `POST …/reveal` (30/min), session exigée, verrou de parcours respecté.
-- Web : page `/pre-remplie/:id` (surlignage par traits SVG, glisser, deux taps ou clavier, « Où est-il ? », récapitulatif des mots appris, partie gardée dans le navigateur), choix du mode au-dessus de la liste des grilles (préférence de l'appareil, suivie par les cartes et la partie rapide), lien entre les deux modes, section « Deux façons de jouer » de la page Comment jouer. Loader `SougoudouLoader` (cases « MOTS » qui se remplissent) sur les pages de jeu et de listes, barre de progression entre les pages.
-- Mobile : écran `pre-remplie/[puzzleId]` (glisser ou deux taps, cases colorées), choix du mode dans l'onglet Grilles, partie rapide de l'accueil dans le mode choisi, `Loading` avec Sougoudou et cases animées (immobile si « réduire les animations »).
+- Web : page `/pre-remplie/:id` (surlignage par traits SVG, glisser, deux taps ou clavier, « Où est-il ? », récapitulatif des mots appris, partie gardée dans le navigateur), choix du mode au-dessus de la liste des grilles (préférence de l'appareil, suivie par les cartes et la partie rapide), lien entre les deux modes, section « Deux façons de jouer » de la page Comment jouer. Loader `MeyronLoader` (cases « MOTS » qui se remplissent) sur les pages de jeu et de listes, barre de progression entre les pages.
+- Mobile : écran `pre-remplie/[puzzleId]` (glisser ou deux taps, cases colorées), choix du mode dans l'onglet Grilles, partie rapide de l'accueil dans le mode choisi, `Loading` avec Meyron et cases animées (immobile si « réduire les animations »).
 - Preuves : `wordsearch.test.ts` côté core (8), API (7, dont toutes les grilles du catalogue et les 8 classiques sur 5 graines, AUTHZ parcours, VAL), web (9), mobile (3) ; `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 62, web 72, mobile 44, api 166 (**344 verts** ; 365 après fusion des mots croisés classiques) ; E2E : **13 passed, 2 skipped** (grille pré-remplie jouée à la suite de `solo.spec.ts`, en mobile et bureau, dans la même session invitée et avec peu de requêtes : limite de 30 invités/h par IP ; la limite globale de 300 requêtes/min, que la suite dépasse depuis une seule IP, est relevée pour les E2E seulement via `RATE_LIMIT_MAX`). Écran mobile vérifié dans Chromium via l'export web Expo ; pas d'appareil iOS/Android réel ici.
 
 ### 2026-10-25 — Mots mêlés standard et pré-rempli des classiques ✅ (hors Docker)
@@ -196,6 +196,13 @@ Légende : ✅ validée (preuve jointe) · 🟡 écrite, non vérifiée · ⏳ e
 - Grille pré-remplie des mots croisés classiques (PR #22) : définitions repérées « Ligne IV / Col. 4 ».
 - Défi du jour (PR #21) : n'attribue plus une étape de parcours verrouillable.
 - Preuves : `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 74, web 74, mobile 48, api 186 (**382 verts**) ; E2E local **13 passed, 2 skipped** (mots mêlés joués à la suite de `solo.spec.ts`, `/mots-meles` et une partie ajoutées aux contrôles 320 px et accessibilité) ; captures Chromium 390 px et 1280 px sans défilement horizontal.
+
+### 2026-10-26 — Thème Sport (escalade) et mascotte renommée Meyron ✅ (hors Docker)
+
+- Demande de madox : une grille escalade « dans sport », et la mascotte s'appelle désormais **Meyron** (anciennement Sougoudou) partout.
+- Catalogue : nouveau thème **Sport** (habillage `sport`, crêtes de montagne en CSS) et sous-thème **Escalade** ; grille intermédiaire 13×13 « Au pied de la falaise » (14 mots : baudrier, dégaine, mousqueton, magnésie…). Football reste un thème à part (deux niveaux au plus, il a déjà ses sous-thèmes). Chargée au démarrage par `syncCatalog` comme les autres.
+- Mascotte : composants `MeyronMascot.vue` et `MeyronLoader.vue`, `MASCOT_NAME`, salutations, textes, `docs/brand/meyron.svg`, image mobile `assets/meyron.png` (même dessin, nom de fichier seulement).
+- Preuves : `pnpm lint`, `pnpm typecheck` verts ; `pnpm test` : core 74, web 74, mobile 48, api 186 (**382 verts**, `catalog.test.ts` mis à jour pour l'ordre des thèmes). E2E non relancés en local (CI).
 
 ## Points ouverts (repérés pendant la construction)
 
