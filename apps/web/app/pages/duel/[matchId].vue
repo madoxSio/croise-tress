@@ -330,7 +330,7 @@ async function onForfeit(): Promise<void> {
       <button type="button" class="ml-2 font-semibold underline" @click="load">Réessayer</button>
     </div>
 
-    <SougoudouLoader v-else-if="!current" label="Chargement du match…" />
+    <MeyronLoader v-else-if="!current" label="Chargement du match…" />
 
     <template v-else>
       <p

@@ -194,6 +194,7 @@ describe('GET /catalog', () => {
       'culture',
       'histoire',
       'football',
+      'sport',
       'manga',
       'art',
       'musique',

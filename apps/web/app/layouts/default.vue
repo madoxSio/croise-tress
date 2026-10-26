@@ -160,9 +160,7 @@ const isCurrent = (to: string): boolean =>
       >
         <p class="flex items-center gap-2">
           <img src="/favicon.svg" alt="" width="24" height="24" class="size-6 rounded-md" />
-          <span
-            ><span class="text-fg font-display font-bold">Crossverse</span> · avec Sougoudou</span
-          >
+          <span><span class="text-fg font-display font-bold">Crossverse</span> · avec Meyron</span>
         </p>
         <nav aria-label="Liens utiles" class="sm:ml-auto">
           <ul class="flex flex-wrap gap-x-5 gap-y-1">

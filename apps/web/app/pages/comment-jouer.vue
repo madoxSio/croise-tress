@@ -119,7 +119,7 @@ const faq = [
         class="cv-rise mx-auto flex flex-col items-center gap-3 md:mx-0"
         style="--cv-delay: 200ms"
       >
-        <SougoudouMascot class="w-36 sm:w-44" />
+        <MeyronMascot class="w-36 sm:w-44" />
         <figcaption class="text-muted max-w-[14rem] text-center text-sm">
           <span class="text-fg font-semibold">{{ MASCOT_NAME }}</span> : « {{ MASCOT_PHRASE }} »
         </figcaption>

@@ -33,7 +33,7 @@ onMounted(load)
   <div class="mx-auto flex max-w-3xl flex-col gap-6">
     <h1 class="text-3xl font-extrabold tracking-tight">Mes parties terminées</h1>
 
-    <SougoudouLoader v-if="loading" label="Chargement de l’historique…" />
+    <MeyronLoader v-if="loading" label="Chargement de l’historique…" />
     <LockedPreview v-else-if="isGuest">
       <template #preview>
         <ul class="divide-line bg-surface border-line divide-y rounded-2xl border">

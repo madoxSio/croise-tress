@@ -14,7 +14,7 @@ export interface SeedTheme {
 /**
  * Catalogue de départ. Les parents précèdent leurs sous-thèmes. Les sous-thèmes sans style
  * propre héritent de celui de leur thème. Clés `skin` utilisées : culture, histoire, football,
- * champions, manga, art, musique, nature.
+ * champions, sport, manga, art, musique, nature.
  */
 export const SEED_THEMES: readonly SeedTheme[] = [
   {
@@ -137,6 +137,24 @@ export const SEED_THEMES: readonly SeedTheme[] = [
     accent: '#1E3A8A',
     accentAlt: '#6366F1',
     sortOrder: 4,
+  },
+  {
+    slug: 'sport',
+    name: 'Sport',
+    description: 'Disciplines, matériel et gestes techniques, du mur d’escalade au stade.',
+    skin: 'sport',
+    icon: '🏅',
+    accent: '#C2410C',
+    accentAlt: '#FACC15',
+    sortOrder: 35,
+  },
+  {
+    slug: 'escalade',
+    name: 'Escalade',
+    description: 'Falaises, salles de bloc et matériel du grimpeur.',
+    parent: 'sport',
+    icon: '🧗',
+    sortOrder: 1,
   },
   {
     slug: 'manga',

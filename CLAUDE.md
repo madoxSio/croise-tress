@@ -10,15 +10,16 @@ En cas de conflit : les instructions explicites de l'utilisateur > ce fichier > 
 
 ## 0. État du projet (à tenir à jour)
 
-Au 2026-10-25 (dépôt GitHub `madoxSio/croise-tress`, qui fait foi) — détail et preuves dans [`docs/PROGRESS.md`](docs/PROGRESS.md) :
+Au 2026-10-26 (dépôt GitHub `madoxSio/croise-tress`, qui fait foi) — détail et preuves dans [`docs/PROGRESS.md`](docs/PROGRESS.md) :
 
 - **Fait et testé** (382 tests Vitest et 13 E2E Playwright verts, lint et types verts) : socle, moteur, contrats, API complète (solo, défi, comptes, progression, duels, Elo, administration, catalogue de thèmes et partie rapide — [`docs/CATALOGUE.md`](docs/CATALOGUE.md)), web complet dont l'espace `/admin` ([`docs/ADMIN.md`](docs/ADMIN.md)), script de comptes de test et d'administrateurs, parcours à étapes, indices limités et Coumba points, pile de production (Caddy + API) jouée hors Docker, app mobile Expo.
 - **Points ouverts** : voir PROGRESS.md.
 - **Écrit, non vérifié** : `docker-compose.yml`, `compose.prod.yml` et les cibles Docker du `Makefile` (`make init`, `make start`, `make prod-up` : jamais exécutés faute de démon Docker dans l'environnement de travail) ; la CI GitHub Actions tourne et est verte, le déploiement provisoire (Render + Vercel) est suivi dans `docs/deploy/README.md`.
-- **Refonte visuelle (2026-10-23)** : landing page, mascotte Sougoudou, page « Comment jouer », icônes ; invité limité au solo (D11). Refonte v2 : landing néon + Partie rapide, ourson Sougoudou animé, interrupteur soleil/lune, cartes de thèmes et habillages, fenêtre floutée d'invitation au compte, web branché sur le catalogue de thèmes et lien vers les parcours.
-- **Grille pré-remplie (2026-10-24)** : second mode de jeu façon mots mêlés (D14), web et mobile, loader Sougoudou, explication des deux modes dans « Comment jouer ».
+- **Refonte visuelle (2026-10-23)** : landing page, mascotte Meyron, page « Comment jouer », icônes ; invité limité au solo (D11). Refonte v2 : landing néon + Partie rapide, ourson Meyron animé, interrupteur soleil/lune, cartes de thèmes et habillages, fenêtre floutée d'invitation au compte, web branché sur le catalogue de thèmes et lien vers les parcours.
+- **Grille pré-remplie (2026-10-24)** : second mode de jeu façon mots mêlés (D14), web et mobile, loader Meyron, explication des deux modes dans « Comment jouer ».
 - **Mots croisés classiques (2026-10-25)** : type de grille `classic` (D15) à côté des grilles « en croix », 8 grilles, filtre au catalogue, web et mobile.
 - **Mots mêlés standard (2026-10-25)** : table `word_lists` (D16), 8 grilles à thème avec mot mystère, `/mots-meles` web et mobile ; jeu côté client, sans points.
+- **Sport et Meyron (2026-10-26)** : thème Sport > Escalade avec une grille ; la mascotte s'appelle désormais Meyron.
 - **Pas commencé** : MFA admin, modération, observabilité, PWA/Capacitor.
 
 Mettre à jour cette section à chaque étape livrée.

@@ -16,7 +16,7 @@ import {
   type ViewStyle,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import sougoudou from '../../assets/sougoudou.png'
+import meyron from '../../assets/meyron.png'
 import { TOUCH_TARGET, radius, usePalette } from '../theme'
 
 export function Screen({ children, scroll = true }: { children: ReactNode; scroll?: boolean }) {
@@ -106,7 +106,7 @@ export function Button({
 }
 
 /**
- * Chargement aux couleurs de Crossverse : Sougoudou attend pendant que les cases « MOTS » se
+ * Chargement aux couleurs de Crossverse : Meyron attend pendant que les cases « MOTS » se
  * remplissent une à une. Animations réduites (réglage système) : les cases restent pleines.
  */
 export function Loading({ label = 'Chargement…' }: { label?: string }) {
@@ -136,7 +136,7 @@ export function Loading({ label = 'Chargement…' }: { label?: string }) {
   return (
     <View accessibilityRole="progressbar" accessibilityLabel={label} style={styles.loading}>
       <Image
-        source={sougoudou}
+        source={meyron}
         style={styles.loadingBear}
         accessibilityElementsHidden
         importantForAccessibility="no"

@@ -103,7 +103,7 @@ onMounted(() => {
           Réessayer
         </button>
       </div>
-      <SougoudouLoader v-if="loading" label="Sougoudou mélange les lettres…" />
+      <MeyronLoader v-if="loading" label="Meyron mélange les lettres…" />
       <ul v-else-if="visible.length > 0" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <li v-for="wordList in visible" :key="wordList.id">
           <WordListCard :word-list="wordList" :look="catalog.lookOf(wordList.themeSlug)" />

@@ -1,4 +1,4 @@
-// Génère les icônes PNG (web et mobile) et l'image de Sougoudou pour l'app mobile, depuis les
+// Génère les icônes PNG (web et mobile) et l'image de Meyron pour l'app mobile, depuis les
 // SVG de ce dossier et apps/web/public/favicon.svg.
 // Usage (Chromium de Playwright requis) : node docs/brand/render-icons.mjs
 // Lancé depuis la racine du dépôt ; @playwright/test est résolu depuis apps/e2e.
@@ -22,7 +22,7 @@ const outputs = [
   [`${brand}/icon-monochrome.svg`, 'apps/mobile/assets/android-icon-monochrome.png', 432],
   ['apps/web/public/favicon.svg', 'apps/mobile/assets/favicon.png', 48],
   ['apps/web/public/favicon.svg', 'apps/mobile/assets/splash-icon.png', 1024],
-  [`${brand}/sougoudou.svg`, 'apps/mobile/assets/sougoudou.png', 480],
+  [`${brand}/meyron.svg`, 'apps/mobile/assets/meyron.png', 480],
 ]
 
 const browser = await chromium.launch(

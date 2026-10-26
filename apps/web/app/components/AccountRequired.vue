@@ -28,7 +28,7 @@ const perks = [
       class="bg-accent/15 pointer-events-none absolute -top-20 -right-16 size-56 rounded-full blur-3xl"
     />
     <div class="relative flex flex-col gap-6 sm:flex-row sm:items-center">
-      <SougoudouMascot class="mx-auto w-28 shrink-0 sm:mx-0 sm:w-32" />
+      <MeyronMascot class="mx-auto w-28 shrink-0 sm:mx-0 sm:w-32" />
       <div class="min-w-0 flex-1">
         <h2 :id="titleId" class="text-2xl font-extrabold">{{ title }}</h2>
         <p class="text-muted mt-2 leading-relaxed">{{ reason }}</p>
